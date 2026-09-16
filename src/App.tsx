@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState, type AnimationEvent } from 'react'
 import { PhoneFrame } from './components/PhoneFrame'
 import { ScreenNavigator } from './components/ScreenNavigator'
+import { DEFAULT_SCENARIO, type HomeScenarioId } from './data/homeScenarios'
 import { DEFAULT_SCREEN, type ScreenId } from './data/screens'
 import { AppHomeScreen } from './screens/AppHomeScreen'
 import { IosHomeScreen } from './screens/IosHomeScreen'
@@ -16,12 +17,14 @@ function isInApp(id: ScreenId) {
 function App() {
   const [screen, setScreen] = useState<ScreenId>(DEFAULT_SCREEN)
   const [layerAnim, setLayerAnim] = useState<LayerAnim>(null)
+  const [scenario, setScenario] = useState<HomeScenarioId>(DEFAULT_SCENARIO)
   const layerAnimRef = useRef<LayerAnim>(null)
   layerAnimRef.current = layerAnim
 
   const appOpen = isInApp(screen)
   const showHome = screen === 'ios-home' || appOpen
   const canGoHome = appOpen && layerAnim !== 'leave'
+  const needsAttention = scenario === 'attention'
 
   const openApp = useCallback(() => {
     if (appOpen && layerAnim !== 'leave') return
@@ -60,6 +63,10 @@ function App() {
     [appOpen, closeApp, layerAnim, screen],
   )
 
+  const toggleAttention = useCallback(() => {
+    setScenario((current) => (current === 'attention' ? 'ok' : 'attention'))
+  }, [])
+
   const onLayerAnimationEnd = useCallback(
     (e: AnimationEvent<HTMLDivElement>) => {
       if (e.target !== e.currentTarget) return
@@ -88,17 +95,30 @@ function App() {
       <main className="studio__main">
         <div className="studio__phone-anchor">
           <PhoneFrame canGoHome={canGoHome} onGoHome={closeApp}>
-            {showHome ? <IosHomeScreen onOpenApp={openApp} /> : null}
+            {showHome ? <IosHomeScreen onOpenApp={openApp} scenario={scenario} /> : null}
 
             {appOpen ? (
               <div className={`app-layer${layerClass}`} onAnimationEnd={onLayerAnimationEnd}>
                 {screen === 'splash' ? <SplashScreen onDone={finishSplash} /> : null}
-                {screen === 'app-home' ? <AppHomeScreen /> : null}
+                {screen === 'app-home' ? <AppHomeScreen scenario={scenario} /> : null}
               </div>
             ) : null}
           </PhoneFrame>
 
           <div className="studio__nav-slot">
+            <button
+              type="button"
+              className={`scenario-toggle${needsAttention ? ' is-active' : ''}`}
+              aria-pressed={needsAttention}
+              onClick={toggleAttention}
+            >
+              <span className="scenario-toggle__label">
+                {needsAttention ? 'Alerta activa' : 'Activar alerta'}
+              </span>
+              <span className="scenario-toggle__hint">
+                {needsAttention ? 'Actividad ≤ 30' : 'Simular inactividad'}
+              </span>
+            </button>
             <ScreenNavigator active={screen} onSelect={selectScreen} />
           </div>
         </div>

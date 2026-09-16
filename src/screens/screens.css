@@ -122,6 +122,83 @@
   white-space: nowrap;
 }
 
+/* Alert widget — Figma 68:9988 (152×153) */
+.ios-home__widget-slot--alert {
+  overflow: hidden;
+  background: #fd8e5e;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  pointer-events: auto;
+  text-align: left;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ios-home__widget-slot--alert:focus-visible {
+  outline: 2px solid #fcfcfc;
+  outline-offset: 2px;
+}
+
+.ios-home__widget--alert {
+  height: 100%;
+  padding: 14px 16.379px;
+  box-sizing: border-box;
+  background: #fd8e5e;
+  pointer-events: none;
+}
+
+.ios-home__widget-body--alert {
+  height: 100%;
+  gap: 10px;
+}
+
+.ios-home__widget-body--alert .ios-home__widget-copy {
+  width: 122px;
+  height: 32px;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.ios-home__widget-body--alert .ios-home__widget-status {
+  margin-top: auto;
+}
+
+.ios-home__widget-head--alert {
+  gap: 2.89px;
+  height: 15px;
+  font-size: 13px;
+  line-height: 15px;
+  opacity: 0.6;
+}
+
+.ios-home__widget-alert-icon {
+  display: block;
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  transform: rotate(180deg);
+}
+
+.ios-home__widget-head--alert .ios-home__widget-alert-icon {
+  width: 13px;
+  height: 13px;
+}
+
+.ios-home__widget--alert .ios-home__widget-title {
+  line-height: 15.416px;
+}
+
+.ios-home__widget-status {
+  margin: 0;
+  width: 120px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 15.416px;
+  color: #fcfcfc;
+}
+
 /* Figma metric row is always 30px tall (empty on “Todo en orden”) */
 .ios-home__widget-metric {
   height: 30px;
@@ -137,6 +214,41 @@
   line-height: 16px; /* was 15.4 → even up */
   color: #fcfcfc;
   font-feature-settings: 'lnum' 1, 'pnum' 1;
+}
+
+/* Figma 68:9998 — must follow base metric rules so height 46px wins */
+.ios-home__widget-metric.ios-home__widget-metric--alert {
+  height: 46px;
+  width: 120px;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.ios-home__widget-metric-cluster {
+  display: block;
+  font-size: 0;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.ios-home__widget-metric--alert .ios-home__widget-metric-value,
+.ios-home__widget-metric--alert .ios-home__widget-metric-max {
+  display: inline;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  color: #fcfcfc;
+  font-feature-settings: 'lnum' 1, 'pnum' 1;
+  vertical-align: baseline;
+}
+
+.ios-home__widget-metric--alert .ios-home__widget-metric-value {
+  font-size: 42.511px;
+  line-height: 1;
+}
+
+.ios-home__widget-metric--alert .ios-home__widget-metric-max {
+  font-size: 24.292px;
+  line-height: 1;
 }
 
 /* Decor: Figma SVG already has ~0.19 fill opacity — don’t reduce further */
@@ -281,11 +393,54 @@
   pointer-events: none;
 }
 
-/* —— App home (Figma 48:3198) —— */
+/* —— App home (Figma 48:3198 ok / 67:8685 attention) —— */
 .app-home {
+  --alert-shift: 0px;
   background: #0d0a09;
   color: #fcfcfc;
   isolation: isolate;
+  overflow: hidden;
+}
+
+.app-home__scroller {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.app-home.is-alert {
+  --alert-shift: 206px;
+}
+
+.app-home.is-alert .app-home__scroller {
+  cursor: grab;
+  touch-action: none;
+}
+
+.app-home.is-alert .app-home__scroller.is-dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.app-home__scroll-content {
+  position: relative;
+  width: 100%;
+  min-height: 100%;
+  will-change: transform;
+}
+
+/* Tall spacer so transform-scroll knows content height (absolute UI doesn’t contribute). */
+.app-home__scroll-extent {
+  display: block;
+  width: 1px;
+  height: var(--phone-h);
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.app-home.is-alert .app-home__scroll-extent {
+  /* Match stage bottom (top: alert-shift + height phone-h) so max scroll = alert-shift */
+  height: calc(var(--phone-h) + var(--alert-shift));
 }
 
 .app-home__bg {
@@ -353,6 +508,22 @@
   mix-blend-mode: normal;
 }
 
+/* Stage shifts down when the attention alert is inserted */
+.app-home__stage {
+  position: absolute;
+  left: 0;
+  top: var(--alert-shift);
+  width: 100%;
+  height: 844px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.app-home__stage .app-home__cta,
+.app-home__stage .app-home__copy {
+  pointer-events: auto;
+}
+
 .app-home__veil {
   position: absolute;
   left: 0;
@@ -363,6 +534,130 @@
   mix-blend-mode: multiply;
   pointer-events: none;
   z-index: 1;
+}
+
+/* Attention alert card — Figma Frame 91191 */
+.app-home__alert {
+  position: absolute;
+  left: 24px;
+  top: 243px;
+  z-index: 3;
+  width: 341px;
+  padding: 18px;
+  border-radius: 26px;
+  background: rgba(13, 10, 9, 0.56);
+  backdrop-filter: blur(2.4px);
+  -webkit-backdrop-filter: blur(2.4px);
+  box-sizing: border-box;
+  pointer-events: auto;
+}
+
+.app-home__alert-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.app-home__alert-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 30px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.3) 0%, rgba(188, 45, 58, 0.3) 100%),
+    rgba(13, 10, 9, 0.58);
+  backdrop-filter: blur(2.4px);
+  -webkit-backdrop-filter: blur(2.4px);
+  box-sizing: border-box;
+}
+
+.app-home__alert-badge img {
+  display: block;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  transform: rotate(180deg);
+}
+
+.app-home__alert-badge span {
+  width: 186px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 21px;
+  color: #fcfcfc;
+}
+
+.app-home__alert-close {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.app-home__alert-close img {
+  display: block;
+  width: 22px;
+  height: 22px;
+  transform: rotate(-90deg);
+}
+
+.app-home__alert-body {
+  margin: 14px 0 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 21px;
+  color: #fcfcfc;
+}
+
+.app-home__alert-body strong {
+  font-weight: 800;
+}
+
+.app-home__alert-actions {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin-top: 14px;
+}
+
+.app-home__alert-btn {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-home__alert-btn span {
+  padding: 0 8px;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 16px;
+  color: #fcfcfc;
+  white-space: nowrap;
+}
+
+.app-home__alert-btn--primary {
+  background: var(--orange);
 }
 
 .app-home__header {
@@ -590,6 +885,15 @@
   width: 218.5px;
 }
 
+.app-home__gauge-fill.is-low {
+  /* Figma 67:8754 — same left edge as track (x=43), no centered transform */
+  left: 43px;
+  top: 273px;
+  width: 105.5px;
+  height: 57.964px;
+  transform: none;
+}
+
 .app-home__gauge-track img,
 .app-home__gauge-fill img {
   position: absolute;
@@ -611,6 +915,13 @@
   right: -1.37%;
   bottom: -4.76%;
   left: -1.37%;
+}
+
+.app-home__gauge-fill.is-low img {
+  top: -5.18%;
+  right: -2.84%;
+  bottom: -5.18%;
+  left: -2.84%;
 }
 
 .app-home__bone {
@@ -646,6 +957,16 @@
   right: 31.89%;
   bottom: 66.67%;
   left: 65.9%;
+}
+
+.app-home__knob.is-low {
+  /* Figma 67:8761 — phone (145, 475) → stage (145, 269) */
+  top: 269px;
+  left: 145px;
+  right: auto;
+  bottom: auto;
+  width: 8.62px;
+  height: 8.62px;
 }
 
 .app-home__knob img {
@@ -757,6 +1078,8 @@
   flex-direction: column;
   align-items: center;
   gap: 22px;
+  /* Keep CTA at the same Y as the longer “ok” copy (headline + body + gaps + button) */
+  min-height: 231px;
   width: 344px;
   transform: translateX(-50%);
 }
@@ -792,6 +1115,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-top: auto;
   height: 40px;
   padding: 12px 16px;
   border: 0;

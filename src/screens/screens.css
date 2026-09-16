@@ -602,7 +602,8 @@
   justify-content: center;
   gap: 8px;
   height: 30px;
-  padding: 6px 8px;
+  min-height: 30px;
+  padding: 4.5px 8px;
   border-radius: 10px;
   background:
     linear-gradient(180deg, rgba(0, 0, 0, 0.3) 0%, rgba(188, 45, 58, 0.3) 100%),
@@ -621,11 +622,14 @@
 }
 
 .app-home__alert-badge span {
+  display: flex;
+  align-items: center;
   width: 186px;
+  height: 21px;
   font-family: var(--font-body);
   font-size: 14px;
   font-weight: 600;
-  line-height: 21px;
+  line-height: 1;
   color: #fcfcfc;
 }
 

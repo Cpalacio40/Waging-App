@@ -10,8 +10,13 @@ import './screens.css'
 
 const ASSET = (name: string) => `${import.meta.env.BASE_URL}ios-home/${name}`
 
-const SWIPE_THRESHOLD_PX = 40
-const RUBBER_BAND = 0.32
+/** Distance to commit one page change (one page per gesture). */
+const SWIPE_THRESHOLD_PX = 44
+/** Max free drag toward the next/prev card (keeps content on-card). */
+const MAX_PAGE_DRAG_PX = 52
+/** Hard cap for edge rubber-band stretch (both edges). */
+const MAX_RUBBER_PX = 12
+const RUBBER_BAND = 0.28
 
 type WidgetSlide = {
   id: string
@@ -56,12 +61,17 @@ type IosHomeScreenProps = {
 function rubberBand(overflow: number, dimension: number) {
   const abs = Math.abs(overflow)
   const resisted = (abs * RUBBER_BAND * dimension) / (dimension + abs * RUBBER_BAND)
-  return overflow < 0 ? -resisted : resisted
+  const signed = overflow < 0 ? -resisted : resisted
+  return Math.max(-MAX_RUBBER_PX, Math.min(MAX_RUBBER_PX, signed))
+}
+
+function clampPageDrag(delta: number) {
+  return Math.max(-MAX_PAGE_DRAG_PX, Math.min(MAX_PAGE_DRAG_PX, delta))
 }
 
 /**
  * Home iOS from Figma: full-frame base art + interactive Waging widget + app icon hit target.
- * Linear pages (1→3), fixed nav, drag/swipe with rubber-band at edges.
+ * Linear pages (1→3), fixed nav, drag/swipe with capped rubber-band; one page per gesture.
  */
 export function IosHomeScreen({ onOpenApp }: IosHomeScreenProps) {
   const [index, setIndex] = useState(0)
@@ -73,6 +83,12 @@ export function IosHomeScreen({ onOpenApp }: IosHomeScreenProps) {
   const slotRef = useRef<HTMLDivElement>(null)
   const startX = useRef(0)
   const pointerId = useRef<number | null>(null)
+  /** After one page commit in this gesture, further drag is rubber-only. */
+  const committedRef = useRef(false)
+  /** True while the settle transition after a swipe commit is playing. */
+  const settlingRef = useRef(false)
+  /** Re-base pointer once after settle before applying rubber. */
+  const needsRubberBaseRef = useRef(false)
   const indexRef = useRef(index)
   indexRef.current = index
 
@@ -99,34 +115,50 @@ export function IosHomeScreen({ onOpenApp }: IosHomeScreenProps) {
     goTo(indexRef.current + 1)
   }, [goTo])
 
-  const finishDrag = (clientX: number) => {
-    if (pointerId.current == null) return
+  /**
+   * Commit one page while keeping the current visual offset, then animate
+   * the rest of the distance with the CSS transition (no teleport).
+   */
+  const commitPageWithTransition = (direction: 'next' | 'prev', currentDrag: number) => {
+    const width = slotRef.current?.offsetWidth ?? 152
+    const from = indexRef.current
+    const to = direction === 'next' ? from + 1 : from - 1
+    if (to < 0 || to >= SLIDES.length) return
 
-    const raw = clientX - startX.current
-    const atStart = indexRef.current === 0
-    const atEnd = indexRef.current === SLIDES.length - 1
+    committedRef.current = true
+    settlingRef.current = true
+    needsRubberBaseRef.current = true
+    setBackdropIndex(from)
+    setIndex(to)
+    // Keep on-screen position continuous, then ease to 0
+    setDragPx(direction === 'next' ? currentDrag + width : currentDrag - width)
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setDragging(false)
+        setDragPx(0)
+      })
+    })
+  }
+
+  const finishDrag = () => {
+    if (pointerId.current == null) return
 
     pointerId.current = null
     setDragging(false)
-
-    // Edge rubber-band: always spring back, never change page
-    if ((atStart && raw > 0) || (atEnd && raw < 0)) {
-      setDragPx(0)
-      return
-    }
-
-    if (Math.abs(raw) >= SWIPE_THRESHOLD_PX) {
-      if (raw < 0) goNext()
-      else goPrev()
-    } else {
-      setDragPx(0)
-    }
+    setDragPx(0)
+    committedRef.current = false
   }
 
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('.ios-home__widget-nav')) return
+    // Don’t start a new drag while a settle animation is running
+    if (settlingRef.current) return
+
     pointerId.current = e.pointerId
     startX.current = e.clientX
+    committedRef.current = false
+    needsRubberBaseRef.current = false
     setDragging(true)
     setDragPx(0)
     e.currentTarget.setPointerCapture(e.pointerId)
@@ -137,30 +169,55 @@ export function IosHomeScreen({ onOpenApp }: IosHomeScreenProps) {
 
     const width = slotRef.current?.offsetWidth ?? 152
     const raw = e.clientX - startX.current
-    const atStart = indexRef.current === 0
-    const atEnd = indexRef.current === SLIDES.length - 1
+    const i = indexRef.current
+    const atStart = i === 0
+    const atEnd = i === SLIDES.length - 1
 
+    // Let the page-change transition finish; then rubber-band only
+    if (committedRef.current) {
+      if (settlingRef.current) return
+      if (needsRubberBaseRef.current) {
+        needsRubberBaseRef.current = false
+        startX.current = e.clientX
+        setDragPx(0)
+        return
+      }
+      setDragging(true)
+      setDragPx(rubberBand(raw, width))
+      return
+    }
+
+    // Physical edge of the list
     if ((atStart && raw > 0) || (atEnd && raw < 0)) {
       setDragPx(rubberBand(raw, width))
       return
     }
 
-    setDragPx(raw)
+    const capped = clampPageDrag(raw)
+    setDragPx(capped)
+
+    // Past threshold → one page, animated settle (not a teleport)
+    if (Math.abs(raw) >= SWIPE_THRESHOLD_PX) {
+      startX.current = e.clientX
+      commitPageWithTransition(raw < 0 ? 'next' : 'prev', capped)
+    }
   }
 
   const onPointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (pointerId.current !== e.pointerId) return
-    finishDrag(e.clientX)
+    finishDrag()
   }
 
   const onPointerCancel = () => {
     pointerId.current = null
+    committedRef.current = false
     setDragging(false)
     setDragPx(0)
   }
 
   const onTrackTransitionEnd = (e: TransitionEvent<HTMLDivElement>) => {
     if (e.propertyName !== 'transform') return
+    settlingRef.current = false
     setBackdropIndex(index)
   }
 

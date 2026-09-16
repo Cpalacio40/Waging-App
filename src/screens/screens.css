@@ -84,6 +84,11 @@
   pointer-events: none;
 }
 
+/* First card: allow decor overhang so rubber-band to the right reveals the full icon */
+.ios-home__widget:first-child {
+  overflow: visible;
+}
+
 .ios-home__widget-body {
   position: relative;
   z-index: 1;

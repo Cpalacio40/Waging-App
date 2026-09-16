@@ -2,7 +2,7 @@
 
 Interactive **mobile app mockup** for **Waging** — a high-fidelity, clickable web prototype that simulates the phone experience.
 
-**Product:** [Waging](https://cpalacio40.github.io/Waging/) · **Repo:** [Cpalacio40/Waging-App](https://github.com/Cpalacio40/Waging-App)
+**Live demo:** [cpalacio40.github.io/Waging-App](https://cpalacio40.github.io/Waging-App/) · **Product:** [Waging](https://cpalacio40.github.io/Waging/) · **Repo:** [Cpalacio40/Waging-App](https://github.com/Cpalacio40/Waging-App)
 
 > Academic / portfolio prototype (TFM). Not a commercial product in production. No real backend, auth, payments, or collar APIs.
 
@@ -42,11 +42,17 @@ Screens are currently **high-level placeholders** ready to be replaced with fide
 | Build | Vite 8 |
 | Icons | lucide-react |
 | Styling | Custom CSS (brand variables; no UI kit) |
-| Hosting target | GitHub Pages (`/Waging-App/`) |
+| Hosting | [GitHub Pages](https://cpalacio40.github.io/Waging-App/) |
 
 ---
 
-## Getting started
+## Try it online
+
+Open the live mockup: **[https://cpalacio40.github.io/Waging-App/](https://cpalacio40.github.io/Waging-App/)**
+
+---
+
+## Getting started (local)
 
 **Requirements:** [Node.js](https://nodejs.org/) 18+
 

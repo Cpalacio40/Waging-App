@@ -1,0 +1,59 @@
+:root {
+  /* Brand tokens (aligned with Waging landing) */
+  --ink: #340616;
+  --terracotta: #e85b29;
+  --orange: #ff905f;
+  --navy: #0e1c33;
+  --blue: #aae8f9;
+  --yellow: #f8eb7a;
+  --gold: #f4b841;
+  --bg: #f5f5f5;
+  --bg-soft: #f8f8f8;
+  --surface: #ffffff;
+  --muted: #6b7280;
+
+  --font-display: 'Instrument Serif', Georgia, serif;
+  --font-body: 'Raleway', system-ui, sans-serif;
+  --font-ui: 'Raleway', system-ui, sans-serif;
+
+  /* Device viewport — Figma artboards (~iPhone 13/14); close to iPhone 11 */
+  --phone-w: 390px;
+  --phone-h: 844px;
+  --phone-radius: 44px;
+  --bezel: 12px;
+
+  font-family: var(--font-body);
+  line-height: 1.5;
+  font-weight: 400;
+  color: var(--ink);
+  background: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  min-height: 100vh;
+}
+
+button {
+  font-family: inherit;
+}
+
+a {
+  color: inherit;
+}

@@ -1,0 +1,84 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="57.8082" height="57.8082" viewBox="0 0 57.8082 57.8082" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Light-Default App Icon">
+<g clip-path="url(#clip0_0_1291)">
+<rect width="57.8082" height="57.8082" rx="14.9338" fill="url(#paint0_linear_0_1291)"/>
+<rect id="Glass Background" width="57.8082" height="57.8082" rx="14.9338" fill="black" fill-opacity="0.01"/>
+<path id="Lines" d="M50.0755 42.9703C50.4081 42.9703 50.6781 43.2403 50.6781 43.5729C50.6779 43.9053 50.408 44.1744 50.0755 44.1744H22.3763C22.0439 44.1744 21.774 43.9053 21.7738 43.5729C21.7738 43.2403 22.0438 42.9703 22.3763 42.9703H50.0755ZM50.0755 28.5182C50.4081 28.5182 50.6781 28.7881 50.6781 29.1207C50.6779 29.4532 50.408 29.7223 50.0755 29.7223H22.3763C22.0438 29.7223 21.7739 29.4532 21.7738 29.1207C21.7738 28.7881 22.0438 28.5182 22.3763 28.5182H50.0755ZM50.0755 14.066C50.4081 14.066 50.6781 14.336 50.6781 14.6686C50.678 15.001 50.4081 15.2701 50.0755 15.2701H22.3763C22.0438 15.2701 21.7739 15.001 21.7738 14.6686C21.7738 14.336 22.0438 14.066 22.3763 14.066H50.0755Z" fill="#C1C1C1"/>
+<circle id="Background Outer Circle 3" cx="12.1393" cy="43.4521" r="4.81735" fill="#F6D2B6"/>
+<g id="Base Outer Circle 3" filter="url(#filter1_dd_0_1291)">
+<circle cx="12.1393" cy="43.4521" r="2.64954" fill="#EA8E44" shape-rendering="crispEdges"/>
+<circle cx="12.1393" cy="43.4521" r="2.64954" stroke="#EA8E44" stroke-opacity="0.84" stroke-width="0.770776" shape-rendering="crispEdges"/>
+</g>
+<circle id="Glass Outer Circle 3" cx="12.1393" cy="43.4521" r="2.64954" fill="black" fill-opacity="0.01"/>
+<circle id="Background Outer Circle 2" cx="12.1393" cy="29" r="4.81735" fill="#F5C7C3"/>
+<g id="Base Outer Circle 2" filter="url(#filter3_dd_0_1291)">
+<circle cx="12.1393" cy="29" r="2.64954" fill="#E45449" shape-rendering="crispEdges"/>
+<circle cx="12.1393" cy="29" r="2.64954" stroke="#E45449" stroke-opacity="0.84" stroke-width="0.770776" shape-rendering="crispEdges"/>
+</g>
+<circle id="Glass Outer Circle 2" cx="12.1393" cy="29" r="2.64954" fill="black" fill-opacity="0.01"/>
+<circle id="Background Outer Circle 1" cx="12.1393" cy="14.5479" r="4.81735" fill="#C0E4FC"/>
+<g id="Base Outer Circle 1" filter="url(#filter5_dd_0_1291)">
+<circle cx="12.1393" cy="14.5479" r="2.64954" fill="#306DEE" shape-rendering="crispEdges"/>
+<circle cx="12.1393" cy="14.5479" r="2.64954" stroke="#306DEE" stroke-opacity="0.84" stroke-width="0.770776" shape-rendering="crispEdges"/>
+</g>
+<circle id="Glass Outer Circle 1" cx="12.1393" cy="14.5479" r="2.64954" fill="black" fill-opacity="0.01"/>
+</g>
+</g>
+<defs>
+<filter id="filter1_dd_0_1291" x="1.39657" y="33.6728" width="21.4854" height="21.4854" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="0.96347"/>
+<feGaussianBlur stdDeviation="3.85388"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.24 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_0_1291"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset/>
+<feGaussianBlur stdDeviation="0.96347"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.1 0"/>
+<feBlend mode="normal" in2="effect1_dropShadow_0_1291" result="effect2_dropShadow_0_1291"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect2_dropShadow_0_1291" result="shape"/>
+</filter>
+<filter id="filter3_dd_0_1291" x="1.39657" y="19.2208" width="21.4854" height="21.4854" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="0.96347"/>
+<feGaussianBlur stdDeviation="3.85388"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.24 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_0_1291"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset/>
+<feGaussianBlur stdDeviation="0.96347"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.1 0"/>
+<feBlend mode="normal" in2="effect1_dropShadow_0_1291" result="effect2_dropShadow_0_1291"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect2_dropShadow_0_1291" result="shape"/>
+</filter>
+<filter id="filter5_dd_0_1291" x="1.39657" y="4.76872" width="21.4854" height="21.4854" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="0.96347"/>
+<feGaussianBlur stdDeviation="3.85388"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.24 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_0_1291"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset/>
+<feGaussianBlur stdDeviation="0.96347"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.1 0"/>
+<feBlend mode="normal" in2="effect1_dropShadow_0_1291" result="effect2_dropShadow_0_1291"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect2_dropShadow_0_1291" result="shape"/>
+</filter>
+<linearGradient id="paint0_linear_0_1291" x1="28.9041" y1="0" x2="28.9041" y2="57.8082" gradientUnits="userSpaceOnUse">
+<stop stop-color="#FEFFFF"/>
+<stop offset="1" stop-color="#E8E9E9"/>
+</linearGradient>
+<clipPath id="clip0_0_1291">
+<rect width="57.8082" height="57.8082" rx="14.9338" fill="white"/>
+</clipPath>
+</defs>
+</svg>

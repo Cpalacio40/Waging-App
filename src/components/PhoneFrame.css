@@ -1,0 +1,69 @@
+.phone-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.phone-scale {
+  /* Prefer a larger device when there’s room; never exceed ~1.22× native */
+  --phone-outer-w: calc(var(--phone-w) + 2 * var(--bezel));
+  --phone-outer-h: calc(var(--phone-h) + 2 * var(--bezel));
+  --scale: min(
+    1.22,
+    (100vh - 6.5rem) / var(--phone-outer-h),
+    (100vw - 2rem) / var(--phone-outer-w)
+  );
+  width: calc(var(--phone-outer-w) * var(--scale));
+  height: calc(var(--phone-outer-h) * var(--scale));
+}
+
+.phone-bezel {
+  width: var(--phone-outer-w);
+  height: var(--phone-outer-h);
+  padding: var(--bezel);
+  border-radius: calc(var(--phone-radius) + var(--bezel));
+  background: linear-gradient(145deg, #1a1a1a 0%, #0a0a0a 55%, #222 100%);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 24px 48px rgba(14, 28, 51, 0.28),
+    0 8px 16px rgba(14, 28, 51, 0.12);
+  position: relative;
+  transform: scale(var(--scale));
+  transform-origin: top left;
+}
+
+.phone-screen {
+  position: relative;
+  width: var(--phone-w);
+  height: var(--phone-h);
+  border-radius: var(--phone-radius);
+  overflow: hidden;
+  background: #000;
+  isolation: isolate;
+}
+
+.phone-notch {
+  position: absolute;
+  top: calc(var(--bezel) + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 118px;
+  height: 28px;
+  border-radius: 20px;
+  background: #0a0a0a;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.phone-home-indicator {
+  position: absolute;
+  bottom: calc(var(--bezel) + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 4px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.35);
+  z-index: 20;
+  pointer-events: none;
+}

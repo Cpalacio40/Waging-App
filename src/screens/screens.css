@@ -1,0 +1,381 @@
+.screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  color: #fff;
+}
+
+.screen-placeholder-note {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 28px;
+  margin: 0;
+  padding: 0.45rem 0.6rem;
+  border-radius: 10px;
+  font-size: 0.65rem;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* —— iOS Home —— */
+.ios-home {
+  background: #111;
+  padding: 0;
+}
+
+.ios-home__base {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+}
+
+.ios-home__widget-slot {
+  position: absolute;
+  left: 34px;
+  top: 98px;
+  width: 152px;
+  height: 153px;
+  z-index: 2;
+}
+
+.ios-home__widget {
+  position: relative;
+  width: 152px;
+  height: 153px;
+  border-radius: 26px;
+  padding: 14px 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: background 0.25s ease;
+}
+
+.ios-home__widget-top {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ios-home__widget-head {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.6;
+  color: #fcfcfc;
+}
+
+.ios-home__widget-head img {
+  display: block;
+  width: 13px;
+  height: 13px;
+}
+
+.ios-home__widget-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #fcfcfc;
+}
+
+.ios-home__widget-value {
+  margin: 2px 0 0;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1;
+  color: #fcfcfc;
+  letter-spacing: -0.02em;
+}
+
+.ios-home__widget-decor {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+.ios-home__widget-decor--waypoints {
+  left: -12px;
+  top: 80px;
+  width: 94px;
+  height: 94px;
+  transform: rotate(180deg);
+  opacity: 0.45;
+}
+
+.ios-home__widget-decor--gauge {
+  left: 50%;
+  top: 72px;
+  width: 103px;
+  height: 21px;
+  transform: translateX(-50%);
+  opacity: 1;
+}
+
+.ios-home__widget-decor--paw {
+  left: -12px;
+  top: 80px;
+  width: 94px;
+  height: 94px;
+  transform: rotate(-90deg);
+}
+
+.ios-home__widget-decor--moon {
+  left: -19px;
+  top: 77px;
+  width: 94px;
+  height: 94px;
+}
+
+.ios-home__widget-nav {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  width: 120px;
+  margin-left: auto;
+}
+
+.ios-home__widget-nav button {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: #fcfcfc;
+  color: #333;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.ios-home__widget-nav button:last-child {
+  opacity: 0.6;
+}
+
+.ios-home__waging-hit {
+  position: absolute;
+  left: 298px;
+  top: 570px;
+  width: 60px;
+  height: 80px;
+  z-index: 3;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 16px;
+}
+
+
+/* —— Splash —— */
+.splash {
+  background: var(--orange);
+  display: grid;
+  place-items: center;
+}
+
+.splash__logo {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: #fff;
+}
+
+.splash__note {
+  color: rgba(52, 6, 22, 0.75);
+  background: rgba(255, 255, 255, 0.55);
+}
+
+/* —— App home —— */
+.app-home {
+  background:
+    linear-gradient(180deg, rgba(14, 28, 51, 0.35) 0%, rgba(14, 28, 51, 0.72) 45%, rgba(14, 28, 51, 0.92) 100%),
+    linear-gradient(160deg, #3d5a40, #1a2e24 60%, #0e1c33);
+  padding: 52px 22px 90px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.app-home__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.app-home__name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 400;
+}
+
+.app-home__breed {
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+.app-home__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 6px;
+}
+
+.app-home__icon-btn {
+  border: 0;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.app-home__battery {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  display: grid;
+  place-items: center;
+}
+
+.app-home__metrics {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+}
+
+.app-home__metric {
+  width: 72px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.68rem;
+  padding: 10px 0 0;
+}
+
+.app-home__metric > :first-child {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(170, 232, 249, 0.35);
+  display: grid;
+  place-items: center;
+  margin-bottom: 2px;
+}
+
+.app-home__metric.is-active > :first-child {
+  background: var(--terracotta);
+}
+
+.app-home__metric strong {
+  font-size: 0.85rem;
+}
+
+.app-home__hero {
+  margin-top: auto;
+  text-align: center;
+  padding: 0 8px 8px;
+}
+
+.app-home__kpi-label {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.app-home__kpi {
+  margin: 0;
+  font-size: 3.4rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.app-home__headline {
+  margin: 12px 0 8px;
+  font-family: var(--font-display);
+  font-size: 1.55rem;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.app-home__copy {
+  margin: 0 auto 14px;
+  max-width: 320px;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  opacity: 0.92;
+}
+
+.app-home__cta {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.65rem 1.4rem;
+  background: var(--terracotta);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.app-home__tabbar {
+  position: absolute;
+  left: 22px;
+  right: 22px;
+  bottom: 22px;
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--ink);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.app-home__tabbar button {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 2px;
+}
+
+.app-home__tabbar button.is-active {
+  color: var(--terracotta);
+}
+
+.app-home__avatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #888, #444);
+}

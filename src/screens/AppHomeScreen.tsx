@@ -6,8 +6,11 @@ import './screens.css'
 
 const inicioAsset = (name: string) => assetUrl(`app-inicio/${name}`)
 
-/** Gauge viewBox 303.5×63 — x of 0 / 20 / 40 / 60 / 80 / 100 along the Figma bone marks. */
+/** Same cubic as Figma Ellipse 39 (track), left → right. */
 const GAUGE = { width: 303.5, height: 63 } as const
+const GAUGE_PATH =
+  'M 0 63 C 27 32 83.88763427734375 0 152.39291381835938 0 C 220.898193359375 0 272.5 30 303.5 63'
+/** ViewBox x of 0 / 20 / 40 / 60 / 80 / 100 (bone marks + track ends). */
 const GAUGE_MARK_X = [0, 37, 106, 191, 259, 303.5]
 const GAUGE_BONES = [
   { className: 'app-home__bone--1', mark: 20 },
@@ -16,16 +19,62 @@ const GAUGE_BONES = [
   { className: 'app-home__bone--4', mark: 80 },
 ] as const
 
+type GaugeSample = { x: number; y: number; d: number }
+
+function cubicPoint(p0: number[], p1: number[], p2: number[], p3: number[], t: number) {
+  const mt = 1 - t
+  return {
+    x: mt ** 3 * p0[0] + 3 * mt ** 2 * t * p1[0] + 3 * mt * t ** 2 * p2[0] + t ** 3 * p3[0],
+    y: mt ** 3 * p0[1] + 3 * mt ** 2 * t * p1[1] + 3 * mt * t ** 2 * p2[1] + t ** 3 * p3[1],
+  }
+}
+
+const GAUGE_SAMPLES: GaugeSample[] = (() => {
+  const segments = [
+    [
+      [0, 63],
+      [27, 32],
+      [83.88763427734375, 0],
+      [152.39291381835938, 0],
+    ],
+    [
+      [152.39291381835938, 0],
+      [220.898193359375, 0],
+      [272.5, 30],
+      [303.5, 63],
+    ],
+  ]
+  const pts: GaugeSample[] = []
+  let d = 0
+  let prev: { x: number; y: number } | null = null
+  for (const [p0, p1, p2, p3] of segments) {
+    for (let i = 0; i <= 80; i++) {
+      if (i === 0 && prev) continue
+      const p = cubicPoint(p0, p1, p2, p3, i / 80)
+      if (prev) d += Math.hypot(p.x - prev.x, p.y - prev.y)
+      pts.push({ x: p.x, y: p.y, d })
+      prev = p
+    }
+  }
+  return pts
+})()
+
+const GAUGE_LENGTH = GAUGE_SAMPLES[GAUGE_SAMPLES.length - 1].d
+
 function gaugePoint(value: number) {
   const v = Math.min(100, Math.max(0, value))
   const stepped = v / 20
   const i = Math.min(4, Math.floor(stepped))
   const x = GAUGE_MARK_X[i] + (stepped - i) * (GAUGE_MARK_X[i + 1] - GAUGE_MARK_X[i])
-  const rx = GAUGE.width / 2
-  const ry = GAUGE.height
-  const cos = Math.min(1, Math.max(-1, (x - rx) / rx))
-  const y = ry - ry * Math.sin(Math.acos(cos))
-  return { x, y, rx, ry }
+  let k = 1
+  while (k < GAUGE_SAMPLES.length && GAUGE_SAMPLES[k].x < x) k++
+  const a = GAUGE_SAMPLES[k - 1]
+  const b = GAUGE_SAMPLES[Math.min(k, GAUGE_SAMPLES.length - 1)]
+  const span = b.x - a.x
+  const u = span === 0 ? 0 : (x - a.x) / span
+  const y = a.y + u * (b.y - a.y)
+  const dist = a.d + u * (b.d - a.d)
+  return { x, y, progress: (dist / GAUGE_LENGTH) * 100 }
 }
 
 type AppHomeScreenProps = {
@@ -198,7 +247,9 @@ export function AppHomeScreen({ scenario = 'ok' }: AppHomeScreenProps) {
                 >
                   {data.activity > 0 ? (
                     <path
-                      d={`M 0 ${gauge.ry} A ${gauge.rx} ${gauge.ry} 0 0 0 ${gauge.x} ${gauge.y}`}
+                      d={GAUGE_PATH}
+                      pathLength={100}
+                      strokeDasharray={`${gauge.progress} 100`}
                       stroke="var(--yellow)"
                       strokeWidth={6}
                       strokeLinecap="round"

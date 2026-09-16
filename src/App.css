@@ -18,6 +18,29 @@
   pointer-events: none;
 }
 
+/* Splash sits on top and fades out to reveal home (and fades in over home). */
+.app-pane {
+  position: absolute;
+  inset: 0;
+}
+
+.app-pane--home {
+  z-index: 0;
+}
+
+.app-pane--splash {
+  z-index: 1;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+  will-change: opacity;
+}
+
+.app-pane--splash.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 @keyframes ios-app-open {
   from {
     opacity: 0;
@@ -45,6 +68,10 @@
   .app-layer.is-entering,
   .app-layer.is-leaving {
     animation-duration: 0.01ms;
+  }
+
+  .app-pane--splash {
+    transition-duration: 0.01ms;
   }
 }
 

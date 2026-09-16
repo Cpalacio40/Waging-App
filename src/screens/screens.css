@@ -55,6 +55,33 @@
   z-index: 2;
   border-radius: 26px;
   --widget-chevron: #ff905f;
+}
+
+/* Crossfade layers: normal pager ↔ alert widget */
+.ios-home__widget-layer {
+  position: absolute;
+  inset: 0;
+  border-radius: 26px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+  will-change: opacity;
+}
+
+.ios-home__widget-layer.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 1;
+}
+
+.ios-home__widget-layer--alert {
+  overflow: hidden;
+}
+
+.ios-home__widget-pager {
+  width: 100%;
+  height: 100%;
+  border-radius: 26px;
   /* Backdrop = outgoing card color while the track slides */
   background: linear-gradient(180deg, #f2733b 0%, #ff905f 100%);
 }
@@ -72,8 +99,14 @@
 }
 
 /* First card: allow decor overhang so rubber-band to the right reveals the full icon */
-.ios-home__widget-slot .paged-swipe__page:first-child {
+.ios-home__widget-pager .paged-swipe__page:first-child {
   overflow: visible;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ios-home__widget-layer {
+    transition-duration: 0.01ms;
+  }
 }
 
 .ios-home__widget-body {
@@ -123,19 +156,22 @@
 }
 
 /* Alert widget — Figma 68:9988 (152×153) */
-.ios-home__widget-slot--alert {
+.ios-home__widget-alert {
+  display: block;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
   background: #fd8e5e;
   border: 0;
+  border-radius: 26px;
   padding: 0;
   cursor: pointer;
-  pointer-events: auto;
   text-align: left;
   appearance: none;
   -webkit-tap-highlight-color: transparent;
 }
 
-.ios-home__widget-slot--alert:focus-visible {
+.ios-home__widget-alert:focus-visible {
   outline: 2px solid #fcfcfc;
   outline-offset: 2px;
 }
@@ -1132,6 +1168,23 @@
   font-weight: 700;
   line-height: 16px;
   white-space: nowrap;
+}
+
+.app-home__bottom-fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  height: 120px;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    #0d0a09 0%,
+    #0d0a09 32%,
+    rgba(13, 10, 9, 0.85) 52%,
+    rgba(13, 10, 9, 0) 100%
+  );
 }
 
 .app-home__tabbar {

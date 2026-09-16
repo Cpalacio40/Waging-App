@@ -99,8 +99,19 @@ function App() {
 
             {appOpen ? (
               <div className={`app-layer${layerClass}`} onAnimationEnd={onLayerAnimationEnd}>
-                {screen === 'splash' ? <SplashScreen onDone={finishSplash} /> : null}
-                {screen === 'app-home' ? <AppHomeScreen scenario={scenario} /> : null}
+                <div
+                  className="app-pane app-pane--home"
+                  aria-hidden={screen !== 'app-home'}
+                  inert={screen === 'splash' ? true : undefined}
+                >
+                  <AppHomeScreen scenario={scenario} />
+                </div>
+                <div
+                  className={`app-pane app-pane--splash${screen === 'splash' ? ' is-visible' : ''}`}
+                  aria-hidden={screen !== 'splash'}
+                >
+                  <SplashScreen onDone={screen === 'splash' ? finishSplash : undefined} />
+                </div>
               </div>
             ) : null}
           </PhoneFrame>

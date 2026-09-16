@@ -245,6 +245,8 @@ export function AppHomeScreen({ scenario = 'ok' }: AppHomeScreenProps) {
         </div>
       </div>
 
+      <div className="app-home__bottom-fade" aria-hidden="true" />
+
       <nav className="app-home__tabbar" aria-label="Navegación principal">
         <button type="button" className="is-active">
           <img src={inicioAsset('nav-sun.svg')} alt="" width={24} height={24} draggable={false} />

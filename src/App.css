@@ -1,3 +1,51 @@
+/* In-app layer over SpringBoard — iOS-like fade + subtle scale */
+.app-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  transform-origin: center center;
+  will-change: opacity, transform;
+}
+
+.app-layer.is-entering {
+  animation: ios-app-open 0.32s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.app-layer.is-leaving {
+  animation: ios-app-close 0.32s cubic-bezier(0.32, 0.72, 0, 1) both;
+  pointer-events: none;
+}
+
+@keyframes ios-app-open {
+  from {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Exact reverse of open — no window slide */
+@keyframes ios-app-close {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-layer.is-entering,
+  .app-layer.is-leaving {
+    animation-duration: 0.01ms;
+  }
+}
+
 .studio {
   min-height: 100vh;
   display: flex;

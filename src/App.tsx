@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState, type AnimationEvent } from 'react'
 import { PhoneFrame } from './components/PhoneFrame'
 import { ScreenNavigator } from './components/ScreenNavigator'
 import { DEFAULT_SCREEN, type ScreenId } from './data/screens'
@@ -7,16 +7,76 @@ import { IosHomeScreen } from './screens/IosHomeScreen'
 import { SplashScreen } from './screens/SplashScreen'
 import './App.css'
 
+type LayerAnim = 'enter' | 'leave' | null
+
+function isInApp(id: ScreenId) {
+  return id === 'splash' || id === 'app-home'
+}
+
 function App() {
   const [screen, setScreen] = useState<ScreenId>(DEFAULT_SCREEN)
+  const [layerAnim, setLayerAnim] = useState<LayerAnim>(null)
+  const layerAnimRef = useRef<LayerAnim>(null)
+  layerAnimRef.current = layerAnim
+
+  const appOpen = isInApp(screen)
+  const showHome = screen === 'ios-home' || appOpen
+  const canGoHome = appOpen && layerAnim !== 'leave'
 
   const openApp = useCallback(() => {
+    if (appOpen && layerAnim !== 'leave') return
     setScreen('splash')
-  }, [])
+    setLayerAnim('enter')
+  }, [appOpen, layerAnim])
+
+  const closeApp = useCallback(() => {
+    if (!appOpen || layerAnim === 'leave') return
+    setLayerAnim('leave')
+  }, [appOpen, layerAnim])
 
   const finishSplash = useCallback(() => {
-    setScreen('app-home')
+    if (layerAnimRef.current === 'leave') return
+    setScreen((current) => (current === 'splash' ? 'app-home' : current))
   }, [])
+
+  const selectScreen = useCallback(
+    (id: ScreenId) => {
+      if (id === screen && layerAnim !== 'leave') return
+
+      if (id === 'ios-home') {
+        if (appOpen) closeApp()
+        else setScreen('ios-home')
+        return
+      }
+
+      if (!appOpen || layerAnim === 'leave') {
+        setScreen(id)
+        setLayerAnim('enter')
+        return
+      }
+
+      setScreen(id)
+    },
+    [appOpen, closeApp, layerAnim, screen],
+  )
+
+  const onLayerAnimationEnd = useCallback(
+    (e: AnimationEvent<HTMLDivElement>) => {
+      if (e.target !== e.currentTarget) return
+      if (layerAnim === 'enter') {
+        setLayerAnim(null)
+        return
+      }
+      if (layerAnim === 'leave') {
+        setScreen('ios-home')
+        setLayerAnim(null)
+      }
+    },
+    [layerAnim],
+  )
+
+  const layerClass =
+    layerAnim === 'enter' ? ' is-entering' : layerAnim === 'leave' ? ' is-leaving' : ''
 
   return (
     <div className="studio">
@@ -27,14 +87,19 @@ function App() {
 
       <main className="studio__main">
         <div className="studio__phone-anchor">
-          <PhoneFrame>
-            {screen === 'ios-home' && <IosHomeScreen onOpenApp={openApp} />}
-            {screen === 'splash' && <SplashScreen onDone={finishSplash} />}
-            {screen === 'app-home' && <AppHomeScreen />}
+          <PhoneFrame canGoHome={canGoHome} onGoHome={closeApp}>
+            {showHome ? <IosHomeScreen onOpenApp={openApp} /> : null}
+
+            {appOpen ? (
+              <div className={`app-layer${layerClass}`} onAnimationEnd={onLayerAnimationEnd}>
+                {screen === 'splash' ? <SplashScreen onDone={finishSplash} /> : null}
+                {screen === 'app-home' ? <AppHomeScreen /> : null}
+              </div>
+            ) : null}
           </PhoneFrame>
 
           <div className="studio__nav-slot">
-            <ScreenNavigator active={screen} onSelect={setScreen} />
+            <ScreenNavigator active={screen} onSelect={selectScreen} />
           </div>
         </div>
       </main>

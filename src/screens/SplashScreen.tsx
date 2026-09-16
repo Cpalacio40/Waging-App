@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { assetUrl } from '../utils/assetUrl'
 import './screens.css'
 
 type SplashScreenProps = {
@@ -7,7 +8,7 @@ type SplashScreenProps = {
   autoMs?: number
 }
 
-/** Placeholder: brand splash. */
+/** Brand splash — Figma iPhone 13 & 14 - 55 (node 68:10010). */
 export function SplashScreen({ onDone, autoMs = 1400 }: SplashScreenProps) {
   useEffect(() => {
     if (!onDone || autoMs <= 0) return
@@ -17,12 +18,14 @@ export function SplashScreen({ onDone, autoMs = 1400 }: SplashScreenProps) {
 
   return (
     <div className="screen splash">
-      <p className="splash__logo" aria-label="waging">
-        waging
-      </p>
-      <p className="screen-placeholder-note splash__note">
-        Placeholder — logo final desde assets Figma.
-      </p>
+      <img
+        className="splash__logo"
+        src={assetUrl('splash/waging-wordmark.svg')}
+        alt="waging"
+        width={214}
+        height={49}
+        draggable={false}
+      />
     </div>
   )
 }

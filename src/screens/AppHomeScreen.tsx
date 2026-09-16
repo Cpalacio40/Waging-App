@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { HOME_SCENARIOS, type HomeScenarioId } from '../data/homeScenarios'
 import { useDragScroll } from '../hooks/useDragScroll'
 import { assetUrl } from '../utils/assetUrl'
@@ -5,11 +6,33 @@ import './screens.css'
 
 const inicioAsset = (name: string) => assetUrl(`app-inicio/${name}`)
 
+/** Gauge viewBox 303.5×63 — x of 0 / 20 / 40 / 60 / 80 / 100 along the Figma bone marks. */
+const GAUGE = { width: 303.5, height: 63 } as const
+const GAUGE_MARK_X = [0, 37, 106, 191, 259, 303.5]
+const GAUGE_BONES = [
+  { className: 'app-home__bone--1', mark: 20 },
+  { className: 'app-home__bone--2', mark: 40 },
+  { className: 'app-home__bone--3', mark: 60 },
+  { className: 'app-home__bone--4', mark: 80 },
+] as const
+
+function gaugePoint(value: number) {
+  const v = Math.min(100, Math.max(0, value))
+  const stepped = v / 20
+  const i = Math.min(4, Math.floor(stepped))
+  const x = GAUGE_MARK_X[i] + (stepped - i) * (GAUGE_MARK_X[i + 1] - GAUGE_MARK_X[i])
+  const rx = GAUGE.width / 2
+  const ry = GAUGE.height
+  const cos = Math.min(1, Math.max(-1, (x - rx) / rx))
+  const y = ry - ry * Math.sin(Math.acos(cos))
+  return { x, y, rx, ry }
+}
+
 type AppHomeScreenProps = {
   scenario?: HomeScenarioId
 }
 
-/** In-app home — Figma iPhone 13 & 14 - 54 (ok) / 55 (attention, node 67:8685). */
+/** In-app home — Figma iPhone 13 & 14 - 54 (ok, 48:3198) / 58 (attention, 116:4672). */
 export function AppHomeScreen({ scenario = 'ok' }: AppHomeScreenProps) {
   const data = HOME_SCENARIOS[scenario]
   const needsAttention = scenario === 'attention'
@@ -54,17 +77,15 @@ export function AppHomeScreen({ scenario = 'ok' }: AppHomeScreenProps) {
               <p className="app-home__breed">Raza: Mixto</p>
             </div>
             <div className="app-home__actions">
-              {needsAttention ? (
-                <button type="button" className="app-home__icon-btn" aria-label="Calendario">
-                  <img
-                    src={inicioAsset('icon-calendar.svg')}
-                    alt=""
-                    width={24}
-                    height={24}
-                    draggable={false}
-                  />
-                </button>
-              ) : null}
+              <button type="button" className="app-home__icon-btn" aria-label="Calendario">
+                <img
+                  src={inicioAsset('icon-calendar.svg')}
+                  alt=""
+                  width={24}
+                  height={24}
+                  draggable={false}
+                />
+              </button>
               <button type="button" className="app-home__icon-btn" aria-label="Notificaciones">
                 <img src={inicioAsset('icon-bell.svg')} alt="" width={24} height={24} draggable={false} />
               </button>
@@ -88,14 +109,6 @@ export function AppHomeScreen({ scenario = 'ok' }: AppHomeScreenProps) {
                   alt=""
                   width={70}
                   height={70}
-                  draggable={false}
-                />
-                <img
-                  className="app-home__metric-waypoints"
-                  src={inicioAsset('icon-waypoints.svg')}
-                  alt=""
-                  width={28}
-                  height={28}
                   draggable={false}
                 />
               </div>
@@ -172,53 +185,44 @@ export function AppHomeScreen({ scenario = 'ok' }: AppHomeScreenProps) {
             <div className="app-home__veil" aria-hidden="true" />
 
             <div className="app-home__gauge" aria-hidden="true">
-              <div className="app-home__gauge-track">
-                <img src={inicioAsset('gauge-track.svg')} alt="" draggable={false} />
+              <div className="app-home__gauge-plot">
+                <div className="app-home__gauge-track">
+                  <img src={inicioAsset('gauge-track.svg')} alt="" draggable={false} />
+                </div>
+                <svg
+                  className="app-home__gauge-fill"
+                  viewBox={`0 0 ${GAUGE.width} ${GAUGE.height}`}
+                  fill="none"
+                  overflow="visible"
+                >
+                  {data.activity > 0 ? (
+                    <path
+                      d={`M 0 ${gauge.ry} A ${gauge.rx} ${gauge.ry} 0 0 0 ${gauge.x} ${gauge.y}`}
+                      stroke="var(--yellow)"
+                      strokeWidth={6}
+                      strokeLinecap="round"
+                    />
+                  ) : null}
+                </svg>
+                <div
+                  className="app-home__knob"
+                  style={{ left: gauge.x, top: gauge.y } as CSSProperties}
+                >
+                  <img src={inicioAsset('gauge-knob.svg')} alt="" width={15} height={15} draggable={false} />
+                </div>
               </div>
-              <div className={`app-home__gauge-fill${needsAttention ? ' is-low' : ''}`}>
+
+              {GAUGE_BONES.map((bone) => (
                 <img
-                  src={inicioAsset(needsAttention ? 'gauge-fill-30.svg' : 'gauge-fill.svg')}
+                  key={bone.mark}
+                  className={`app-home__bone ${bone.className}`}
+                  src={inicioAsset(data.activity >= bone.mark ? 'bone.svg' : 'bone-outline.svg')}
                   alt=""
+                  width={22}
+                  height={9}
                   draggable={false}
                 />
-              </div>
-
-              <img
-                className="app-home__bone app-home__bone--1"
-                src={inicioAsset('bone.svg')}
-                alt=""
-                width={22}
-                height={9}
-                draggable={false}
-              />
-              <img
-                className="app-home__bone app-home__bone--2"
-                src={inicioAsset('bone.svg')}
-                alt=""
-                width={22}
-                height={9}
-                draggable={false}
-              />
-              <img
-                className="app-home__bone app-home__bone--3"
-                src={inicioAsset('bone.svg')}
-                alt=""
-                width={22}
-                height={9}
-                draggable={false}
-              />
-              <img
-                className="app-home__bone app-home__bone--4"
-                src={inicioAsset('bone-outline.svg')}
-                alt=""
-                width={22}
-                height={9}
-                draggable={false}
-              />
-
-              <div className={`app-home__knob${needsAttention ? ' is-low' : ''}`}>
-                <img src={inicioAsset('gauge-knob.svg')} alt="" width={15} height={15} draggable={false} />
-              </div>
+              ))}
 
               <div className="app-home__paw-bubble">
                 <div className="app-home__paw-bubble-icon">

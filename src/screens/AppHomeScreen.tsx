@@ -40,6 +40,7 @@ export function AppHomeScreen({ scenario = 'ok' }: AppHomeScreenProps) {
     enabled: needsAttention,
     ignoreSelector: 'button, a, input, textarea, [role="button"]',
   })
+  const gauge = gaugePoint(data.activity)
 
   return (
     <div className={`screen app-home${needsAttention ? ' is-alert' : ''}`}>

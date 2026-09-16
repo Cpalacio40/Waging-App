@@ -894,61 +894,36 @@
   pointer-events: none;
 }
 
+.app-home__gauge-plot {
+  position: absolute;
+  top: 268px;
+  left: calc(50% - 0.25px);
+  width: 303.5px;
+  height: 63px;
+  transform: translateX(-50%);
+  overflow: visible;
+}
+
 .app-home__gauge-track,
 .app-home__gauge-fill {
   position: absolute;
-  top: 268px;
-  height: 63px;
-  transform: translateX(-50%);
+  inset: 0;
 }
 
-.app-home__gauge-track {
-  left: calc(50% - 0.25px);
-  width: 303.5px;
-}
-
-.app-home__gauge-fill {
-  left: calc(40% - 3.75px);
-  width: 218.5px;
-}
-
-.app-home__gauge-fill.is-low {
-  /* Figma 67:8754 — same left edge as track (x=43), no centered transform */
-  left: 43px;
-  top: 273px;
-  width: 105.5px;
-  height: 57.964px;
-  transform: none;
-}
-
-.app-home__gauge-track img,
-.app-home__gauge-fill img {
+.app-home__gauge-track img {
   position: absolute;
   display: block;
   width: auto;
   height: auto;
   max-width: none;
-}
-
-.app-home__gauge-track img {
   top: -0.79%;
   right: -0.88%;
   bottom: -4.23%;
   left: -0.16%;
 }
 
-.app-home__gauge-fill img {
-  top: -4.76%;
-  right: -1.37%;
-  bottom: -4.76%;
-  left: -1.37%;
-}
-
-.app-home__gauge-fill.is-low img {
-  top: -5.18%;
-  right: -2.84%;
-  bottom: -5.18%;
-  left: -2.84%;
+.app-home__gauge-fill {
+  overflow: visible;
 }
 
 .app-home__bone {
@@ -980,20 +955,9 @@
 
 .app-home__knob {
   position: absolute;
-  top: 32.31%;
-  right: 31.89%;
-  bottom: 66.67%;
-  left: 65.9%;
-}
-
-.app-home__knob.is-low {
-  /* Figma 67:8761 — phone (145, 475) → stage (145, 269) */
-  top: 269px;
-  left: 145px;
-  right: auto;
-  bottom: auto;
   width: 8.62px;
   height: 8.62px;
+  transform: translate(-50%, -50%);
 }
 
 .app-home__knob img {

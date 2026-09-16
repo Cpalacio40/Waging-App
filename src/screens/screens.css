@@ -46,46 +46,26 @@
   width: 152px;
   height: 153px;
   z-index: 2;
-  overflow: hidden;
   border-radius: 26px;
-  touch-action: pan-y;
-  user-select: none;
   --widget-chevron: #ff905f;
   /* Backdrop = outgoing card color while the track slides */
   background: linear-gradient(180deg, #f2733b 0%, #ff905f 100%);
 }
 
-.ios-home__widget-track {
-  display: flex;
-  width: 100%;
-  height: 100%;
-  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: transform;
-}
-
-.ios-home__widget-slot.is-dragging .ios-home__widget-track {
-  transition: none;
-}
-
 /* Figma: 152×153, px 16.379 / py 14; bottom reserved for fixed nav */
 .ios-home__widget {
-  position: relative;
-  flex: 0 0 100%;
-  width: 100%;
-  height: 100%;
   border-radius: 26px;
   padding: 14px 16px 42px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  box-sizing: border-box;
   font-family: var(--font-body);
   pointer-events: none;
 }
 
 /* First card: allow decor overhang so rubber-band to the right reveals the full icon */
-.ios-home__widget:first-child {
+.ios-home__widget-slot .paged-swipe__page:first-child {
   overflow: visible;
 }
 

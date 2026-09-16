@@ -23,9 +23,9 @@ export const SCREENS: ScreenMeta[] = [
   },
   {
     id: 'app-home',
-    label: 'App · Hoy',
-    shortLabel: 'App',
-    description: 'Home de Waging (Luca)',
+    label: 'App · Inicio',
+    shortLabel: 'Inicio',
+    description: 'Inicio de Waging (Luca)',
   },
 ]
 

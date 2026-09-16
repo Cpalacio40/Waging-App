@@ -5,6 +5,8 @@
   z-index: 5;
   transform-origin: center center;
   will-change: opacity, transform;
+  isolation: isolate;
+  background: #0d0a09;
 }
 
 .app-layer.is-entering {

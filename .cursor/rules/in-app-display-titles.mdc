@@ -1,0 +1,16 @@
+---
+description: Instrument Serif titles inside the app use a 0.5px outside stroke via CSS.
+globs: src/screens/**/*.{tsx,css}
+alwaysApply: false
+---
+
+# In-app display titles
+
+Inside the phone app, every **Instrument Serif** title (`var(--font-display)`) must keep Figma’s **0.5px outside stroke**.
+
+This is already applied globally in `screens.css` for `.screen :is(h1, h2, h3, h4)` and `.display-title`.
+
+- Prefer `h1`–`h4` for those titles so the stroke is automatic.
+- If the title is not a heading, add class `display-title`.
+- Do not restroke titles in the studio chrome (outside `.screen`).
+- Do not change `--display-stroke` to `0.5px`: CSS stroke is centered; `1px` + `paint-order: stroke fill` equals Figma’s 0.5 outside.

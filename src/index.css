@@ -15,6 +15,8 @@
   --font-display: 'Instrument Serif', Georgia, serif;
   --font-body: 'Raleway', system-ui, sans-serif;
   --font-ui: 'Chillax', 'Raleway', system-ui, sans-serif;
+  /* Figma: 0.5px outside stroke. CSS stroke is centered, so 1px + fill on top. */
+  --display-stroke: 1px;
 
   /* Device viewport — Figma artboards (~iPhone 13/14); close to iPhone 11 */
   --phone-w: 390px;

@@ -48,7 +48,9 @@
   z-index: 2;
 }
 
+/* Figma: 152×153, px 16.379 / py 14, gap 28 between body and nav */
 .ios-home__widget {
+  --widget-chevron: #ff905f;
   position: relative;
   width: 152px;
   height: 153px;
@@ -57,116 +59,179 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 28px;
+  box-sizing: border-box;
   transition: background 0.25s ease;
+  font-family: var(--font-body);
 }
 
-.ios-home__widget-top {
+.ios-home__widget-body {
   position: relative;
   z-index: 1;
   display: flex;
   flex-direction: column;
+  gap: 7px;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.ios-home__widget-copy {
+  display: flex;
+  flex-direction: column;
   gap: 6px;
+  width: 122px;
 }
 
 .ios-home__widget-head {
   display: flex;
   align-items: center;
   gap: 3px;
-  font-size: 13px;
-  font-weight: 600;
+  height: 16px;
+  font-size: 14px; /* Figma 13 → even (Camila) */
+  font-weight: 600; /* Raleway SemiBold */
+  line-height: 16px;
   opacity: 0.6;
   color: #fcfcfc;
 }
 
 .ios-home__widget-head img {
   display: block;
-  width: 13px;
-  height: 13px;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
 }
 
 .ios-home__widget-title {
   margin: 0;
+  font-family: var(--font-body);
   font-size: 16px;
-  font-weight: 800;
-  line-height: 1.1;
+  font-weight: 800; /* Raleway ExtraBold */
+  line-height: 16px; /* was 15.4 → even up */
   color: #fcfcfc;
+  white-space: nowrap;
 }
 
-.ios-home__widget-value {
-  margin: 2px 0 0;
+/* Figma metric row is always 30px tall (empty on “Todo en orden”) */
+.ios-home__widget-metric {
+  height: 30px;
+  display: flex;
+  align-items: center;
+  width: 123px;
+}
+
+.ios-home__widget-metric span {
+  font-family: var(--font-ui); /* Chillax */
   font-size: 28px;
-  font-weight: 600;
-  line-height: 1;
+  font-weight: 600; /* Chillax Semibold */
+  line-height: 16px; /* was 15.4 → even up */
   color: #fcfcfc;
-  letter-spacing: -0.02em;
+  font-feature-settings: 'lnum' 1, 'pnum' 1;
 }
 
-.ios-home__widget-decor {
+/* Decor: Figma SVG already has ~0.19 fill opacity — don’t reduce further */
+.ios-home__decor {
   position: absolute;
   pointer-events: none;
-  opacity: 0.55;
-}
-
-.ios-home__widget-decor--waypoints {
-  left: -12px;
-  top: 80px;
+  z-index: 0;
   width: 94px;
   height: 94px;
-  transform: rotate(180deg);
-  opacity: 0.45;
 }
 
-.ios-home__widget-decor--gauge {
+.ios-home__decor--waypoints {
+  left: -12px;
+  top: 80px;
+  transform: rotate(180deg);
+}
+
+.ios-home__decor--paw {
+  left: -12px;
+  top: 80px;
+  transform: rotate(-90deg);
+}
+
+.ios-home__decor--moon {
+  left: -19px;
+  top: 77px;
+}
+
+/* Figma gauge frame 103.2×21.4 with overflow; SVG intrinsic ~111×31 */
+.ios-home__gauge {
+  position: absolute;
   left: 50%;
   top: 72px;
   width: 103px;
   height: 21px;
   transform: translateX(-50%);
-  opacity: 1;
+  z-index: 1;
+  pointer-events: none;
 }
 
-.ios-home__widget-decor--paw {
-  left: -12px;
-  top: 80px;
-  width: 94px;
-  height: 94px;
-  transform: rotate(-90deg);
-}
-
-.ios-home__widget-decor--moon {
-  left: -19px;
-  top: 77px;
-  width: 94px;
-  height: 94px;
+.ios-home__gauge img {
+  position: absolute;
+  /* inset ≈ -23% / -3% / -23% / -5% from Figma */
+  top: -23.33%;
+  right: -2.91%;
+  bottom: -23.33%;
+  left: -4.84%;
+  width: auto;
+  height: auto;
+  max-width: none;
 }
 
 .ios-home__widget-nav {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 12.5px;
   width: 120px;
+  height: 28px;
   margin-left: auto;
+  flex-shrink: 0;
 }
 
 .ios-home__widget-nav button {
-  width: 28px;
-  height: 28px;
+  width: 28.265px;
+  height: 28.265px;
   border: 0;
-  border-radius: 50%;
+  border-radius: 53px;
   background: #fcfcfc;
-  color: #333;
+  color: var(--widget-chevron);
   display: grid;
   place-items: center;
   cursor: pointer;
-  padding: 0;
+  padding: 4px;
+  box-sizing: border-box;
 }
 
-.ios-home__widget-nav button:last-child {
+.ios-home__widget-nav button.is-next {
+  background: #fff;
   opacity: 0.6;
+}
+
+.ios-home__chevron {
+  display: block;
+  width: 20px;
+  height: 20px;
+  background-color: currentColor;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.ios-home__chevron--left {
+  -webkit-mask-image: var(--chevron-left);
+  mask-image: var(--chevron-left);
+}
+
+.ios-home__chevron--right {
+  -webkit-mask-image: var(--chevron-right);
+  mask-image: var(--chevron-right);
 }
 
 .ios-home__waging-hit {

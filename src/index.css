@@ -14,7 +14,7 @@
 
   --font-display: 'Instrument Serif', Georgia, serif;
   --font-body: 'Raleway', system-ui, sans-serif;
-  --font-ui: 'Raleway', system-ui, sans-serif;
+  --font-ui: 'Chillax', 'Raleway', system-ui, sans-serif;
 
   /* Device viewport — Figma artboards (~iPhone 13/14); close to iPhone 11 */
   --phone-w: 390px;

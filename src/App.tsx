@@ -1,12 +1,16 @@
-import { useCallback, useRef, useState, type AnimationEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type AnimationEvent } from 'react'
+import { IosNotification, type IosNotificationPhase } from './components/IosNotification'
 import { PhoneFrame } from './components/PhoneFrame'
 import { ScreenNavigator } from './components/ScreenNavigator'
 import { DEFAULT_SCENARIO, type HomeScenarioId } from './data/homeScenarios'
+import { SCENARIO_HOLD_MS } from './hooks/useHeldScenario'
 import { DEFAULT_SCREEN, type ScreenId } from './data/screens'
 import { AppHomeScreen } from './screens/AppHomeScreen'
 import { IosHomeScreen } from './screens/IosHomeScreen'
 import { SplashScreen } from './screens/SplashScreen'
 import './App.css'
+
+const ALERT_BANNER_HOLD_MS = 4000
 
 type LayerAnim = 'enter' | 'leave' | null
 
@@ -18,7 +22,9 @@ function App() {
   const [screen, setScreen] = useState<ScreenId>(DEFAULT_SCREEN)
   const [layerAnim, setLayerAnim] = useState<LayerAnim>(null)
   const [scenario, setScenario] = useState<HomeScenarioId>(DEFAULT_SCENARIO)
+  const [banner, setBanner] = useState<IosNotificationPhase | 'idle'>('idle')
   const layerAnimRef = useRef<LayerAnim>(null)
+  const bannerTimerRef = useRef<number | null>(null)
   layerAnimRef.current = layerAnim
 
   const appOpen = isInApp(screen)
@@ -67,6 +73,52 @@ function App() {
     setScenario((current) => (current === 'attention' ? 'ok' : 'attention'))
   }, [])
 
+  useEffect(() => {
+    if (bannerTimerRef.current != null) {
+      window.clearTimeout(bannerTimerRef.current)
+      bannerTimerRef.current = null
+    }
+
+    if (scenario !== 'attention') {
+      setBanner((phase) => (phase === 'idle' ? 'idle' : 'out'))
+      return
+    }
+
+    const appear = () => {
+      setBanner('in')
+      bannerTimerRef.current = null
+    }
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      appear()
+      return
+    }
+
+    bannerTimerRef.current = window.setTimeout(appear, SCENARIO_HOLD_MS)
+  }, [scenario])
+
+  useEffect(
+    () => () => {
+      if (bannerTimerRef.current != null) window.clearTimeout(bannerTimerRef.current)
+    },
+    [],
+  )
+
+  const onBannerAnimationEnd = useCallback((e: AnimationEvent<HTMLElement>) => {
+    if (e.target !== e.currentTarget) return
+    if (e.animationName === 'ios-notification-in') {
+      setBanner('hold')
+      bannerTimerRef.current = window.setTimeout(() => {
+        setBanner('out')
+        bannerTimerRef.current = null
+      }, ALERT_BANNER_HOLD_MS)
+      return
+    }
+    if (e.animationName === 'ios-notification-out') {
+      setBanner('idle')
+    }
+  }, [])
+
   const onLayerAnimationEnd = useCallback(
     (e: AnimationEvent<HTMLDivElement>) => {
       if (e.target !== e.currentTarget) return
@@ -113,6 +165,10 @@ function App() {
                   <SplashScreen onDone={screen === 'splash' ? finishSplash : undefined} />
                 </div>
               </div>
+            ) : null}
+
+            {banner !== 'idle' ? (
+              <IosNotification phase={banner} onAnimationEnd={onBannerAnimationEnd} />
             ) : null}
           </PhoneFrame>
 

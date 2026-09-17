@@ -3,6 +3,7 @@ import { PagedSwipe, PagedSwipePage } from '../components/PagedSwipe'
 import type { HomeScenarioId } from '../data/homeScenarios'
 import { HOME_SCENARIOS } from '../data/homeScenarios'
 import { WIDGET_SLIDES } from '../data/widgetSlides'
+import { useHeldScenario } from '../hooks/useHeldScenario'
 import { assetUrl } from '../utils/assetUrl'
 import './screens.css'
 
@@ -18,7 +19,8 @@ type IosHomeScreenProps = {
  * Alert scenario (activity ≤30) crossfades the pager with a single attention widget.
  */
 export function IosHomeScreen({ onOpenApp, scenario = 'ok' }: IosHomeScreenProps) {
-  const needsAttention = scenario === 'attention'
+  const shown = useHeldScenario(scenario)
+  const needsAttention = shown === 'attention'
   const attention = HOME_SCENARIOS.attention
 
   return (

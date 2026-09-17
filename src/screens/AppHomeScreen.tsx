@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
 import { HOME_SCENARIOS, type HomeScenarioId } from '../data/homeScenarios'
 import { useDragScroll } from '../hooks/useDragScroll'
+import { useHeldScenario } from '../hooks/useHeldScenario'
 import { assetUrl } from '../utils/assetUrl'
 import './screens.css'
 
@@ -81,8 +82,7 @@ type AppHomeScreenProps = {
   scenario?: HomeScenarioId
 }
 
-/** In-app home — Figma iPhone 13 & 14 - 54 (ok, 48:3198) / 58 (attention, 116:4672). */
-export function AppHomeScreen({ scenario = 'ok' }: AppHomeScreenProps) {
+function AppHomeView({ scenario }: { scenario: HomeScenarioId }) {
   const data = HOME_SCENARIOS[scenario]
   const needsAttention = scenario === 'attention'
   const dragScroll = useDragScroll({
@@ -328,6 +328,30 @@ export function AppHomeScreen({ scenario = 'ok' }: AppHomeScreenProps) {
           Perfil
         </button>
       </nav>
+    </div>
+  )
+}
+
+/** In-app home — Figma iPhone 13 & 14 - 54 (ok, 48:3198) / 58 (attention, 116:4672). */
+export function AppHomeScreen({ scenario = 'ok' }: AppHomeScreenProps) {
+  const shown = useHeldScenario(scenario)
+
+  return (
+    <div className="app-home-stack">
+      <div
+        className={`app-home-stack__layer${shown === 'ok' ? ' is-visible' : ''}`}
+        aria-hidden={shown !== 'ok'}
+        inert={shown !== 'ok' ? true : undefined}
+      >
+        <AppHomeView scenario="ok" />
+      </div>
+      <div
+        className={`app-home-stack__layer${shown === 'attention' ? ' is-visible' : ''}`}
+        aria-hidden={shown !== 'attention'}
+        inert={shown !== 'attention' ? true : undefined}
+      >
+        <AppHomeView scenario="attention" />
+      </div>
     </div>
   )
 }

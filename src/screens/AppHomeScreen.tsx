@@ -80,9 +80,10 @@ function gaugePoint(value: number) {
 
 type AppHomeScreenProps = {
   scenario?: HomeScenarioId
+  onAgendar?: () => void
 }
 
-function AppHomeView({ scenario }: { scenario: HomeScenarioId }) {
+function AppHomeView({ scenario, onAgendar }: { scenario: HomeScenarioId; onAgendar?: () => void }) {
   const data = HOME_SCENARIOS[scenario]
   const needsAttention = scenario === 'attention'
   const dragScroll = useDragScroll({
@@ -221,7 +222,11 @@ function AppHomeView({ scenario }: { scenario: HomeScenarioId }) {
                 salida?
               </p>
               <div className="app-home__alert-actions">
-                <button type="button" className="app-home__alert-btn app-home__alert-btn--primary">
+                <button
+                  type="button"
+                  className="app-home__alert-btn app-home__alert-btn--primary"
+                  onClick={onAgendar}
+                >
                   <span>Agendar</span>
                 </button>
                 <button type="button" className="app-home__alert-btn app-home__alert-btn--ghost">
@@ -333,7 +338,7 @@ function AppHomeView({ scenario }: { scenario: HomeScenarioId }) {
 }
 
 /** In-app home — Figma iPhone 13 & 14 - 54 (ok, 48:3198) / 58 (attention, 116:4672). */
-export function AppHomeScreen({ scenario = 'ok' }: AppHomeScreenProps) {
+export function AppHomeScreen({ scenario = 'ok', onAgendar }: AppHomeScreenProps) {
   const shown = useHeldScenario(scenario)
 
   return (
@@ -343,14 +348,14 @@ export function AppHomeScreen({ scenario = 'ok' }: AppHomeScreenProps) {
         aria-hidden={shown !== 'ok'}
         inert={shown !== 'ok' ? true : undefined}
       >
-        <AppHomeView scenario="ok" />
+        <AppHomeView scenario="ok" onAgendar={onAgendar} />
       </div>
       <div
         className={`app-home-stack__layer${shown === 'attention' ? ' is-visible' : ''}`}
         aria-hidden={shown !== 'attention'}
         inert={shown !== 'attention' ? true : undefined}
       >
-        <AppHomeView scenario="attention" />
+        <AppHomeView scenario="attention" onAgendar={onAgendar} />
       </div>
     </div>
   )

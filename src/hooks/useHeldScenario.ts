@@ -8,19 +8,24 @@ function prefersReducedMotion() {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 
-/** Lag `scenario` by a short hold so ok ↔ attention can breathe before the crossfade. */
-export function useHeldScenario(scenario: HomeScenarioId) {
-  const [shown, setShown] = useState(scenario)
+/** Lag `value` by a short hold so view A ↔ B can breathe before the crossfade. */
+export function useHeldValue<T>(value: T, holdMs = SCENARIO_HOLD_MS) {
+  const [shown, setShown] = useState(value)
 
   useEffect(() => {
-    if (scenario === shown) return
+    if (Object.is(value, shown)) return
     if (prefersReducedMotion()) {
-      setShown(scenario)
+      setShown(value)
       return
     }
-    const id = window.setTimeout(() => setShown(scenario), SCENARIO_HOLD_MS)
+    const id = window.setTimeout(() => setShown(value), holdMs)
     return () => window.clearTimeout(id)
-  }, [scenario, shown])
+  }, [value, shown, holdMs])
 
   return shown
+}
+
+/** Lag `scenario` by a short hold so ok ↔ attention can breathe before the crossfade. */
+export function useHeldScenario(scenario: HomeScenarioId) {
+  return useHeldValue(scenario)
 }

@@ -1,4 +1,4 @@
-export type ScreenId = 'ios-home' | 'splash' | 'app-home'
+export type ScreenId = 'ios-home' | 'splash' | 'app-home' | 'caregiver-intro' | 'caregiver-search'
 
 export type ScreenMeta = {
   id: ScreenId
@@ -26,6 +26,18 @@ export const SCREENS: ScreenMeta[] = [
     label: 'App · Inicio',
     shortLabel: 'Inicio',
     description: 'Inicio de Waging (Luca)',
+  },
+  {
+    id: 'caregiver-intro',
+    label: 'App · Cuidador intro',
+    shortLabel: 'Intro',
+    description: 'Más que un paseo — valor del cuidador',
+  },
+  {
+    id: 'caregiver-search',
+    label: 'App · Buscar cuidador',
+    shortLabel: 'Buscar',
+    description: 'Buscador y fichas de cuidadores cerca',
   },
 ]
 

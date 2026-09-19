@@ -3,19 +3,29 @@ import { IosNotification, type IosNotificationPhase } from './components/IosNoti
 import { PhoneFrame } from './components/PhoneFrame'
 import { ScreenNavigator } from './components/ScreenNavigator'
 import { DEFAULT_SCENARIO, type HomeScenarioId } from './data/homeScenarios'
-import { SCENARIO_HOLD_MS } from './hooks/useHeldScenario'
+import { SCENARIO_HOLD_MS, useHeldValue } from './hooks/useHeldScenario'
 import { DEFAULT_SCREEN, type ScreenId } from './data/screens'
 import { AppHomeScreen } from './screens/AppHomeScreen'
+import { CaregiverIntroScreen } from './screens/CaregiverIntroScreen'
+import { CaregiverSearchScreen } from './screens/CaregiverSearchScreen'
 import { IosHomeScreen } from './screens/IosHomeScreen'
 import { SplashScreen } from './screens/SplashScreen'
 import './App.css'
+import './screens/screens.css'
 
 const ALERT_BANNER_HOLD_MS = 4000
 
 type LayerAnim = 'enter' | 'leave' | null
+type AppViewId = 'app-home' | 'caregiver-intro' | 'caregiver-search'
 
 function isInApp(id: ScreenId) {
-  return id === 'splash' || id === 'app-home'
+  return id === 'splash' || id === 'app-home' || id === 'caregiver-intro' || id === 'caregiver-search'
+}
+
+function appViewFromScreen(id: ScreenId): AppViewId {
+  if (id === 'caregiver-intro') return 'caregiver-intro'
+  if (id === 'caregiver-search') return 'caregiver-search'
+  return 'app-home'
 }
 
 function App() {
@@ -31,6 +41,8 @@ function App() {
   const showHome = screen === 'ios-home' || appOpen
   const canGoHome = appOpen && layerAnim !== 'leave'
   const needsAttention = scenario === 'attention'
+  const appView = appViewFromScreen(screen)
+  const shownView = useHeldValue(appView)
 
   const openApp = useCallback(() => {
     if (appOpen && layerAnim !== 'leave') return
@@ -153,10 +165,38 @@ function App() {
               <div className={`app-layer${layerClass}`} onAnimationEnd={onLayerAnimationEnd}>
                 <div
                   className="app-pane app-pane--home"
-                  aria-hidden={screen !== 'app-home'}
+                  aria-hidden={screen === 'splash'}
                   inert={screen === 'splash' ? true : undefined}
                 >
-                  <AppHomeScreen scenario={scenario} />
+                  <div className="app-screen-stack">
+                    <div
+                      className={`app-screen-stack__layer${shownView === 'app-home' ? ' is-visible' : ''}`}
+                      aria-hidden={shownView !== 'app-home'}
+                      inert={shownView !== 'app-home' ? true : undefined}
+                    >
+                      <AppHomeScreen
+                        scenario={scenario}
+                        onAgendar={() => setScreen('caregiver-intro')}
+                      />
+                    </div>
+                    <div
+                      className={`app-screen-stack__layer${shownView === 'caregiver-intro' ? ' is-visible' : ''}`}
+                      aria-hidden={shownView !== 'caregiver-intro'}
+                      inert={shownView !== 'caregiver-intro' ? true : undefined}
+                    >
+                      <CaregiverIntroScreen
+                        onBack={() => setScreen('app-home')}
+                        onContinue={() => setScreen('caregiver-search')}
+                      />
+                    </div>
+                    <div
+                      className={`app-screen-stack__layer${shownView === 'caregiver-search' ? ' is-visible' : ''}`}
+                      aria-hidden={shownView !== 'caregiver-search'}
+                      inert={shownView !== 'caregiver-search' ? true : undefined}
+                    >
+                      <CaregiverSearchScreen onBack={() => setScreen('caregiver-intro')} />
+                    </div>
+                  </div>
                 </div>
                 <div
                   className={`app-pane app-pane--splash${screen === 'splash' ? ' is-visible' : ''}`}

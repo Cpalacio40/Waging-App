@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { CAREGIVERS } from '../data/caregivers'
+import { CAREGIVERS, type Caregiver } from '../data/caregivers'
 import { useDragScroll } from '../hooks/useDragScroll'
 import { assetUrl } from '../utils/assetUrl'
+import { CaregiverProfileScreen } from './CaregiverProfileScreen'
 import './screens.css'
 
 const caregiverAsset = (name: string) => assetUrl(`caregiver/${name}`)
 const SEARCH_DELAY_MS = 2000
 const SKELETON_COUNT = 3
+/** Gap above a focused result card (below the notch / rounded bezel). */
+const CARD_TOP_INSET_PX = 20
 
 type SearchPhase = 'idle' | 'loading' | 'results'
 
@@ -36,11 +39,15 @@ function CaregiverCardSkeleton() {
 export function CaregiverSearchScreen({ onBack }: CaregiverSearchScreenProps) {
   const [query, setQuery] = useState('')
   const [phase, setPhase] = useState<SearchPhase>('idle')
+  const [selected, setSelected] = useState<Caregiver | null>(null)
+  const [profileOpen, setProfileOpen] = useState(false)
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const showList = phase === 'loading' || phase === 'results'
+  // Keep scroll enabled while the profile covers the list so opening doesn't
+  // jump the list mid-slide (we re-align to the clicked card after open).
   const dragScroll = useDragScroll({
     enabled: showList,
-    ignoreSelector: 'button, a, input, textarea, [role="button"]',
+    ignoreSelector: 'a, input, textarea, .caregiver-back, .caregiver-cta',
   })
 
   useEffect(() => {
@@ -59,12 +66,48 @@ export function CaregiverSearchScreen({ onBack }: CaregiverSearchScreenProps) {
     }, SEARCH_DELAY_MS)
   }
 
+  const openProfile = (caregiver: Caregiver) => {
+    if (dragScroll.consumeClickSuppression()) return
+    setSelected(caregiver)
+    setProfileOpen(true)
+  }
+
+  const alignToSelectedCard = () => {
+    if (!selected) return
+    const card = dragScroll.contentRef.current?.querySelector<HTMLElement>(
+      `[data-caregiver-id="${selected.id}"]`,
+    )
+    if (!card) return
+    const isLast = selected.id === CAREGIVERS[CAREGIVERS.length - 1]?.id
+    // Last card stays at the bottom (shows previous ones); others pin near the top.
+    if (isLast) {
+      dragScroll.scrollToElement(card, 'end')
+    } else {
+      dragScroll.scrollToElement(card, 'start', CARD_TOP_INSET_PX)
+    }
+  }
+
+  const closeProfile = () => {
+    alignToSelectedCard()
+    setProfileOpen(false)
+  }
+
+  const onProfileOpened = () => {
+    alignToSelectedCard()
+  }
+
+  const onProfileClosed = () => {
+    setSelected(null)
+  }
+
   return (
     <div className={`screen caregiver-search${showList ? ' is-scrollable' : ''}`}>
       <div
         ref={dragScroll.ref}
         className={`caregiver-search__scroller${dragScroll.dragging ? ' is-dragging' : ''}`}
         {...dragScroll.scrollerProps}
+        aria-hidden={Boolean(selected) || undefined}
+        inert={selected ? true : undefined}
       >
         <div ref={dragScroll.contentRef} className="caregiver-search__scroll-content">
           <header className="caregiver-search__header">
@@ -109,22 +152,29 @@ export function CaregiverSearchScreen({ onBack }: CaregiverSearchScreenProps) {
             {phase === 'results' ? (
               <ul className="caregiver-search__results">
                 {CAREGIVERS.map((caregiver) => (
-                  <li key={caregiver.id} className="caregiver-card">
-                    <div className="caregiver-card__hero">
-                      <img
-                        className={`caregiver-card__photo caregiver-card__photo--${caregiver.id}`}
-                        src={caregiverAsset(caregiver.photo)}
-                        alt=""
-                        draggable={false}
-                      />
-                      <div className="caregiver-card__scrim" aria-hidden="true" />
-                      <span className="caregiver-card__badge">{caregiver.badge}</span>
-                      <div className="caregiver-card__copy">
-                        <h2 className="caregiver-card__name display-title">{caregiver.name}</h2>
-                        <p className="caregiver-card__specialty">{caregiver.specialty}</p>
+                  <li key={caregiver.id}>
+                    <button
+                      type="button"
+                      className="caregiver-card caregiver-card--button"
+                      data-caregiver-id={caregiver.id}
+                      onClick={() => openProfile(caregiver)}
+                    >
+                      <div className="caregiver-card__hero">
+                        <img
+                          className={`caregiver-card__photo caregiver-card__photo--${caregiver.id}`}
+                          src={caregiverAsset(caregiver.photo)}
+                          alt=""
+                          draggable={false}
+                        />
+                        <div className="caregiver-card__scrim" aria-hidden="true" />
+                        <span className="caregiver-card__badge">{caregiver.badge}</span>
+                        <div className="caregiver-card__copy">
+                          <h2 className="caregiver-card__name display-title">{caregiver.name}</h2>
+                          <p className="caregiver-card__specialty">{caregiver.specialty}</p>
+                        </div>
                       </div>
-                    </div>
-                    <p className="caregiver-card__bio">{caregiver.bio}</p>
+                      <p className="caregiver-card__bio">{caregiver.bio}</p>
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -132,6 +182,16 @@ export function CaregiverSearchScreen({ onBack }: CaregiverSearchScreenProps) {
           </div>
         </div>
       </div>
+
+      {selected ? (
+        <CaregiverProfileScreen
+          caregiver={selected}
+          open={profileOpen}
+          onBack={closeProfile}
+          onOpened={onProfileOpened}
+          onClosed={onProfileClosed}
+        />
+      ) : null}
     </div>
   )
 }

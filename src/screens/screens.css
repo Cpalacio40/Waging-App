@@ -1554,6 +1554,22 @@
   box-shadow: 0 10px 32px -4px rgba(19, 25, 39, 0.1);
 }
 
+.caregiver-card--button {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.caregiver-card--button:active {
+  filter: brightness(0.98);
+}
+
 .caregiver-card__hero {
   position: relative;
   height: 269px;
@@ -1727,4 +1743,362 @@
     animation: none;
     background-image: none;
   }
+}
+
+/* Caregiver profile sheet (160:4038 / 180:5520+) ? slides in from the right */
+.caregiver-profile-sheet {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  background: #fcfcfc;
+  color: var(--ink);
+  transform: translate3d(100%, 0, 0);
+  transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: transform;
+}
+
+.caregiver-profile-sheet.is-open {
+  transform: translate3d(0, 0, 0);
+}
+
+.caregiver-profile-sheet.is-closing {
+  transform: translate3d(100%, 0, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caregiver-profile-sheet {
+    transition-duration: 0.01ms;
+  }
+}
+
+.caregiver-profile__scroller {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+}
+
+.caregiver-profile__scroller.is-dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.caregiver-profile__scroll-content {
+  position: relative;
+  width: 100%;
+  min-height: 100%;
+  padding-bottom: 128px;
+  will-change: transform;
+}
+
+.caregiver-profile__hero-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 642px;
+  background: #f3f3f3;
+  pointer-events: none;
+}
+
+.caregiver-profile__header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  height: 101px;
+  padding: 34px 17px 12px;
+}
+
+.caregiver-profile__photo-wrap {
+  position: relative;
+  z-index: 1;
+  width: 346px;
+  height: 332px;
+  margin: -16px auto 0;
+  overflow: hidden;
+  border-radius: 28px;
+}
+
+.caregiver-profile__photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+}
+
+.caregiver-profile__photo--javier {
+  width: 132%;
+  height: 144%;
+  margin-left: -13%;
+  object-fit: cover;
+}
+
+.caregiver-profile__body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: 24px 20px 0;
+}
+
+.caregiver-profile__intro {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  text-align: center;
+}
+
+.caregiver-profile__name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 400;
+  line-height: 38px;
+  color: var(--ink);
+}
+
+.caregiver-profile__tagline {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: rgba(52, 6, 22, 0.75);
+}
+
+.caregiver-profile__stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  font-variant-numeric: lining-nums proportional-nums;
+  color: var(--ink);
+}
+
+.caregiver-profile__stats img {
+  flex-shrink: 0;
+}
+
+.caregiver-profile__rule {
+  width: 100%;
+  margin: 0;
+  border: 0;
+  border-top: 1.2px solid rgba(52, 6, 22, 0.12);
+}
+
+.caregiver-profile__section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.caregiver-profile__section--reviews {
+  gap: 14px;
+}
+
+.caregiver-profile__heading {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 28px;
+  color: var(--ink);
+}
+
+.caregiver-profile__copy {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  color: rgba(52, 6, 22, 0.75);
+}
+
+.caregiver-profile__sessions {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.caregiver-profile__session {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.caregiver-profile__session-icon {
+  flex-shrink: 0;
+  width: 84px;
+  height: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 24px;
+}
+
+.caregiver-profile__session-icon--clipboard {
+  background: transparent;
+}
+
+.caregiver-profile__session-icon--clipboard img {
+  width: 84px;
+  height: 84px;
+}
+
+.caregiver-profile__session-icon--chart {
+  background: #f8eb7a;
+}
+
+.caregiver-profile__session-icon--hourglass {
+  background: #aae8f9;
+}
+
+.caregiver-profile__session-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.caregiver-profile__session-title {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  color: var(--ink);
+}
+
+.caregiver-profile__session-body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  color: rgba(52, 6, 22, 0.75);
+}
+
+.caregiver-profile__reviews {
+  margin: 0;
+  padding: 0 0 8px;
+  list-style: none;
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  touch-action: pan-x;
+  cursor: grab;
+}
+
+.caregiver-profile__reviews::-webkit-scrollbar {
+  display: none;
+}
+
+.caregiver-review {
+  flex: 0 0 199px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border: 0.5px solid #fff;
+  border-radius: 23px;
+  background: #fff;
+  box-shadow: 0 16px 40px -8px rgba(88, 92, 95, 0.16);
+}
+
+.caregiver-review__top {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.caregiver-review__owner-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.caregiver-review__avatar {
+  flex-shrink: 0;
+  border-radius: 999px;
+}
+
+.caregiver-review__owner-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.caregiver-review__owner {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 14px;
+  font-variant-numeric: lining-nums proportional-nums;
+  color: var(--ink);
+}
+
+.caregiver-review__stars {
+  display: flex;
+  gap: 4px;
+}
+
+.caregiver-review__text {
+  margin: 0;
+  min-height: 53px;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 14px;
+  color: rgba(52, 6, 22, 0.75);
+}
+
+.caregiver-review__photo {
+  width: calc(100% + 32px);
+  height: 112px;
+  margin: 0 -16px;
+  background: #e8e8e8;
+}
+
+.caregiver-review__date {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 14px;
+  font-variant-numeric: lining-nums proportional-nums;
+  color: rgba(52, 6, 22, 0.75);
+}
+
+.caregiver-profile__footer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 22px 40px;
+  background: #f0f0f0;
+  box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.1);
 }

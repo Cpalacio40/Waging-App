@@ -7,7 +7,7 @@ import {
   type RefObject,
 } from 'react'
 
-const DRAG_THRESHOLD_PX = 4
+const DRAG_THRESHOLD_PX = 8
 
 type UseDragScrollOptions = {
   enabled: boolean
@@ -30,6 +30,7 @@ export function useDragScroll({ enabled, ignoreSelector }: UseDragScrollOptions)
   const moved = useRef(false)
   const active = useRef(false)
   const offsetRef = useRef(0)
+  const suppressClickRef = useRef(false)
   const enabledRef = useRef(enabled)
   enabledRef.current = enabled
 
@@ -61,12 +62,73 @@ export function useDragScroll({ enabled, ignoreSelector }: UseDragScrollOptions)
     [clampOffset, paint],
   )
 
-  const clear = useCallback((el: HTMLDivElement | null, id: number) => {
+  const resetScroll = useCallback(() => {
+    offsetRef.current = 0
+    paint(0)
+  }, [paint])
+
+  /**
+   * Scroll so `el` (inside the content) is in view.
+   * - start: pin element top to the top of the viewport (minus inset)
+   * - end: pin element bottom to the bottom of the viewport
+   * - nearest: only move if it's clipped
+   */
+  const scrollToElement = useCallback(
+    (
+      el: HTMLElement,
+      align: 'start' | 'end' | 'nearest' = 'nearest',
+      inset = 0,
+    ) => {
+      const viewport = ref.current
+      const content = contentRef.current
+      if (!viewport || !content) return
+
+      // offsetTop chain is stable under translate transforms on `content`.
+      let elTop = 0
+      let node: HTMLElement | null = el
+      while (node && node !== content) {
+        elTop += node.offsetTop
+        node = node.offsetParent as HTMLElement | null
+      }
+      // Fallback if offsetParent chain left the content (e.g. unexpected CSS).
+      if (!node) {
+        elTop =
+          el.getBoundingClientRect().top -
+          content.getBoundingClientRect().top +
+          offsetRef.current
+      }
+
+      const elBottom = elTop + el.offsetHeight
+      const viewH = viewport.clientHeight
+      const visibleTop = offsetRef.current
+      const visibleBottom = offsetRef.current + viewH
+      const topInset = Math.max(0, inset)
+
+      let target = offsetRef.current
+      if (align === 'start') {
+        target = elTop - topInset
+      } else if (align === 'end') {
+        target = elBottom - viewH
+      } else if (elTop < visibleTop + topInset) {
+        target = elTop - topInset
+      } else if (elBottom > visibleBottom) {
+        target = elBottom - viewH
+      } else {
+        return
+      }
+
+      applyOffset(target)
+    },
+    [applyOffset],
+  )
+
+  const clear = useCallback((el: HTMLDivElement | null, id: number, captured: boolean) => {
+    suppressClickRef.current = moved.current
     pointerId.current = null
     active.current = false
     moved.current = false
     setDragging(false)
-    if (!el) return
+    if (!el || !captured) return
     try {
       el.releasePointerCapture(id)
     } catch {
@@ -74,20 +136,24 @@ export function useDragScroll({ enabled, ignoreSelector }: UseDragScrollOptions)
     }
   }, [])
 
+  /** Call from click handlers: true if the gesture was a drag (skip the click). */
+  const consumeClickSuppression = useCallback(() => {
+    const blocked = suppressClickRef.current
+    suppressClickRef.current = false
+    return blocked
+  }, [])
+
   const onPointerDown = useCallback(
     (e: ReactPointerEvent<HTMLDivElement>) => {
       if (!enabled || e.button !== 0) return
       if (ignoreSelector && (e.target as Element).closest?.(ignoreSelector)) return
-
-      const el = ref.current
-      if (!el) return
 
       pointerId.current = e.pointerId
       active.current = true
       moved.current = false
       startY.current = e.clientY
       startOffset.current = offsetRef.current
-      el.setPointerCapture(e.pointerId)
+      // Don't capture yet — capturing on pointerdown steals clicks from buttons/cards.
     },
     [enabled, ignoreSelector],
   )
@@ -99,9 +165,16 @@ export function useDragScroll({ enabled, ignoreSelector }: UseDragScrollOptions)
       const dy = e.clientY - startY.current
       if (!moved.current && Math.abs(dy) < DRAG_THRESHOLD_PX) return
 
+      const el = ref.current
       if (!moved.current) {
         moved.current = true
         setDragging(true)
+        // Capture only once the gesture is clearly a drag.
+        try {
+          el?.setPointerCapture(e.pointerId)
+        } catch {
+          /* ignore */
+        }
       }
 
       applyOffset(startOffset.current - dy)
@@ -113,7 +186,7 @@ export function useDragScroll({ enabled, ignoreSelector }: UseDragScrollOptions)
   const onPointerUp = useCallback(
     (e: ReactPointerEvent<HTMLDivElement>) => {
       if (e.pointerId !== pointerId.current) return
-      clear(ref.current, e.pointerId)
+      clear(ref.current, e.pointerId, moved.current)
     },
     [clear],
   )
@@ -121,7 +194,7 @@ export function useDragScroll({ enabled, ignoreSelector }: UseDragScrollOptions)
   const onPointerCancel = useCallback(
     (e: ReactPointerEvent<HTMLDivElement>) => {
       if (e.pointerId !== pointerId.current) return
-      clear(ref.current, e.pointerId)
+      clear(ref.current, e.pointerId, moved.current)
     },
     [clear],
   )
@@ -145,7 +218,7 @@ export function useDragScroll({ enabled, ignoreSelector }: UseDragScrollOptions)
     if (!enabled) {
       offsetRef.current = 0
       paint(0)
-      if (pointerId.current != null) clear(ref.current, pointerId.current)
+      if (pointerId.current != null) clear(ref.current, pointerId.current, true)
       return
     }
     applyOffset(offsetRef.current)
@@ -169,6 +242,9 @@ export function useDragScroll({ enabled, ignoreSelector }: UseDragScrollOptions)
     ref: ref as RefObject<HTMLDivElement>,
     contentRef: contentRef as RefObject<HTMLDivElement>,
     dragging,
+    consumeClickSuppression,
+    resetScroll,
+    scrollToElement,
     scrollerProps: enabled
       ? {
           onPointerDown,

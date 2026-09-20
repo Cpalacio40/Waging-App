@@ -83,24 +83,22 @@ export function CaregiverProfileScreen({
         {...dragScroll.scrollerProps}
       >
         <div ref={dragScroll.contentRef} className="caregiver-profile__scroll-content">
-          <div className="caregiver-profile__hero-bg" aria-hidden="true" />
+          <div className="caregiver-profile__top">
+            <header className="caregiver-profile__header">
+              <button type="button" className="caregiver-back" aria-label="Volver" onClick={onBack}>
+                <img src={caregiverAsset('arrow-left.svg')} alt="" width={32} height={32} draggable={false} />
+              </button>
+            </header>
 
-          <header className="caregiver-profile__header">
-            <button type="button" className="caregiver-back" aria-label="Volver" onClick={onBack}>
-              <img src={caregiverAsset('arrow-left.svg')} alt="" width={32} height={32} draggable={false} />
-            </button>
-          </header>
+            <div className="caregiver-profile__photo-wrap">
+              <img
+                className={`caregiver-profile__photo caregiver-profile__photo--${caregiver.id}`}
+                src={caregiverAsset(caregiver.photo)}
+                alt=""
+                draggable={false}
+              />
+            </div>
 
-          <div className="caregiver-profile__photo-wrap">
-            <img
-              className={`caregiver-profile__photo caregiver-profile__photo--${caregiver.id}`}
-              src={caregiverAsset(caregiver.photo)}
-              alt=""
-              draggable={false}
-            />
-          </div>
-
-          <div className="caregiver-profile__body">
             <div className="caregiver-profile__intro">
               <h1 className="caregiver-profile__name display-title">{caregiver.name}</h1>
               <p className="caregiver-profile__tagline">{caregiver.tagline}</p>
@@ -111,9 +109,9 @@ export function CaregiverProfileScreen({
                 </span>
               </p>
             </div>
+          </div>
 
-            <hr className="caregiver-profile__rule" />
-
+          <div className="caregiver-profile__body">
             <section className="caregiver-profile__section">
               <h2 className="caregiver-profile__heading">Sobre mí</h2>
               <p className="caregiver-profile__copy">{caregiver.about}</p>
@@ -190,7 +188,9 @@ export function CaregiverProfileScreen({
                       </div>
                       <p className="caregiver-review__text">{review.text}</p>
                     </div>
-                    <div className="caregiver-review__photo" aria-hidden="true" />
+                    <div className="caregiver-review__photo">
+                      <img src={profileAsset(review.photo)} alt="" draggable={false} />
+                    </div>
                     <p className="caregiver-review__date">{review.date}</p>
                   </li>
                 ))}

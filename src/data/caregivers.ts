@@ -9,6 +9,7 @@ export type CaregiverReview = {
   text: string
   date: string
   avatar: '1' | '2' | '3'
+  photo: string
 }
 
 export type Caregiver = {
@@ -65,18 +66,21 @@ export const CAREGIVERS: Caregiver[] = [
         text: 'Luna temblaba solo con oír la correa. María fue con una calma que yo no sabía transmitir.',
         date: 'Agosto 12, 2026',
         avatar: '2',
+        photo: 'review-1.png',
       },
       {
         owner: 'Dueño de Toby',
         text: 'Antes no podíamos dejarlo solo ni cinco minutos. Ahora aguanta la mañana entera.',
         date: 'Julio 2, 2026',
         avatar: '1',
+        photo: 'review-2.png',
       },
       {
         owner: 'Dueña de Nala',
         text: 'No fuerza nada. Cada semana un pasito, y Nala ya saluda sin esconderse.',
         date: 'Junio 18, 2026',
         avatar: '3',
+        photo: 'review-3.png',
       },
     ],
   },
@@ -117,18 +121,21 @@ export const CAREGIVERS: Caregiver[] = [
         text: 'Zeus reacciona a otros perros desde lejos. Andrés sabe exactamente a qué distancia trabajar sin que se dispare.',
         date: 'Agosto 10, 2026',
         avatar: '1',
+        photo: 'review-1.png',
       },
       {
         owner: 'Dueña de Kira',
         text: 'Antes evitábamos cruzarnos con nadie en la calle. Ahora Kira puede ver a otro perro pasar sin explotar.',
         date: 'Mayo 20, 2026',
         avatar: '2',
+        photo: 'review-2.png',
       },
       {
         owner: 'Dueño de Rex',
         text: "Lo que más me tranquiliza es que Andrés nunca arriesga una situación solo para 'probar'.",
         date: 'Junio 7, 2026',
         avatar: '3',
+        photo: 'review-3.png',
       },
     ],
   },
@@ -169,18 +176,21 @@ export const CAREGIVERS: Caregiver[] = [
         text: 'Milo tiene la mala costumbre de comer palos, por eso lleva el bozal. Pero se va trabajando sesión a sesión.',
         date: 'Agosto 3, 2026',
         avatar: '1',
+        photo: 'review-1.png',
       },
       {
         owner: 'Dueña de Coco',
         text: 'Por fin duerme la siesta. Javier le da trabajo de cabeza, no solo kilómetros.',
         date: 'Julio 22, 2026',
         avatar: '2',
+        photo: 'review-2.png',
       },
       {
         owner: 'Dueño de Rocky',
         text: 'Rocky llega cansado y contento. Antes solo llegaba agitado.',
         date: 'Junio 30, 2026',
         avatar: '3',
+        photo: 'review-3.png',
       },
     ],
   },
@@ -221,18 +231,21 @@ export const CAREGIVERS: Caregiver[] = [
         text: 'Con artrosis avanzada, Sofía adapta cada paseo. Él vuelve más calmado, no más dolorido.',
         date: 'Agosto 8, 2026',
         avatar: '1',
+        photo: 'review-2.png',
       },
       {
         owner: 'Dueña de Miel',
         text: 'Miel es ciega. Sofía lee el entorno por ella y nunca la apura.',
         date: 'Julio 14, 2026',
         avatar: '2',
+        photo: 'review-1.png',
       },
       {
         owner: 'Dueño de Teo',
         text: 'Después de la operación, Sofía fue la única en quien confiamos para sacarlo.',
         date: 'Junio 5, 2026',
         avatar: '3',
+        photo: 'review-3.png',
       },
     ],
   },

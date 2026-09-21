@@ -205,13 +205,21 @@ export function useDragScroll({ enabled, ignoreSelector }: UseDragScrollOptions)
     if (!el || !enabled) return
 
     const onWheel = (e: WheelEvent) => {
+      const target = e.target
+      if (
+        ignoreSelector &&
+        target instanceof Element &&
+        target.closest(ignoreSelector)
+      ) {
+        return
+      }
       e.preventDefault()
       applyOffset(offsetRef.current + e.deltaY)
     }
 
     el.addEventListener('wheel', onWheel, { passive: false })
     return () => el.removeEventListener('wheel', onWheel)
-  }, [applyOffset, enabled])
+  }, [applyOffset, enabled, ignoreSelector])
 
   // Reset / reclamp when enabling or content size changes.
   useEffect(() => {

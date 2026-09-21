@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { CAREGIVERS, type Caregiver } from '../data/caregivers'
+import { CAREGIVERS, findCaregiver, type Caregiver } from '../data/caregivers'
+import type { SearchPhase } from '../data/screens'
 import { useDragScroll } from '../hooks/useDragScroll'
 import { assetUrl } from '../utils/assetUrl'
 import { CaregiverProfileScreen } from './CaregiverProfileScreen'
@@ -11,10 +12,18 @@ const SKELETON_COUNT = 3
 /** Gap above a focused result card (below the notch / rounded bezel). */
 const CARD_TOP_INSET_PX = 20
 
-type SearchPhase = 'idle' | 'loading' | 'results'
+type CaregiverSearchOverlay = 'none' | 'profile' | 'calendar'
 
 type CaregiverSearchScreenProps = {
   onBack?: () => void
+  phase?: SearchPhase
+  overlay?: CaregiverSearchOverlay
+  caregiverId?: string
+  onPhaseChange?: (phase: SearchPhase) => void
+  onOpenProfile?: (caregiverId: string) => void
+  onCloseProfile?: () => void
+  onOpenCalendar?: () => void
+  onCloseCalendar?: () => void
 }
 
 function CaregiverCardSkeleton() {
@@ -36,12 +45,28 @@ function CaregiverCardSkeleton() {
 }
 
 /** Address search + caregiver cards — Figma 164:6857 / 120:6900. */
-export function CaregiverSearchScreen({ onBack }: CaregiverSearchScreenProps) {
+export function CaregiverSearchScreen({
+  onBack,
+  phase: phaseProp,
+  overlay: overlayProp,
+  caregiverId,
+  onPhaseChange,
+  onOpenProfile,
+  onCloseProfile,
+  onOpenCalendar,
+  onCloseCalendar,
+}: CaregiverSearchScreenProps) {
   const [query, setQuery] = useState('')
-  const [phase, setPhase] = useState<SearchPhase>('idle')
-  const [selected, setSelected] = useState<Caregiver | null>(null)
-  const [profileOpen, setProfileOpen] = useState(false)
+  const [internalPhase, setInternalPhase] = useState<SearchPhase>('idle')
+  const [selected, setSelected] = useState<Caregiver | null>(() =>
+    overlayProp === 'profile' || overlayProp === 'calendar' ? findCaregiver(caregiverId) : null,
+  )
+  const [profileOpen, setProfileOpen] = useState(
+    () => overlayProp === 'profile' || overlayProp === 'calendar',
+  )
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const phase = phaseProp ?? internalPhase
+  const overlay = overlayProp ?? (profileOpen ? 'profile' : 'none')
   const showList = phase === 'loading' || phase === 'results'
   // Keep scroll enabled while the profile covers the list so opening doesn't
   // jump the list mid-slide (we re-align to the clicked card after open).
@@ -50,11 +75,33 @@ export function CaregiverSearchScreen({ onBack }: CaregiverSearchScreenProps) {
     ignoreSelector: 'a, input, textarea, .caregiver-back, .caregiver-cta',
   })
 
+  const setPhase = (next: SearchPhase) => {
+    onPhaseChange?.(next)
+    if (phaseProp === undefined) setInternalPhase(next)
+  }
+
   useEffect(() => {
     return () => {
       if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
     }
   }, [])
+
+  useEffect(() => {
+    if (phase !== 'loading' && searchTimerRef.current) {
+      clearTimeout(searchTimerRef.current)
+      searchTimerRef.current = null
+    }
+  }, [phase])
+
+  useEffect(() => {
+    const wantsProfile = overlay === 'profile' || overlay === 'calendar'
+    if (wantsProfile) {
+      setSelected(findCaregiver(caregiverId))
+      setProfileOpen(true)
+      return
+    }
+    setProfileOpen(false)
+  }, [overlay, caregiverId])
 
   const onSearch = (e?: FormEvent) => {
     e?.preventDefault()
@@ -70,6 +117,7 @@ export function CaregiverSearchScreen({ onBack }: CaregiverSearchScreenProps) {
     if (dragScroll.consumeClickSuppression()) return
     setSelected(caregiver)
     setProfileOpen(true)
+    onOpenProfile?.(caregiver.id)
   }
 
   const alignToSelectedCard = () => {
@@ -90,6 +138,7 @@ export function CaregiverSearchScreen({ onBack }: CaregiverSearchScreenProps) {
   const closeProfile = () => {
     alignToSelectedCard()
     setProfileOpen(false)
+    onCloseProfile?.()
   }
 
   const onProfileOpened = () => {
@@ -189,9 +238,12 @@ export function CaregiverSearchScreen({ onBack }: CaregiverSearchScreenProps) {
         <CaregiverProfileScreen
           caregiver={selected}
           open={profileOpen}
+          showCalendar={overlay === 'calendar'}
           onBack={closeProfile}
           onOpened={onProfileOpened}
           onClosed={onProfileClosed}
+          onShowCalendar={onOpenCalendar}
+          onHideCalendar={onCloseCalendar}
         />
       ) : null}
     </div>

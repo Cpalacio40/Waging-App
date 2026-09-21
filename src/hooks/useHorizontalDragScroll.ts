@@ -73,12 +73,7 @@ export function useHorizontalDragScroll({ enabled = true }: UseHorizontalDragScr
 
     if (!moved.current) {
       if (Math.abs(dx) < DRAG_THRESHOLD_PX && Math.abs(dy) < DRAG_THRESHOLD_PX) return
-      // Axis lock: only claim the gesture when it is primarily horizontal.
-      if (Math.abs(dx) < Math.abs(dy)) {
-        active.current = false
-        pointerId.current = null
-        return
-      }
+      // On this strip, any clear drag becomes horizontal (vertical is handled elsewhere).
       moved.current = true
       setDragging(true)
       try {
@@ -88,7 +83,9 @@ export function useHorizontalDragScroll({ enabled = true }: UseHorizontalDragScr
       }
     }
 
-    el.scrollLeft = startScroll.current - dx
+    // Prefer sideways movement; fall back to vertical delta so a "scroll" gesture still pans.
+    const delta = Math.abs(dx) >= Math.abs(dy) ? dx : dy
+    el.scrollLeft = startScroll.current - delta
     e.preventDefault()
     e.stopPropagation()
   }, [])
@@ -120,6 +117,31 @@ export function useHorizontalDragScroll({ enabled = true }: UseHorizontalDragScr
     if (enabled) return
     clear(ref.current, pointerId.current ?? -1, false)
   }, [enabled, clear])
+
+  // Map wheel / trackpad gestures to horizontal scroll while hovered.
+  useEffect(() => {
+    const el = ref.current
+    if (!el || !enabled) return
+
+    const onWheel = (e: WheelEvent) => {
+      const dominant =
+        Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY
+      if (dominant === 0) return
+
+      const max = el.scrollWidth - el.clientWidth
+      if (max <= 0) return
+
+      const next = Math.min(max, Math.max(0, el.scrollLeft + dominant))
+      if (next === el.scrollLeft) return
+
+      e.preventDefault()
+      e.stopPropagation()
+      el.scrollLeft = next
+    }
+
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [enabled])
 
   return {
     ref: ref as RefObject<HTMLUListElement>,

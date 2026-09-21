@@ -242,6 +242,7 @@ export const CAREGIVERS: Caregiver[] = [
         date: 'Junio 20, 2026',
         avatar: '2',
         photo: 'reviews/activos-pepe.png',
+        video: 'reviews/activos-pepe.mp4',
         objectPosition: '50% 71.3%',
       },
       {
@@ -250,6 +251,7 @@ export const CAREGIVERS: Caregiver[] = [
         date: 'Agosto 2, 2026',
         avatar: '3',
         photo: 'reviews/activos-coco.png',
+        video: 'reviews/activos-coco.mp4',
         objectPosition: '50% 50%',
       },
       {
@@ -258,6 +260,7 @@ export const CAREGIVERS: Caregiver[] = [
         date: 'Marzo 16, 2026',
         avatar: '1',
         photo: 'reviews/activos-simba.png',
+        video: 'reviews/activos-simba.mp4',
         objectPosition: '50% 74.7%',
       },
       {
@@ -266,6 +269,7 @@ export const CAREGIVERS: Caregiver[] = [
         date: 'Abril 15, 2026',
         avatar: '2',
         photo: 'reviews/activos-bruno.png',
+        video: 'reviews/activos-bruno.mp4',
         objectPosition: '50% 45.7%',
       },
     ],
@@ -309,6 +313,7 @@ export const CAREGIVERS: Caregiver[] = [
         date: 'Agosto 10, 2026',
         avatar: '1',
         photo: 'reviews/especiales-tana.png',
+        video: 'reviews/especiales-tana.mp4',
         objectPosition: '50% 40%',
       },
       {
@@ -317,6 +322,7 @@ export const CAREGIVERS: Caregiver[] = [
         date: 'Mayo 20, 2026',
         avatar: '2',
         photo: 'reviews/especiales-cris.png',
+        video: 'reviews/especiales-cris.mp4',
         objectPosition: '50% 50%',
       },
       {
@@ -325,6 +331,7 @@ export const CAREGIVERS: Caregiver[] = [
         date: 'Junio 7, 2026',
         avatar: '3',
         photo: 'reviews/especiales-pancho.png',
+        video: 'reviews/especiales-pancho.mp4',
         objectPosition: '50% 50%',
       },
       {
@@ -333,6 +340,7 @@ export const CAREGIVERS: Caregiver[] = [
         date: 'Septiembre 19, 2026',
         avatar: '1',
         photo: 'reviews/especiales-maru.png',
+        video: 'reviews/especiales-maru.mp4',
         objectPosition: '50% 50%',
       },
       {
@@ -341,6 +349,7 @@ export const CAREGIVERS: Caregiver[] = [
         date: 'Julio 15, 2026',
         avatar: '2',
         photo: 'reviews/especiales-wilson.png',
+        video: 'reviews/especiales-wilson.mp4',
         objectPosition: '50% 50%',
       },
     ],
@@ -350,5 +359,5 @@ export const CAREGIVERS: Caregiver[] = [
 export const DEFAULT_CAREGIVER_ID = CAREGIVERS[0]?.id ?? 'maria'
 
 export function findCaregiver(id: string | undefined): Caregiver {
-  return CAREGIVERS.find((caregiver) => caregiver.id === id) ?? CAREGIVERS[0]
+  return CAREGIVERS.find((caregiver) => caregiver.id === id) ?? CAREGIVERS[0]!
 }

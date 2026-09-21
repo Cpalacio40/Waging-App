@@ -28,6 +28,8 @@ const TIME_SLOTS = ['8:00', '9:00', '10:00', '11:00', '12:00', '16:00', '17:00',
 const SESSION_DURATION = '60 min'
 const SESSION_PRICE = '29,99€'
 const SESSION_SUBTITLE = 'Salidas por tu barrio o sesiones en casa'
+const OCCUPIED_DAY_OFFSETS = [4, 7, 8] as const
+const WHEEL_ITEM_HEIGHT = 44
 
 type DayStatus = 'default' | 'available' | 'unavailable' | 'outside'
 
@@ -43,23 +45,23 @@ function dateKey(d: Date) {
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
 }
 
-/** Prototype availability — matches Figma 180:6825 (Sept 2026). */
-function dayStatusFor(date: Date): DayStatus {
-  const y = date.getFullYear()
-  const m = date.getMonth()
-  const d = date.getDate()
-
-  if (y === 2026 && m === 8) {
-    if ([23, 26, 27].includes(d)) return 'unavailable'
-    if (d >= 19 && d !== 23) return 'available'
-    return 'default'
-  }
-
-  if (y === 2026 && m === 9 && d <= 2) return 'available'
-  return 'default'
+function startOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate())
 }
 
-function buildMonthGrid(year: number, month: number): CalendarDay[] {
+function addDays(date: Date, amount: number) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + amount)
+}
+
+function monthIndex(date: Date) {
+  return date.getFullYear() * 12 + date.getMonth()
+}
+
+function buildMonthGrid(
+  year: number,
+  month: number,
+  statusFor: (date: Date) => DayStatus,
+): CalendarDay[] {
   const first = new Date(year, month, 1)
   const startOffset = (first.getDay() + 6) % 7 // Monday = 0
   const daysInMonth = new Date(year, month + 1, 0).getDate()
@@ -82,7 +84,7 @@ function buildMonthGrid(year: number, month: number): CalendarDay[] {
       key: dateKey(date),
       date,
       day,
-      status: dayStatusFor(date),
+      status: statusFor(date),
       outside: false,
     })
   }
@@ -100,7 +102,7 @@ function buildMonthGrid(year: number, month: number): CalendarDay[] {
         key: dateKey(date),
         date,
         day: date.getDate(),
-        status: dayStatusFor(date),
+        status: statusFor(date),
         outside: true,
       })
     }
@@ -123,12 +125,16 @@ export function CaregiverCalendarScreen({
   onBack,
   onClosed,
 }: CaregiverCalendarScreenProps) {
+  const [today] = useState(() => startOfDay(new Date()))
   const [entered, setEntered] = useState(false)
-  const [cursor, setCursor] = useState(() => new Date(2026, 8, 1))
-  const [selectedKey, setSelectedKey] = useState('2026-8-25')
+  const [cursor, setCursor] = useState(
+    () => new Date(today.getFullYear(), today.getMonth(), 1),
+  )
+  const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [time, setTime] = useState<string>(TIME_SLOTS[0])
+  const [pendingTime, setPendingTime] = useState<string>(TIME_SLOTS[0])
   const [timeOpen, setTimeOpen] = useState(false)
-  const timeRef = useRef<HTMLDivElement>(null)
+  const wheelRef = useRef<HTMLDivElement>(null)
 
   const dragScroll = useDragScroll({
     enabled: open && entered,
@@ -137,7 +143,39 @@ export function CaregiverCalendarScreen({
 
   const year = cursor.getFullYear()
   const month = cursor.getMonth()
-  const days = useMemo(() => buildMonthGrid(year, month), [year, month])
+  const firstMonth = useMemo(
+    () => new Date(today.getFullYear(), today.getMonth(), 1),
+    [today],
+  )
+  const secondMonth = useMemo(
+    () => new Date(today.getFullYear(), today.getMonth() + 1, 1),
+    [today],
+  )
+  const lastVisibleDay = useMemo(
+    () => new Date(today.getFullYear(), today.getMonth() + 2, 0),
+    [today],
+  )
+  const occupiedKeys = useMemo(
+    () => new Set(OCCUPIED_DAY_OFFSETS.map((offset) => dateKey(addDays(today, offset)))),
+    [today],
+  )
+  const statusFor = (date: Date): DayStatus => {
+    const normalized = startOfDay(date)
+    if (normalized < today || normalized > lastVisibleDay) return 'default'
+    if (occupiedKeys.has(dateKey(normalized))) return 'unavailable'
+    return 'available'
+  }
+  const days = useMemo(
+    () => buildMonthGrid(year, month, statusFor),
+    // The calendar status is fixed for the lifetime of this screen instance.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [year, month, today, lastVisibleDay, occupiedKeys],
+  )
+  const cursorMonthIndex = monthIndex(cursor)
+  const firstMonthIndex = monthIndex(firstMonth)
+  const secondMonthIndex = monthIndex(secondMonth)
+  const isFirstMonth = cursorMonthIndex === firstMonthIndex
+  const isSecondMonth = cursorMonthIndex === secondMonthIndex
 
   useEffect(() => {
     if (!open) {
@@ -157,12 +195,12 @@ export function CaregiverCalendarScreen({
 
   useEffect(() => {
     if (!timeOpen) return
-    const onPointer = (e: PointerEvent) => {
-      if (!timeRef.current?.contains(e.target as Node)) setTimeOpen(false)
-    }
-    window.addEventListener('pointerdown', onPointer)
-    return () => window.removeEventListener('pointerdown', onPointer)
-  }, [timeOpen])
+    const frame = window.requestAnimationFrame(() => {
+      const index = TIME_SLOTS.indexOf(time as (typeof TIME_SLOTS)[number])
+      wheelRef.current?.scrollTo({ top: Math.max(0, index) * WHEEL_ITEM_HEIGHT })
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [timeOpen, time])
 
   const onSheetTransitionEnd = (e: TransitionEvent<HTMLDivElement>) => {
     if (e.target !== e.currentTarget) return
@@ -179,15 +217,18 @@ export function CaregiverCalendarScreen({
     .join(' ')
 
   const shiftMonth = (delta: number) => {
-    setCursor((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1))
+    setCursor((prev) => {
+      const candidate = new Date(prev.getFullYear(), prev.getMonth() + delta, 1)
+      const candidateIndex = monthIndex(candidate)
+      if (candidateIndex < firstMonthIndex) return firstMonth
+      if (candidateIndex > secondMonthIndex) return secondMonth
+      return candidate
+    })
     setTimeOpen(false)
   }
 
   const resolvedStatus = (cell: CalendarDay): DayStatus => {
-    if (cell.outside) {
-      const s = dayStatusFor(cell.date)
-      return s === 'available' || s === 'unavailable' ? s : 'outside'
-    }
+    if (cell.outside && cell.status !== 'available' && cell.status !== 'unavailable') return 'outside'
     return cell.status
   }
 
@@ -196,9 +237,30 @@ export function CaregiverCalendarScreen({
   const onSelectDay = (cell: CalendarDay) => {
     if (!canSelect(cell)) return
     setSelectedKey(cell.key)
-    if (cell.outside) {
+    if (cell.outside && monthIndex(cell.date) <= secondMonthIndex) {
       setCursor(new Date(cell.date.getFullYear(), cell.date.getMonth(), 1))
     }
+  }
+
+  const openTimePicker = () => {
+    if (!selectedKey) return
+    setPendingTime(time)
+    setTimeOpen(true)
+  }
+
+  const onWheelScroll = () => {
+    const index = Math.round((wheelRef.current?.scrollTop ?? 0) / WHEEL_ITEM_HEIGHT)
+    const slot = TIME_SLOTS[Math.max(0, Math.min(index, TIME_SLOTS.length - 1))]
+    if (slot) setPendingTime(slot)
+  }
+
+  const selectWheelTime = (slot: string) => {
+    setPendingTime(slot)
+    const index = TIME_SLOTS.indexOf(slot as (typeof TIME_SLOTS)[number])
+    wheelRef.current?.scrollTo({
+      top: index * WHEEL_ITEM_HEIGHT,
+      behavior: 'smooth',
+    })
   }
 
   return (
@@ -252,6 +314,7 @@ export function CaregiverCalendarScreen({
                       type="button"
                       className="caregiver-calendar__nav caregiver-calendar__nav--prev"
                       aria-label="Mes anterior"
+                      disabled={isFirstMonth}
                       onClick={() => shiftMonth(-1)}
                     >
                       <ChevronLeft size={18} strokeWidth={2.2} aria-hidden="true" />
@@ -263,6 +326,7 @@ export function CaregiverCalendarScreen({
                       type="button"
                       className="caregiver-calendar__nav caregiver-calendar__nav--next"
                       aria-label="Mes siguiente"
+                      disabled={isSecondMonth}
                       onClick={() => shiftMonth(1)}
                     >
                       <ChevronRight size={18} strokeWidth={2.2} aria-hidden="true" />
@@ -322,41 +386,22 @@ export function CaregiverCalendarScreen({
                   </div>
                 </div>
 
-                <div className="caregiver-calendar__time" ref={timeRef}>
+                <div className="caregiver-calendar__time">
                   <label className="caregiver-calendar__time-label" id="calendar-time-label">
                     Disponibilidad
                   </label>
                   <button
                     type="button"
                     className={`caregiver-calendar__time-trigger${timeOpen ? ' is-open' : ''}`}
-                    aria-haspopup="listbox"
+                    aria-haspopup="dialog"
                     aria-expanded={timeOpen}
                     aria-labelledby="calendar-time-label"
-                    onClick={() => setTimeOpen((v) => !v)}
+                    disabled={!selectedKey}
+                    onClick={openTimePicker}
                   >
-                    <span>{time}</span>
+                    <span>{selectedKey ? time : 'Selecciona un día'}</span>
                     <ChevronDown size={16} strokeWidth={2.2} aria-hidden="true" />
                   </button>
-                  {timeOpen ? (
-                    <ul className="caregiver-calendar__time-menu" role="listbox" aria-labelledby="calendar-time-label">
-                      {TIME_SLOTS.map((slot) => (
-                        <li key={slot}>
-                          <button
-                            type="button"
-                            role="option"
-                            aria-selected={slot === time}
-                            className={`caregiver-calendar__time-option${slot === time ? ' is-active' : ''}`}
-                            onClick={() => {
-                              setTime(slot)
-                              setTimeOpen(false)
-                            }}
-                          >
-                            {slot}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
                 </div>
               </div>
 
@@ -387,6 +432,75 @@ export function CaregiverCalendarScreen({
           </div>
         </div>
       </div>
+
+      {timeOpen ? (
+        <div
+          className="caregiver-time-modal"
+          role="presentation"
+          onPointerDown={(event) => {
+            if (event.target === event.currentTarget) setTimeOpen(false)
+          }}
+        >
+          <div
+            className="caregiver-time-modal__dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="caregiver-time-modal-title"
+          >
+            <div className="caregiver-time-modal__header">
+              <button
+                type="button"
+                className="caregiver-time-modal__action"
+                onClick={() => setTimeOpen(false)}
+              >
+                Cancelar
+              </button>
+              <h2 id="caregiver-time-modal-title" className="caregiver-time-modal__title">
+                Selecciona una hora
+              </h2>
+              <button
+                type="button"
+                className="caregiver-time-modal__action caregiver-time-modal__action--confirm"
+                onClick={() => {
+                  setTime(pendingTime)
+                  setTimeOpen(false)
+                }}
+              >
+                OK
+              </button>
+            </div>
+
+            <div className="caregiver-time-modal__wheel-wrap">
+              <div className="caregiver-time-modal__selection" aria-hidden="true" />
+              <div
+                ref={wheelRef}
+                className="caregiver-time-modal__wheel"
+                role="listbox"
+                aria-label="Horas disponibles"
+                onScroll={onWheelScroll}
+              >
+                <ul className="caregiver-time-modal__list">
+                  {TIME_SLOTS.map((slot) => (
+                    <li key={slot}>
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected={slot === pendingTime}
+                        className={`caregiver-time-modal__option${
+                          slot === pendingTime ? ' is-selected' : ''
+                        }`}
+                        onClick={() => selectWheelTime(slot)}
+                      >
+                        {slot}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <div className="caregiver-calendar__footer">
         <div className="caregiver-calendar__checkout">

@@ -115,18 +115,24 @@ function ReviewMedia({ review, playing, onPlay, onPause, videoRef }: ReviewMedia
 type CaregiverProfileScreenProps = {
   caregiver: Caregiver
   open: boolean
+  showCalendar?: boolean
   onBack: () => void
   onOpened?: () => void
   onClosed: () => void
+  onShowCalendar?: () => void
+  onHideCalendar?: () => void
 }
 
 /** Profile sheet — Figma 160:4038 / 180:5520 / 180:5599 / 180:5678. */
 export function CaregiverProfileScreen({
   caregiver,
   open,
+  showCalendar = false,
   onBack,
   onOpened,
   onClosed,
+  onShowCalendar,
+  onHideCalendar,
 }: CaregiverProfileScreenProps) {
   const [entered, setEntered] = useState(false)
   const [reviews, setReviews] = useState(() => shuffleReviews(caregiver.reviews))
@@ -136,7 +142,7 @@ export function CaregiverProfileScreen({
   const videoEls = useRef(new Map<string, HTMLVideoElement>())
   const dragScroll = useDragScroll({
     enabled: open && entered && !calendarOpen,
-    ignoreSelector: 'button, a, input, textarea, .caregiver-profile__reviews, .caregiver-review__photo',
+    ignoreSelector: 'button, a, input, textarea, .caregiver-profile__reviews',
   })
   const reviewsScroll = useHorizontalDragScroll({ enabled: open && entered && !calendarOpen })
 
@@ -185,6 +191,15 @@ export function CaregiverProfileScreen({
   }, [open, caregiver.id, caregiver.reviews])
 
   useEffect(() => {
+    if (showCalendar) {
+      setCalendarMounted(true)
+      setCalendarOpen(true)
+      return
+    }
+    setCalendarOpen(false)
+  }, [showCalendar])
+
+  useEffect(() => {
     if (!calendarOpen) return
     videoEls.current.forEach((el) => el.pause())
     setPlayingKey(null)
@@ -208,11 +223,19 @@ export function CaregiverProfileScreen({
   }, [playingKey])
 
   const openCalendar = () => {
+    if (onShowCalendar) {
+      onShowCalendar()
+      return
+    }
     setCalendarMounted(true)
     setCalendarOpen(true)
   }
 
   const closeCalendar = () => {
+    if (onHideCalendar) {
+      onHideCalendar()
+      return
+    }
     setCalendarOpen(false)
   }
 

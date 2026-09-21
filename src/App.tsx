@@ -2,9 +2,16 @@ import { useCallback, useEffect, useRef, useState, type AnimationEvent } from 'r
 import { IosNotification, type IosNotificationPhase } from './components/IosNotification'
 import { PhoneFrame } from './components/PhoneFrame'
 import { ScreenNavigator } from './components/ScreenNavigator'
+import { DEFAULT_CAREGIVER_ID } from './data/caregivers'
 import { DEFAULT_SCENARIO, type HomeScenarioId } from './data/homeScenarios'
 import { SCENARIO_HOLD_MS, useHeldValue } from './hooks/useHeldScenario'
-import { DEFAULT_SCREEN, type ScreenId } from './data/screens'
+import {
+  DEFAULT_SCREEN,
+  activeNavId,
+  type NavItem,
+  type ScreenId,
+  type SearchPhase,
+} from './data/screens'
 import { AppHomeScreen } from './screens/AppHomeScreen'
 import { CaregiverIntroScreen } from './screens/CaregiverIntroScreen'
 import { CaregiverSearchScreen } from './screens/CaregiverSearchScreen'
@@ -19,19 +26,37 @@ type LayerAnim = 'enter' | 'leave' | null
 type AppViewId = 'app-home' | 'caregiver-intro' | 'caregiver-search'
 
 function isInApp(id: ScreenId) {
-  return id === 'splash' || id === 'app-home' || id === 'caregiver-intro' || id === 'caregiver-search'
+  return (
+    id === 'splash' ||
+    id === 'app-home' ||
+    id === 'caregiver-intro' ||
+    id === 'caregiver-search' ||
+    id === 'caregiver-profile' ||
+    id === 'caregiver-calendar'
+  )
 }
 
 function appViewFromScreen(id: ScreenId): AppViewId {
   if (id === 'caregiver-intro') return 'caregiver-intro'
-  if (id === 'caregiver-search') return 'caregiver-search'
+  if (id === 'caregiver-search' || id === 'caregiver-profile' || id === 'caregiver-calendar') {
+    return 'caregiver-search'
+  }
   return 'app-home'
+}
+
+function searchOverlay(id: ScreenId) {
+  if (id === 'caregiver-calendar') return 'calendar' as const
+  if (id === 'caregiver-profile') return 'profile' as const
+  return 'none' as const
 }
 
 function App() {
   const [screen, setScreen] = useState<ScreenId>(DEFAULT_SCREEN)
   const [layerAnim, setLayerAnim] = useState<LayerAnim>(null)
   const [scenario, setScenario] = useState<HomeScenarioId>(DEFAULT_SCENARIO)
+  const [widgetIndex, setWidgetIndex] = useState(0)
+  const [searchPhase, setSearchPhase] = useState<SearchPhase>('idle')
+  const [caregiverId, setCaregiverId] = useState(DEFAULT_CAREGIVER_ID)
   const [banner, setBanner] = useState<IosNotificationPhase | 'idle'>('idle')
   const layerAnimRef = useRef<LayerAnim>(null)
   const bannerTimerRef = useRef<number | null>(null)
@@ -80,6 +105,21 @@ function App() {
     },
     [appOpen, closeApp, layerAnim, screen],
   )
+
+  const selectNav = useCallback(
+    (item: NavItem) => {
+      if (item.scenario) setScenario(item.scenario)
+      if (item.widgetIndex != null) setWidgetIndex(item.widgetIndex)
+      if (item.searchPhase) setSearchPhase(item.searchPhase)
+      if (item.caregiverId) setCaregiverId(item.caregiverId)
+      selectScreen(item.screen)
+    },
+    [selectScreen],
+  )
+
+  const onWidgetIndexChange = useCallback((index: number) => {
+    setWidgetIndex((current) => (current === index ? current : index))
+  }, [])
 
   const toggleAttention = useCallback(() => {
     setScenario((current) => (current === 'attention' ? 'ok' : 'attention'))
@@ -159,7 +199,14 @@ function App() {
       <main className="studio__main">
         <div className="studio__phone-anchor">
           <PhoneFrame canGoHome={canGoHome} onGoHome={closeApp}>
-            {showHome ? <IosHomeScreen onOpenApp={openApp} scenario={scenario} /> : null}
+            {showHome ? (
+              <IosHomeScreen
+                onOpenApp={openApp}
+                scenario={scenario}
+                widgetIndex={widgetIndex}
+                onWidgetIndexChange={onWidgetIndexChange}
+              />
+            ) : null}
 
             {appOpen ? (
               <div className={`app-layer${layerClass}`} onAnimationEnd={onLayerAnimationEnd}>
@@ -186,7 +233,10 @@ function App() {
                     >
                       <CaregiverIntroScreen
                         onBack={() => setScreen('app-home')}
-                        onContinue={() => setScreen('caregiver-search')}
+                        onContinue={() => {
+                          setSearchPhase('idle')
+                          setScreen('caregiver-search')
+                        }}
                       />
                     </div>
                     <div
@@ -194,7 +244,21 @@ function App() {
                       aria-hidden={shownView !== 'caregiver-search'}
                       inert={shownView !== 'caregiver-search' ? true : undefined}
                     >
-                      <CaregiverSearchScreen onBack={() => setScreen('caregiver-intro')} />
+                      <CaregiverSearchScreen
+                        onBack={() => setScreen('caregiver-intro')}
+                        phase={searchPhase}
+                        overlay={searchOverlay(screen)}
+                        caregiverId={caregiverId}
+                        onPhaseChange={setSearchPhase}
+                        onOpenProfile={(id) => {
+                          setCaregiverId(id)
+                          setSearchPhase('results')
+                          setScreen('caregiver-profile')
+                        }}
+                        onCloseProfile={() => setScreen('caregiver-search')}
+                        onOpenCalendar={() => setScreen('caregiver-calendar')}
+                        onCloseCalendar={() => setScreen('caregiver-profile')}
+                      />
                     </div>
                   </div>
                 </div>
@@ -226,7 +290,16 @@ function App() {
                 {needsAttention ? 'Actividad ≤ 30' : 'Simular inactividad'}
               </span>
             </button>
-            <ScreenNavigator active={screen} onSelect={selectScreen} />
+            <ScreenNavigator
+              activeId={activeNavId({
+                screen,
+                scenario,
+                widgetIndex,
+                searchPhase,
+                caregiverId,
+              })}
+              onSelect={selectNav}
+            />
           </div>
         </div>
       </main>

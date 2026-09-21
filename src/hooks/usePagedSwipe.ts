@@ -22,6 +22,9 @@ export type PagedSwipeOptions = {
   /** CSS selector for elements that should not start a drag (e.g. fixed nav). */
   ignoreSelector?: string
   initialIndex?: number
+  /** Jump the pager when the prototype navigator (or parent) changes page. */
+  targetIndex?: number
+  onIndexChange?: (index: number) => void
 }
 
 export type PagedSwipeApi = {
@@ -67,6 +70,8 @@ export function usePagedSwipe({
   pageCount,
   ignoreSelector,
   initialIndex = 0,
+  targetIndex,
+  onIndexChange,
 }: PagedSwipeOptions): PagedSwipeApi {
   const [index, setIndex] = useState(initialIndex)
   const [backdropIndex, setBackdropIndex] = useState(initialIndex)
@@ -80,8 +85,14 @@ export function usePagedSwipe({
   const settlingRef = useRef(false)
   const needsRubberBaseRef = useRef(false)
   const indexRef = useRef(index)
+  const onIndexChangeRef = useRef(onIndexChange)
+  onIndexChangeRef.current = onIndexChange
   useEffect(() => {
     indexRef.current = index
+  }, [index])
+
+  useEffect(() => {
+    onIndexChangeRef.current?.(index)
   }, [index])
 
   const goTo = useCallback(
@@ -96,6 +107,11 @@ export function usePagedSwipe({
     },
     [pageCount],
   )
+
+  useEffect(() => {
+    if (targetIndex == null || targetIndex === indexRef.current) return
+    goTo(targetIndex)
+  }, [goTo, targetIndex])
 
   const goPrev = useCallback(() => {
     goTo(indexRef.current - 1)

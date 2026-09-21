@@ -18,6 +18,8 @@ type PagedSwipeProps = {
   /** Elements matching this selector won’t start a drag (fixed controls). */
   ignoreSelector?: string
   initialIndex?: number
+  targetIndex?: number
+  onIndexChange?: (index: number) => void
   className?: string
   style?: CSSProperties | ((state: PagedSwipeRenderState) => CSSProperties)
   /** Fixed overlay (nav buttons, etc.) — does not slide with pages. */
@@ -33,12 +35,14 @@ export function PagedSwipe({
   pageCount,
   ignoreSelector,
   initialIndex,
+  targetIndex,
+  onIndexChange,
   className = '',
   style,
   overlay,
   children,
 }: PagedSwipeProps) {
-  const pager = usePagedSwipe({ pageCount, ignoreSelector, initialIndex })
+  const pager = usePagedSwipe({ pageCount, ignoreSelector, initialIndex, targetIndex, onIndexChange })
 
   const state: PagedSwipeRenderState = {
     index: pager.index,

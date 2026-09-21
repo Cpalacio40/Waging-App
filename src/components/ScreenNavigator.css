@@ -1,10 +1,18 @@
 .screen-nav {
   width: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   padding: 0.55rem;
   border-radius: 16px;
   background: var(--surface);
   border: 1px solid rgba(52, 6, 22, 0.08);
   box-shadow: 0 10px 30px rgba(14, 28, 51, 0.06);
+}
+
+.screen-nav.is-open {
+  flex: 1;
+  overflow: hidden;
 }
 
 .screen-nav__toggle {
@@ -63,7 +71,16 @@
 }
 
 .screen-nav__panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   padding: 0.2rem 0.2rem 0.4rem;
+  overflow: hidden;
+}
+
+.screen-nav__panel[hidden] {
+  display: none;
 }
 
 .screen-nav__list {
@@ -73,7 +90,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  max-height: min(42rem, 76vh);
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;

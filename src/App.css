@@ -105,7 +105,8 @@
 .studio__title {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(1.75rem, 3.5vw, 2.35rem);
+  /* rem only — vw would fight browser zoom relative to the phone */
+  font-size: 2.1rem;
   font-weight: 400;
   color: var(--ink);
   line-height: 1.1;
@@ -118,7 +119,7 @@
   justify-content: center;
   align-items: flex-start;
   /* Extra side room so the absolute nav doesn’t clip on desktop */
-  padding: 0 max(1rem, 12rem);
+  padding: 0 max(1rem, 16rem);
 }
 
 .studio__phone-anchor {
@@ -130,16 +131,21 @@
 .studio__nav-slot {
   position: absolute;
   top: 0;
+  bottom: 0;
   left: calc(100% + 1.25rem);
   z-index: 2;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
   align-items: stretch;
+  width: 22rem;
+  max-width: calc(100vw - 2rem);
+  overflow: hidden;
 }
 
 .scenario-toggle {
-  width: min(280px, 100%);
+  flex-shrink: 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -154,7 +160,8 @@
   color: var(--ink);
   transition:
     border-color 0.15s ease,
-    background 0.15s ease;
+    background 0.15s ease,
+    transform 0.16s cubic-bezier(0.34, 1.4, 0.64, 1);
 }
 
 .scenario-toggle:hover {
@@ -218,9 +225,16 @@
     position: static;
     inset: auto;
     top: auto;
+    bottom: auto;
     left: auto;
     margin-top: 1rem;
-    width: fit-content;
+    width: min(22rem, 100%);
     max-width: 100%;
+    overflow: visible;
+  }
+
+  .screen-nav.is-open {
+    flex: none;
+    max-height: min(28rem, 55dvh);
   }
 }

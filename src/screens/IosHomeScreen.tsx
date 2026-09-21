@@ -12,13 +12,20 @@ const iosAsset = (name: string) => assetUrl(`ios-home/${name}`)
 type IosHomeScreenProps = {
   onOpenApp: () => void
   scenario?: HomeScenarioId
+  widgetIndex?: number
+  onWidgetIndexChange?: (index: number) => void
 }
 
 /**
  * Home iOS from Figma: full-frame base art + interactive Waging widget + app icon hit target.
  * Alert scenario (activity ≤30) crossfades the pager with a single attention widget.
  */
-export function IosHomeScreen({ onOpenApp, scenario = 'ok' }: IosHomeScreenProps) {
+export function IosHomeScreen({
+  onOpenApp,
+  scenario = 'ok',
+  widgetIndex = 0,
+  onWidgetIndexChange,
+}: IosHomeScreenProps) {
   const shown = useHeldScenario(scenario)
   const needsAttention = shown === 'attention'
   const attention = HOME_SCENARIOS.attention
@@ -40,6 +47,9 @@ export function IosHomeScreen({ onOpenApp, scenario = 'ok' }: IosHomeScreenProps
           <PagedSwipe
             pageCount={WIDGET_SLIDES.length}
             ignoreSelector=".ios-home__widget-nav"
+            initialIndex={widgetIndex}
+            targetIndex={widgetIndex}
+            onIndexChange={onWidgetIndexChange}
             className="ios-home__widget-pager"
             style={(state) =>
               ({

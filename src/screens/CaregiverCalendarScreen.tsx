@@ -255,6 +255,12 @@ export function CaregiverCalendarScreen({
   }
 
   const selectWheelTime = (slot: string) => {
+    if (slot === pendingTime) {
+      setTime(slot)
+      setTimeOpen(false)
+      return
+    }
+
     setPendingTime(slot)
     const index = TIME_SLOTS.indexOf(slot as (typeof TIME_SLOTS)[number])
     wheelRef.current?.scrollTo({
@@ -448,26 +454,9 @@ export function CaregiverCalendarScreen({
             aria-labelledby="caregiver-time-modal-title"
           >
             <div className="caregiver-time-modal__header">
-              <button
-                type="button"
-                className="caregiver-time-modal__action"
-                onClick={() => setTimeOpen(false)}
-              >
-                Cancelar
-              </button>
               <h2 id="caregiver-time-modal-title" className="caregiver-time-modal__title">
                 Selecciona una hora
               </h2>
-              <button
-                type="button"
-                className="caregiver-time-modal__action caregiver-time-modal__action--confirm"
-                onClick={() => {
-                  setTime(pendingTime)
-                  setTimeOpen(false)
-                }}
-              >
-                OK
-              </button>
             </div>
 
             <div className="caregiver-time-modal__wheel-wrap">
@@ -497,6 +486,26 @@ export function CaregiverCalendarScreen({
                   ))}
                 </ul>
               </div>
+            </div>
+
+            <div className="caregiver-time-modal__actions">
+              <button
+                type="button"
+                className="caregiver-time-modal__action"
+                onClick={() => setTimeOpen(false)}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="caregiver-time-modal__action caregiver-time-modal__action--confirm"
+                onClick={() => {
+                  setTime(pendingTime)
+                  setTimeOpen(false)
+                }}
+              >
+                OK
+              </button>
             </div>
           </div>
         </div>

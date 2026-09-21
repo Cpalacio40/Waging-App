@@ -2624,9 +2624,9 @@ button.caregiver-review__play:active:not(:disabled):not([aria-disabled='true']) 
 }
 
 .caregiver-time-modal__header {
-  display: grid;
-  grid-template-columns: 64px 1fr 64px;
+  display: flex;
   align-items: center;
+  justify-content: center;
   min-height: 52px;
   padding: 0 12px;
   border-bottom: 0.5px solid rgba(60, 60, 67, 0.18);
@@ -2643,22 +2643,31 @@ button.caregiver-review__play:active:not(:disabled):not([aria-disabled='true']) 
   white-space: nowrap;
 }
 
+.caregiver-time-modal__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 50px;
+  border-top: 0.5px solid rgba(60, 60, 67, 0.22);
+}
+
 .caregiver-time-modal__action {
-  padding: 8px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
   border: 0;
   background: transparent;
   font-family: var(--font-body);
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 500;
-  line-height: 18px;
+  line-height: 22px;
   color: #da6938;
   cursor: pointer;
-  text-align: left;
 }
 
 .caregiver-time-modal__action--confirm {
+  border-left: 0.5px solid rgba(60, 60, 67, 0.22);
   font-weight: 700;
-  text-align: right;
 }
 
 .caregiver-time-modal__wheel-wrap {

@@ -218,7 +218,7 @@ function AppHomeView({ scenario, onAgendar }: { scenario: HomeScenarioId; onAgen
                 </button>
               </div>
               <p className="app-home__alert-body">
-                Luca necesita atención, lleva <strong>quieto mas de lo habitual</strong> ¿Le agendamos una
+                Luca necesita atención, lleva <strong>quieto más de lo habitual</strong>. ¿Le agendamos una
                 salida?
               </p>
               <div className="app-home__alert-actions">

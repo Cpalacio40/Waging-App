@@ -31,7 +31,7 @@ export type Caregiver = {
 export const CAREGIVERS: Caregiver[] = [
   {
     id: 'maria',
-    name: 'María Camila Rodriguez',
+    name: 'María Camila Rodríguez',
     specialty: 'Especialista en perros ansiosos · 312 salidas realizadas',
     badge: '50 dueños repiten',
     bio: 'Llevo cuatro años trabajando con perros, y me especialicé en ansiedad de separación porque tuve el mío propio...',
@@ -196,7 +196,7 @@ export const CAREGIVERS: Caregiver[] = [
   },
   {
     id: 'sofia',
-    name: 'Sofía Gutierrez',
+    name: 'Sofía Gutiérrez',
     specialty: 'Especialista en perros con necesidades especiales · 501 salidas realizadas',
     badge: '60 dueños repiten',
     bio: 'Adapto cada salida a lo que tu perro puede hacer hoy, atenta a signos de dolor o cansancio...',

@@ -127,7 +127,7 @@ export function CaregiverProfileScreen({
             <hr className="caregiver-profile__rule" />
 
             <section className="caregiver-profile__section">
-              <h2 className="caregiver-profile__heading">Que haremos en cada sesión</h2>
+              <h2 className="caregiver-profile__heading">Qué haremos en cada sesión</h2>
               <ul className="caregiver-profile__sessions">
                 {caregiver.sessions.map((step) => (
                   <li key={step.title} className="caregiver-profile__session">

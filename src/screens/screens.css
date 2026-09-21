@@ -1256,6 +1256,39 @@
   height: 32px;
 }
 
+/*
+ * Sticky back-nav banner: solid bar behind the arrow with a hard edge
+ * and the same light divider line used on caregiver footers.
+ */
+.caregiver-nav {
+  --caregiver-nav-bg: #fcfcfc;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 6;
+  display: flex;
+  align-items: flex-end;
+  height: 92px;
+  padding: 0 17px 12px;
+  pointer-events: none;
+  background: var(--caregiver-nav-bg);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
+}
+
+.caregiver-nav .caregiver-back {
+  pointer-events: auto;
+}
+
+.caregiver-nav--muted {
+  --caregiver-nav-bg: #f3f3f3;
+}
+
+.caregiver-nav-spacer {
+  height: 128px;
+  flex-shrink: 0;
+}
+
 .caregiver-cta {
   display: flex;
   align-items: center;
@@ -1279,8 +1312,8 @@
 }
 
 .caregiver-cta:disabled {
-  cursor: wait;
-  opacity: 0.72;
+  cursor: not-allowed;
+  opacity: 0.45;
   filter: none;
   transform: none;
 }
@@ -1294,12 +1327,9 @@
   overflow: hidden;
 }
 
-.caregiver-intro__header {
+.caregiver-intro .caregiver-nav {
+  position: relative;
   flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  height: 104px;
-  padding: 34px 17px 12px;
 }
 
 .caregiver-intro__collage {
@@ -1473,28 +1503,6 @@
   will-change: transform;
 }
 
-.caregiver-search__header {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 6;
-  display: flex;
-  align-items: center;
-  height: 101px;
-  padding: 34px 17px 12px;
-  pointer-events: none;
-  background: linear-gradient(180deg, #fcfcfc 52%, rgba(252, 252, 252, 0));
-}
-
-.caregiver-search__header .caregiver-back {
-  pointer-events: auto;
-}
-
-.caregiver-search__header-spacer {
-  height: 101px;
-  flex-shrink: 0;
-}
 
 .caregiver-search__content {
   display: flex;
@@ -1822,34 +1830,12 @@
   padding-bottom: 28px;
 }
 
-.caregiver-profile__header {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 6;
-  display: flex;
-  align-items: center;
-  height: 101px;
-  padding: 34px 17px 12px;
-  pointer-events: none;
-}
-
-.caregiver-profile__header .caregiver-back {
-  pointer-events: auto;
-}
-
-.caregiver-profile__header-spacer {
-  height: 101px;
-  flex-shrink: 0;
-}
-
 .caregiver-profile__photo-wrap {
   position: relative;
   z-index: 1;
   width: 346px;
   height: 332px;
-  margin: -16px auto 0;
+  margin: 0 auto;
   overflow: hidden;
   border-radius: 28px;
 }
@@ -2252,23 +2238,6 @@ button.caregiver-review__play:active:not(:disabled):not([aria-disabled='true']) 
   }
 }
 
-.caregiver-calendar__header {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 6;
-  display: flex;
-  align-items: center;
-  height: 101px;
-  padding: 34px 17px 12px;
-  pointer-events: none;
-}
-
-.caregiver-calendar__header .caregiver-back {
-  pointer-events: auto;
-}
-
 .caregiver-calendar__scroller {
   position: relative;
   flex: 1;
@@ -2290,11 +2259,6 @@ button.caregiver-review__play:active:not(:disabled):not([aria-disabled='true']) 
   padding-bottom: 128px;
   will-change: transform;
   background: #fcfcfc;
-}
-
-.caregiver-calendar__header-spacer {
-  height: 80px;
-  flex-shrink: 0;
 }
 
 .caregiver-calendar__content {

@@ -41,7 +41,7 @@ type CaregiverIntroScreenProps = {
 export function CaregiverIntroScreen({ onBack, onContinue }: CaregiverIntroScreenProps) {
   return (
     <div className="screen caregiver-intro">
-      <header className="caregiver-intro__header">
+      <header className="caregiver-nav">
         <button type="button" className="caregiver-back" aria-label="Volver" onClick={onBack}>
           <img src={caregiverAsset('arrow-left.svg')} alt="" width={32} height={32} draggable={false} />
         </button>

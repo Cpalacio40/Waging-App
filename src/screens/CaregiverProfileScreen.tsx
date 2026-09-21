@@ -269,7 +269,7 @@ export function CaregiverProfileScreen({
       aria-label={caregiver.name}
       onTransitionEnd={onSheetTransitionEnd}
     >
-      <header className="caregiver-profile__header">
+      <header className="caregiver-nav caregiver-nav--muted">
         <button type="button" className="caregiver-back" aria-label="Volver" onClick={onBack}>
           <img src={caregiverAsset('arrow-left.svg')} alt="" width={32} height={32} draggable={false} />
         </button>
@@ -282,7 +282,7 @@ export function CaregiverProfileScreen({
       >
         <div ref={dragScroll.contentRef} className="caregiver-profile__scroll-content">
           <div className="caregiver-profile__top">
-            <div className="caregiver-profile__header-spacer" aria-hidden="true" />
+            <div className="caregiver-nav-spacer" aria-hidden="true" />
 
             <div className="caregiver-profile__photo-wrap">
               <img

@@ -294,7 +294,6 @@ function App() {
               activeId={activeNavId({
                 screen,
                 scenario,
-                widgetIndex,
                 searchPhase,
                 caregiverId,
               })}

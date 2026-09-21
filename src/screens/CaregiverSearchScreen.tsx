@@ -9,8 +9,8 @@ import './screens.css'
 const caregiverAsset = (name: string) => assetUrl(`caregiver/${name}`)
 const SEARCH_DELAY_MS = 2000
 const SKELETON_COUNT = 3
-/** Gap above a focused result card (below the notch / rounded bezel). */
-const CARD_TOP_INSET_PX = 20
+/** Gap above a focused result card (clears the sticky nav banner). */
+const CARD_TOP_INSET_PX = 128
 
 type CaregiverSearchOverlay = 'none' | 'profile' | 'calendar'
 
@@ -105,6 +105,7 @@ export function CaregiverSearchScreen({
 
   const onSearch = (e?: FormEvent) => {
     e?.preventDefault()
+    if (!query.trim() || phase === 'loading') return
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
     setPhase('loading')
     searchTimerRef.current = setTimeout(() => {
@@ -151,7 +152,7 @@ export function CaregiverSearchScreen({
 
   return (
     <div className={`screen caregiver-search${showList ? ' is-scrollable' : ''}`}>
-      <header className="caregiver-search__header">
+      <header className="caregiver-nav">
         <button type="button" className="caregiver-back" aria-label="Volver" onClick={onBack}>
           <img src={caregiverAsset('arrow-left.svg')} alt="" width={32} height={32} draggable={false} />
         </button>
@@ -165,7 +166,7 @@ export function CaregiverSearchScreen({
         inert={selected ? true : undefined}
       >
         <div ref={dragScroll.contentRef} className="caregiver-search__scroll-content">
-          <div className="caregiver-search__header-spacer" aria-hidden="true" />
+          <div className="caregiver-nav-spacer" aria-hidden="true" />
 
           <div className="caregiver-search__content">
             <p className="caregiver-search__lead">
@@ -187,7 +188,11 @@ export function CaregiverSearchScreen({
                   autoComplete="street-address"
                 />
               </div>
-              <button type="submit" className="caregiver-cta" disabled={phase === 'loading'}>
+              <button
+                type="submit"
+                className="caregiver-cta"
+                disabled={!query.trim() || phase === 'loading'}
+              >
                 Buscar
               </button>
             </form>

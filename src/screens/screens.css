@@ -1474,10 +1474,26 @@
 }
 
 .caregiver-search__header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 6;
   display: flex;
   align-items: center;
   height: 101px;
   padding: 34px 17px 12px;
+  pointer-events: none;
+  background: linear-gradient(180deg, #fcfcfc 52%, rgba(252, 252, 252, 0));
+}
+
+.caregiver-search__header .caregiver-back {
+  pointer-events: auto;
+}
+
+.caregiver-search__header-spacer {
+  height: 101px;
+  flex-shrink: 0;
 }
 
 .caregiver-search__content {
@@ -1807,12 +1823,25 @@
 }
 
 .caregiver-profile__header {
-  position: relative;
-  z-index: 2;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 6;
   display: flex;
   align-items: center;
   height: 101px;
   padding: 34px 17px 12px;
+  pointer-events: none;
+}
+
+.caregiver-profile__header .caregiver-back {
+  pointer-events: auto;
+}
+
+.caregiver-profile__header-spacer {
+  height: 101px;
+  flex-shrink: 0;
 }
 
 .caregiver-profile__photo-wrap {
@@ -2001,8 +2030,12 @@
 }
 
 .caregiver-profile__reviews {
-  margin: 0;
-  padding: 0 0 8px;
+  /* Full-bleed to phone edges; inset only the first/last resting position. */
+  margin: 0 -20px;
+  width: calc(100% + 40px);
+  max-width: none;
+  box-sizing: border-box;
+  padding: 10px 20px 36px;
   list-style: none;
   display: flex;
   gap: 20px;
@@ -2011,10 +2044,16 @@
   scrollbar-width: none;
   touch-action: pan-x;
   cursor: grab;
+  -webkit-overflow-scrolling: touch;
 }
 
 .caregiver-profile__reviews::-webkit-scrollbar {
   display: none;
+}
+
+.caregiver-profile__reviews.is-dragging {
+  cursor: grabbing;
+  user-select: none;
 }
 
 .caregiver-review {
@@ -2027,7 +2066,8 @@
   border: 0.5px solid #fff;
   border-radius: 23px;
   background: #fff;
-  box-shadow: 0 16px 40px -8px rgba(88, 92, 95, 0.16);
+  box-shadow: 0 16px 20px rgba(88, 92, 95, 0.16);
+  touch-action: pan-x;
 }
 
 .caregiver-review__top {
@@ -2080,20 +2120,85 @@
 }
 
 .caregiver-review__photo {
+  position: relative;
   width: calc(100% + 32px);
   height: 112px;
   margin: 0 -16px;
   overflow: hidden;
   background: #e8e8e8;
+  touch-action: pan-x;
+  cursor: grab;
 }
 
-.caregiver-review__photo img {
+.caregiver-review__photo img,
+.caregiver-review__photo video {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  pointer-events: none;
   user-select: none;
+}
+
+.caregiver-review__photo--video .caregiver-review__media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.caregiver-review__photo--video video.caregiver-review__media {
+  opacity: 0;
+}
+
+.caregiver-review__photo--video.is-playing video.caregiver-review__media,
+.caregiver-review__photo--video.has-frame video.caregiver-review__media {
+  opacity: 1;
+}
+
+.caregiver-review__photo--video .caregiver-review__cover {
+  z-index: 1;
+}
+
+.caregiver-review__photo img {
+  pointer-events: none;
+}
+
+.caregiver-review__photo video {
+  pointer-events: none;
+}
+
+.caregiver-review__photo.is-playing video {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.caregiver-review__play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0 -22px;
+  padding: 0 0 0 2px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(52, 6, 22, 0.55);
+  color: #fff;
+  cursor: pointer;
+  transform: none;
+  touch-action: pan-x;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+button.caregiver-review__play:active:not(:disabled):not([aria-disabled='true']) {
+  transform: none;
 }
 
 .caregiver-review__date {
@@ -2117,4 +2222,536 @@
   padding: 10px 22px 40px;
   background: #f0f0f0;
   box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Caregiver calendar booking sheet (180:6825) — slides in from the right */
+.caregiver-calendar-sheet {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  background: #fcfcfc;
+  color: var(--ink);
+  transform: translate3d(100%, 0, 0);
+  transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: transform;
+}
+
+.caregiver-calendar-sheet.is-open {
+  transform: translate3d(0, 0, 0);
+}
+
+.caregiver-calendar-sheet.is-closing {
+  transform: translate3d(100%, 0, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caregiver-calendar-sheet {
+    transition-duration: 0.01ms;
+  }
+}
+
+.caregiver-calendar__header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  height: 101px;
+  padding: 34px 17px 12px;
+  pointer-events: none;
+}
+
+.caregiver-calendar__header .caregiver-back {
+  pointer-events: auto;
+}
+
+.caregiver-calendar__scroller {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+}
+
+.caregiver-calendar__scroller.is-dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.caregiver-calendar__scroll-content {
+  position: relative;
+  width: 100%;
+  min-height: 100%;
+  padding-bottom: 128px;
+  will-change: transform;
+  background: #fcfcfc;
+}
+
+.caregiver-calendar__header-spacer {
+  height: 80px;
+  flex-shrink: 0;
+}
+
+.caregiver-calendar__content {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  align-items: center;
+  padding: 0 22px 12px;
+}
+
+.caregiver-calendar__title {
+  margin: 0;
+  width: 100%;
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 400;
+  line-height: 38px;
+  text-align: center;
+  color: var(--ink);
+}
+
+.caregiver-calendar__body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+  width: 100%;
+}
+
+.caregiver-calendar__main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  width: 285px;
+}
+
+.caregiver-calendar__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  text-align: center;
+}
+
+.caregiver-calendar__session {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  font-variant-numeric: lining-nums proportional-nums;
+  color: var(--ink);
+}
+
+.caregiver-calendar__subtitle {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.3;
+  color: rgba(52, 6, 22, 0.75);
+}
+
+.caregiver-calendar__legend {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.caregiver-calendar__legend-item {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.3;
+  color: rgba(52, 6, 22, 0.75);
+}
+
+.caregiver-calendar__swatch {
+  flex-shrink: 0;
+  width: 13px;
+  height: 13px;
+  border-radius: 4px;
+}
+
+.caregiver-calendar__swatch--available {
+  background: #ffc8af;
+}
+
+.caregiver-calendar__swatch--unavailable {
+  background-color: #ded8db;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent 0 3px,
+    #fff 3px 5px
+  );
+}
+
+.caregiver-calendar__card {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 17px 21px;
+  border: 1px solid #d2d2d2;
+  border-radius: 28px;
+  background: #fff;
+}
+
+.caregiver-calendar__month-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.caregiver-calendar__month-label {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  font-variant-numeric: lining-nums proportional-nums;
+  color: var(--ink);
+}
+
+.caregiver-calendar__nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 27px;
+  height: 27px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.caregiver-calendar__nav--next {
+  background: #efefef;
+}
+
+.caregiver-calendar__weekdays,
+.caregiver-calendar__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  column-gap: 4.242px;
+}
+
+.caregiver-calendar__weekdays {
+  margin-bottom: 11px;
+}
+
+.caregiver-calendar__weekday {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 12px;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1;
+  text-align: center;
+  color: #da6938;
+}
+
+.caregiver-calendar__grid {
+  row-gap: 5.656px;
+}
+
+.caregiver-calendar__day {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 31.11px;
+  height: 31.11px;
+  margin: 0 auto;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 12px;
+  color: rgba(52, 6, 22, 0.7);
+  cursor: default;
+}
+
+.caregiver-calendar__day.is-empty {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.caregiver-calendar__day--available {
+  background: rgba(255, 144, 95, 0.1);
+  color: #da6938;
+  cursor: pointer;
+}
+
+.caregiver-calendar__day--unavailable {
+  background: transparent;
+  color: #7b5965;
+  -webkit-text-stroke: 3px #fcfcfc;
+  paint-order: stroke fill;
+  cursor: not-allowed;
+}
+
+.caregiver-calendar__day-pattern {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 31.11px;
+  height: 31.11px;
+  pointer-events: none;
+}
+
+.caregiver-calendar__day-number {
+  position: relative;
+  z-index: 1;
+}
+
+.caregiver-calendar__day.is-selected,
+.caregiver-calendar__day--available.is-selected {
+  background: #da6938;
+  background-image: none;
+  color: #fcfcfc;
+  cursor: pointer;
+}
+
+.caregiver-calendar__day:disabled {
+  opacity: 1;
+}
+
+.caregiver-calendar__time {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.caregiver-calendar__time-label {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--ink);
+}
+
+.caregiver-calendar__time-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  height: 44px;
+  padding: 12px 12px 12px 16px;
+  border: 1px solid #d2d2d2;
+  border-radius: 12px;
+  background: #fff;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 16px;
+  color: rgba(52, 6, 22, 0.25);
+  cursor: pointer;
+  text-align: left;
+}
+
+.caregiver-calendar__time-trigger svg {
+  flex-shrink: 0;
+  color: var(--ink);
+  transition: transform 0.18s ease;
+}
+
+.caregiver-calendar__time-trigger.is-open svg {
+  transform: rotate(180deg);
+}
+
+.caregiver-calendar__time-menu {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 4;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  max-height: 180px;
+  overflow-y: auto;
+  border: 1px solid #d2d2d2;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 12px 24px rgba(88, 92, 95, 0.12);
+}
+
+.caregiver-calendar__time-option {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 16px;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.caregiver-calendar__time-option.is-active,
+.caregiver-calendar__time-option:hover {
+  background: rgba(255, 144, 95, 0.12);
+  color: #da6938;
+}
+
+.caregiver-calendar__rule {
+  width: 100%;
+  max-width: 351px;
+  margin: 0;
+  border: 0;
+  border-top: 1.2px solid #d2d2d2;
+}
+
+.caregiver-calendar__policy {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 351px;
+  padding: 0 30px;
+  box-sizing: border-box;
+}
+
+.caregiver-calendar__policy-heading {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.caregiver-calendar__policy-title {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--ink);
+}
+
+.caregiver-calendar__policy-help {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 1px solid #da6938;
+  border-radius: 50%;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  color: #da6938;
+  cursor: pointer;
+}
+
+.caregiver-calendar__policy-copy {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  color: rgba(52, 6, 22, 0.75);
+}
+
+.caregiver-calendar__policy-copy span {
+  font-weight: 500;
+  font-variant-numeric: lining-nums proportional-nums;
+}
+
+.caregiver-calendar__policy-more {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 16px;
+  font-variant-numeric: lining-nums proportional-nums;
+  color: rgba(52, 6, 22, 0.75);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.caregiver-calendar__footer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 22px 40px;
+  background: #f3f3f3;
+  box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.1);
+}
+
+.caregiver-calendar__checkout {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 10px 10px 10px 20px;
+  border-radius: 999px;
+  background: #fcfcfc;
+  box-shadow: 0 16px 32px rgba(88, 92, 95, 0.1);
+}
+
+.caregiver-calendar__price {
+  flex: 1;
+  margin: 0;
+  min-width: 0;
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  font-variant-numeric: lining-nums proportional-nums;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.caregiver-calendar__pay {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 194px;
+  height: 48px;
+  padding: 14px 20px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--orange);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 20px;
+  color: #fcfcfc;
+  cursor: pointer;
 }

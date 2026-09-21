@@ -9,7 +9,12 @@ export type CaregiverReview = {
   text: string
   date: string
   avatar: '1' | '2' | '3'
+  /** Still / poster under public/caregiver/profile/ */
   photo: string
+  /** Optional looping video; when set, used instead of photo */
+  video?: string
+  /** Figma videoTransform / imageTransform → CSS object-position */
+  objectPosition: string
 }
 
 export type Caregiver = {
@@ -24,6 +29,7 @@ export type Caregiver = {
   about: string
   priority: string
   sessions: CaregiverSessionStep[]
+  reviewsHeading: string
   reviews: CaregiverReview[]
 }
 
@@ -60,27 +66,51 @@ export const CAREGIVERS: Caregiver[] = [
         icon: 'hourglass',
       },
     ],
+    reviewsHeading: 'Aquí también empezaron con un perro que no sabían cómo ayudar',
     reviews: [
       {
-        owner: 'Dueña de Luna',
-        text: 'Luna temblaba solo con oír la correa. María fue con una calma que yo no sabía transmitir.',
-        date: 'Agosto 12, 2026',
-        avatar: '2',
-        photo: 'review-1.png',
+        owner: 'Dueño de Calletano',
+        text: 'Pensé que Luna nunca iba a poder cruzarse con otro perro sin ladrar. Llevamos dos meses y ayer se cruzó con uno tranquila.',
+        date: 'Agosto 10, 2026',
+        avatar: '1',
+        photo: 'reviews/ansiedad-calletano.png',
+        video: 'reviews/ansiedad-calletano.mp4',
+        objectPosition: '50% 49.9%',
       },
       {
-        owner: 'Dueño de Toby',
-        text: 'Antes no podíamos dejarlo solo ni cinco minutos. Ahora aguanta la mañana entera.',
-        date: 'Julio 2, 2026',
-        avatar: '1',
-        photo: 'review-2.png',
+        owner: 'Dueña de Roko',
+        text: 'Lo que más valoro es que nunca fuerza nada. Si Roko no está listo para algo, lo deja para la próxima sesión.',
+        date: 'Mayo 20, 2026',
+        avatar: '2',
+        photo: 'reviews/ansiedad-roko.png',
+        video: 'reviews/ansiedad-roko.mp4',
+        objectPosition: '50% 69.6%',
+      },
+      {
+        owner: 'Dueño de Kiwi',
+        text: 'Me explica cómo le va a Kiwi después de cada salida, no solo si salió bien o mal. Eso me ayudó a entenderlo mejor yo también.',
+        date: 'Junio 7, 2026',
+        avatar: '3',
+        photo: 'reviews/ansiedad-kiwi.png',
+        objectPosition: '50% 77.2%',
       },
       {
         owner: 'Dueña de Nala',
-        text: 'No fuerza nada. Cada semana un pasito, y Nala ya saluda sin esconderse.',
-        date: 'Junio 18, 2026',
-        avatar: '3',
-        photo: 'review-3.png',
+        text: 'Nala llegó a las sesiones mordiendo la correa de puros nervios. Ahora la primera media hora ya está relajada.',
+        date: 'Septiembre 19, 2026',
+        avatar: '1',
+        photo: 'reviews/ansiedad-nala.png',
+        video: 'reviews/ansiedad-nala.mp4',
+        objectPosition: '50% 91%',
+      },
+      {
+        owner: 'Dueño de Toby',
+        text: 'No es magia, es paciencia. Con Toby se nota semana a semana, que se queda más tranquilo en casa cuando se queda solo.',
+        date: 'Julio 15, 2026',
+        avatar: '2',
+        photo: 'reviews/ansiedad-toby.png',
+        video: 'reviews/ansiedad-toby.mp4',
+        objectPosition: '50% 50%',
       },
     ],
   },
@@ -115,27 +145,52 @@ export const CAREGIVERS: Caregiver[] = [
         icon: 'hourglass',
       },
     ],
+    reviewsHeading: 'Aquí también empezaron avanzando poco a poco, con la guía correcta',
     reviews: [
       {
         owner: 'Dueño de Zeus',
         text: 'Zeus reacciona a otros perros desde lejos. Andrés sabe exactamente a qué distancia trabajar sin que se dispare.',
         date: 'Agosto 10, 2026',
         avatar: '1',
-        photo: 'review-1.png',
+        photo: 'reviews/reactivos-zeus.png',
+        video: 'reviews/reactivos-zeus.mp4',
+        objectPosition: '50% 61%',
       },
       {
         owner: 'Dueña de Kira',
-        text: 'Antes evitábamos cruzarnos con nadie en la calle. Ahora Kira puede ver a otro perro pasar sin explotar.',
+        text: 'Antes evitábamos cruzarnos con nadie en la calle. Ahora Kira puede ver a otro perro pasar sin explotar. Y guiarla con refuerzo positivo.',
         date: 'Mayo 20, 2026',
         avatar: '2',
-        photo: 'review-2.png',
+        photo: 'reviews/reactivos-kira.png',
+        video: 'reviews/reactivos-kira.mp4',
+        objectPosition: '50% 50%',
       },
       {
         owner: 'Dueño de Rex',
         text: "Lo que más me tranquiliza es que Andrés nunca arriesga una situación solo para 'probar'.",
         date: 'Junio 7, 2026',
         avatar: '3',
-        photo: 'review-3.png',
+        photo: 'reviews/reactivos-rex.png',
+        video: 'reviews/reactivos-rex.mp4',
+        objectPosition: '41.7% 94.2%',
+      },
+      {
+        owner: 'Dueña de Oscar',
+        text: 'No lo expone a lo que le altera de golpe. Va aumentando la exposición poco a poco, y eso se nota semana a semana.',
+        date: 'Septiembre 19, 2026',
+        avatar: '1',
+        photo: 'reviews/reactivos-oscar.png',
+        video: 'reviews/reactivos-oscar.mp4',
+        objectPosition: '50% 50%',
+      },
+      {
+        owner: 'Dueño de Nano',
+        text: 'Nano mordió a alguien antes de empezar con Andrés. Hoy todavía tiene sus límites, pero me alivia contar con alguien que sabe con....',
+        date: 'Julio 15, 2026',
+        avatar: '2',
+        photo: 'reviews/reactivos-nano.png',
+        video: 'reviews/reactivos-nano.mp4',
+        objectPosition: '50% 43.7%',
       },
     ],
   },
@@ -170,27 +225,48 @@ export const CAREGIVERS: Caregiver[] = [
         icon: 'hourglass',
       },
     ],
+    reviewsHeading: 'Aquí también empezaron buscando algo más que un paseo cualquiera',
     reviews: [
       {
         owner: 'Dueño de Milo',
-        text: 'Milo tiene la mala costumbre de comer palos, por eso lleva el bozal. Pero se va trabajando sesión a sesión.',
+        text: 'Milo tiene la mala costumbre de comer palos, por eso lleva el bozal en las salidas. Pero se va avanzando con él para que suelte esa costumbre sesión a sesión.',
         date: 'Agosto 3, 2026',
         avatar: '1',
-        photo: 'review-1.png',
+        photo: 'reviews/activos-milo.png',
+        video: 'reviews/activos-milo.mp4',
+        objectPosition: '50% 50%',
+      },
+      {
+        owner: 'Dueña de Pepe',
+        text: 'Aquí seguimos para que controle su emoción al saludar a las personas, reforzando saludos más tranquilos y positivos.',
+        date: 'Junio 20, 2026',
+        avatar: '2',
+        photo: 'reviews/activos-pepe.png',
+        objectPosition: '50% 71.3%',
       },
       {
         owner: 'Dueña de Coco',
-        text: 'Por fin duerme la siesta. Javier le da trabajo de cabeza, no solo kilómetros.',
-        date: 'Julio 22, 2026',
-        avatar: '2',
-        photo: 'review-2.png',
+        text: 'No es solo correr. Javier le pone juegos de olfato al final para que también se canse la cabeza. Lo aplicaré para la próxima vez.',
+        date: 'Agosto 2, 2026',
+        avatar: '3',
+        photo: 'reviews/activos-coco.png',
+        objectPosition: '50% 50%',
       },
       {
-        owner: 'Dueño de Rocky',
-        text: 'Rocky llega cansado y contento. Antes solo llegaba agitado.',
-        date: 'Junio 30, 2026',
-        avatar: '3',
-        photo: 'review-3.png',
+        owner: 'Dueño de Simba',
+        text: 'Con Simba estamos reforzando buenos hábitos durante los paseos para que aprenda a caminar sin jalar la correa y disfrute cada salida.',
+        date: 'Marzo 16, 2026',
+        avatar: '1',
+        photo: 'reviews/activos-simba.png',
+        objectPosition: '50% 74.7%',
+      },
+      {
+        owner: 'Dueño de Bruno',
+        text: 'Bruno necesitaba gastar energía de otra forma, no solo caminar más rápido. Javier entendió eso desde la primera sesión.',
+        date: 'Abril 15, 2026',
+        avatar: '2',
+        photo: 'reviews/activos-bruno.png',
+        objectPosition: '50% 45.7%',
       },
     ],
   },
@@ -225,28 +301,54 @@ export const CAREGIVERS: Caregiver[] = [
         icon: 'hourglass',
       },
     ],
+    reviewsHeading: 'Aquí también aprendieron a acompañar a su perro a su ritmo',
     reviews: [
       {
-        owner: 'Dueño de Calletano',
-        text: 'Con artrosis avanzada, Sofía adapta cada paseo. Él vuelve más calmado, no más dolorido.',
-        date: 'Agosto 8, 2026',
+        owner: 'Dueño de Tana',
+        text: 'Tana es ciega de nacimiento. Sin embargo eso no lo detiene para jugar con la pelota. Reforzando con comandos de voz mientras se...',
+        date: 'Agosto 10, 2026',
         avatar: '1',
-        photo: 'review-2.png',
+        photo: 'reviews/especiales-tana.png',
+        objectPosition: '50% 40%',
       },
       {
-        owner: 'Dueña de Miel',
-        text: 'Miel es ciega. Sofía lee el entorno por ella y nunca la apura.',
-        date: 'Julio 14, 2026',
+        owner: 'Dueña de Cris',
+        text: 'Es muy reconfortante para mí saber que mi perrita está en buenas manos, que sabe de ella y manejar su carrito de ruedas con...',
+        date: 'Mayo 20, 2026',
         avatar: '2',
-        photo: 'review-1.png',
+        photo: 'reviews/especiales-cris.png',
+        objectPosition: '50% 50%',
       },
       {
-        owner: 'Dueño de Teo',
-        text: 'Después de la operación, Sofía fue la única en quien confiamos para sacarlo.',
-        date: 'Junio 5, 2026',
+        owner: 'Dueño de Pancho',
+        text: 'Vivir sola con mi perrito a veces puede ser difícil, pero contar con una red de cuidadores que entienden sus necesidades y me...',
+        date: 'Junio 7, 2026',
         avatar: '3',
-        photo: 'review-3.png',
+        photo: 'reviews/especiales-pancho.png',
+        objectPosition: '50% 50%',
+      },
+      {
+        owner: 'Dueña de Maru',
+        text: 'Luna ya es mayor y se cansa distinto cada semana. Sofía siempre sigue su ritmo y la cuida en el proceso debido a su artritis.',
+        date: 'Septiembre 19, 2026',
+        avatar: '1',
+        photo: 'reviews/especiales-maru.png',
+        objectPosition: '50% 50%',
+      },
+      {
+        owner: 'Dueño de Wilson',
+        text: 'Aunque mi perrito sigue recuperándose de su operación de cadera, me sorprende cada día con su energía, determinación y capac...',
+        date: 'Julio 15, 2026',
+        avatar: '2',
+        photo: 'reviews/especiales-wilson.png',
+        objectPosition: '50% 50%',
       },
     ],
   },
 ]
+
+export const DEFAULT_CAREGIVER_ID = CAREGIVERS[0]?.id ?? 'maria'
+
+export function findCaregiver(id: string | undefined): Caregiver {
+  return CAREGIVERS.find((caregiver) => caregiver.id === id) ?? CAREGIVERS[0]
+}

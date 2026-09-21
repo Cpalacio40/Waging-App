@@ -102,6 +102,12 @@ export function CaregiverSearchScreen({ onBack }: CaregiverSearchScreenProps) {
 
   return (
     <div className={`screen caregiver-search${showList ? ' is-scrollable' : ''}`}>
+      <header className="caregiver-search__header">
+        <button type="button" className="caregiver-back" aria-label="Volver" onClick={onBack}>
+          <img src={caregiverAsset('arrow-left.svg')} alt="" width={32} height={32} draggable={false} />
+        </button>
+      </header>
+
       <div
         ref={dragScroll.ref}
         className={`caregiver-search__scroller${dragScroll.dragging ? ' is-dragging' : ''}`}
@@ -110,11 +116,7 @@ export function CaregiverSearchScreen({ onBack }: CaregiverSearchScreenProps) {
         inert={selected ? true : undefined}
       >
         <div ref={dragScroll.contentRef} className="caregiver-search__scroll-content">
-          <header className="caregiver-search__header">
-            <button type="button" className="caregiver-back" aria-label="Volver" onClick={onBack}>
-              <img src={caregiverAsset('arrow-left.svg')} alt="" width={32} height={32} draggable={false} />
-            </button>
-          </header>
+          <div className="caregiver-search__header-spacer" aria-hidden="true" />
 
           <div className="caregiver-search__content">
             <p className="caregiver-search__lead">

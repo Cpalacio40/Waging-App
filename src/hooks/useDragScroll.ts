@@ -13,16 +13,19 @@ type UseDragScrollOptions = {
   enabled: boolean
   /** Skip starting a drag when the event target matches (buttons, links, …). */
   ignoreSelector?: string
+  /** Fires whenever the clamped scroll offset changes (including reset). */
+  onOffsetChange?: (offset: number) => void
 }
 
 /**
  * Vertical scroll without a native scrollbar: wheel + pointer drag update a translateY offset.
  * Transform is written directly to the content node (no scrollbar, smooth drag).
  */
-export function useDragScroll({ enabled, ignoreSelector }: UseDragScrollOptions) {
+export function useDragScroll({ enabled, ignoreSelector, onOffsetChange }: UseDragScrollOptions) {
   const ref = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const [dragging, setDragging] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
 
   const pointerId = useRef<number | null>(null)
   const startY = useRef(0)
@@ -30,9 +33,12 @@ export function useDragScroll({ enabled, ignoreSelector }: UseDragScrollOptions)
   const moved = useRef(false)
   const active = useRef(false)
   const offsetRef = useRef(0)
+  const scrolledRef = useRef(false)
   const suppressClickRef = useRef(false)
   const enabledRef = useRef(enabled)
+  const onOffsetChangeRef = useRef(onOffsetChange)
   enabledRef.current = enabled
+  onOffsetChangeRef.current = onOffsetChange
 
   const paint = useCallback((value: number) => {
     const content = contentRef.current
@@ -42,6 +48,13 @@ export function useDragScroll({ enabled, ignoreSelector }: UseDragScrollOptions)
       return
     }
     content.style.transform = `translate3d(0, ${-value}px, 0)`
+  }, [])
+
+  const syncScrolled = useCallback((offset: number) => {
+    const next = offset > 0.5
+    if (next === scrolledRef.current) return
+    scrolledRef.current = next
+    setScrolled(next)
   }, [])
 
   const clampOffset = useCallback((value: number) => {
@@ -57,15 +70,19 @@ export function useDragScroll({ enabled, ignoreSelector }: UseDragScrollOptions)
       const next = clampOffset(value)
       offsetRef.current = next
       paint(next)
+      syncScrolled(next)
+      onOffsetChangeRef.current?.(next)
       return next
     },
-    [clampOffset, paint],
+    [clampOffset, paint, syncScrolled],
   )
 
   const resetScroll = useCallback(() => {
     offsetRef.current = 0
     paint(0)
-  }, [paint])
+    syncScrolled(0)
+    onOffsetChangeRef.current?.(0)
+  }, [paint, syncScrolled])
 
   /**
    * Scroll so `el` (inside the content) is in view.
@@ -226,11 +243,13 @@ export function useDragScroll({ enabled, ignoreSelector }: UseDragScrollOptions)
     if (!enabled) {
       offsetRef.current = 0
       paint(0)
+      syncScrolled(0)
+      onOffsetChangeRef.current?.(0)
       if (pointerId.current != null) clear(ref.current, pointerId.current, true)
       return
     }
     applyOffset(offsetRef.current)
-  }, [applyOffset, clear, enabled, paint])
+  }, [applyOffset, clear, enabled, paint, syncScrolled])
 
   useEffect(() => {
     if (!enabled) return
@@ -250,6 +269,8 @@ export function useDragScroll({ enabled, ignoreSelector }: UseDragScrollOptions)
     ref: ref as RefObject<HTMLDivElement>,
     contentRef: contentRef as RefObject<HTMLDivElement>,
     dragging,
+    /** True once the content has scrolled past the top (for sticky chrome). */
+    scrolled,
     consumeClickSuppression,
     resetScroll,
     scrollToElement,

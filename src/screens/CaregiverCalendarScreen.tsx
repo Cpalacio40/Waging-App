@@ -277,7 +277,7 @@ export function CaregiverCalendarScreen({
       aria-label="Calendario y disponibilidad"
       onTransitionEnd={onSheetTransitionEnd}
     >
-      <header className="caregiver-nav">
+      <header className={`caregiver-nav${dragScroll.scrolled ? ' is-scrolled' : ''}`}>
         <button type="button" className="caregiver-back" aria-label="Volver" onClick={onBack}>
           <img src={caregiverAsset('arrow-left.svg')} alt="" width={32} height={32} draggable={false} />
         </button>

@@ -1257,8 +1257,8 @@
 }
 
 /*
- * Sticky back-nav banner: solid bar behind the arrow with a hard edge
- * and the same light divider line used on caregiver footers.
+ * Sticky back-nav banner: solid bar matching the screen surface below.
+ * Divider line fades in only after the content has scrolled.
  */
 .caregiver-nav {
   --caregiver-nav-bg: #fcfcfc;
@@ -1273,13 +1273,31 @@
   padding: 0 17px 12px;
   pointer-events: none;
   background: var(--caregiver-nav-bg);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
+  transition: background-color 0.18s ease;
+}
+
+.caregiver-nav::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  transition: opacity 0.22s ease;
+}
+
+.caregiver-nav.is-scrolled::after {
+  opacity: 1;
 }
 
 .caregiver-nav .caregiver-back {
   pointer-events: auto;
 }
 
+/* Match .caregiver-profile__top surface under the arrow. */
 .caregiver-nav--muted {
   --caregiver-nav-bg: #f3f3f3;
 }

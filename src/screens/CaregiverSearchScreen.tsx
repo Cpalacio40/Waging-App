@@ -152,7 +152,7 @@ export function CaregiverSearchScreen({
 
   return (
     <div className={`screen caregiver-search${showList ? ' is-scrollable' : ''}`}>
-      <header className="caregiver-nav">
+      <header className={`caregiver-nav${dragScroll.scrolled ? ' is-scrolled' : ''}`}>
         <button type="button" className="caregiver-back" aria-label="Volver" onClick={onBack}>
           <img src={caregiverAsset('arrow-left.svg')} alt="" width={32} height={32} draggable={false} />
         </button>

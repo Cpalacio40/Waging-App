@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type TransitionEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type TransitionEvent } from 'react'
 import { Play } from 'lucide-react'
 import type { Caregiver, CaregiverReview } from '../data/caregivers'
 import { useDragScroll } from '../hooks/useDragScroll'
@@ -9,6 +9,10 @@ import './screens.css'
 
 const caregiverAsset = (name: string) => assetUrl(`caregiver/${name}`)
 const profileAsset = (name: string) => assetUrl(`caregiver/profile/${name}`)
+
+/** Matches .caregiver-profile__top / default caregiver-nav surfaces. */
+const NAV_SURFACE_MUTED = '#f3f3f3'
+const NAV_SURFACE_DEFAULT = '#fcfcfc'
 
 const SESSION_ICON: Record<Caregiver['sessions'][number]['icon'], string> = {
   clipboard: 'icon-clipboard.svg',
@@ -140,11 +144,38 @@ export function CaregiverProfileScreen({
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [playingKey, setPlayingKey] = useState<string | null>(null)
   const videoEls = useRef(new Map<string, HTMLVideoElement>())
+  const navRef = useRef<HTMLElement>(null)
+  const topRef = useRef<HTMLDivElement>(null)
+  const mutedSurfaceRef = useRef(true)
+
+  const syncNavSurface = useCallback((offset: number) => {
+    const nav = navRef.current
+    const top = topRef.current
+    if (!nav || !top) return
+    // Sample the content row sitting under the nav bottom edge.
+    const underNavY = offset + nav.offsetHeight
+    const muted = underNavY < top.offsetHeight
+    if (muted === mutedSurfaceRef.current) return
+    mutedSurfaceRef.current = muted
+    nav.style.setProperty(
+      '--caregiver-nav-bg',
+      muted ? NAV_SURFACE_MUTED : NAV_SURFACE_DEFAULT,
+    )
+  }, [])
+
   const dragScroll = useDragScroll({
     enabled: open && entered && !calendarOpen,
     ignoreSelector: 'button, a, input, textarea, .caregiver-profile__reviews',
+    onOffsetChange: syncNavSurface,
   })
   const reviewsScroll = useHorizontalDragScroll({ enabled: open && entered && !calendarOpen })
+
+  useEffect(() => {
+    if (!open || !entered) return
+    mutedSurfaceRef.current = true
+    navRef.current?.style.setProperty('--caregiver-nav-bg', NAV_SURFACE_MUTED)
+    syncNavSurface(0)
+  }, [open, entered, caregiver.id, syncNavSurface])
 
   const pausePlaying = () => {
     if (!playingKey) return
@@ -269,7 +300,10 @@ export function CaregiverProfileScreen({
       aria-label={caregiver.name}
       onTransitionEnd={onSheetTransitionEnd}
     >
-      <header className="caregiver-nav caregiver-nav--muted">
+      <header
+        ref={navRef}
+        className={`caregiver-nav caregiver-nav--muted${dragScroll.scrolled ? ' is-scrolled' : ''}`}
+      >
         <button type="button" className="caregiver-back" aria-label="Volver" onClick={onBack}>
           <img src={caregiverAsset('arrow-left.svg')} alt="" width={32} height={32} draggable={false} />
         </button>
@@ -281,7 +315,7 @@ export function CaregiverProfileScreen({
         {...dragScroll.scrollerProps}
       >
         <div ref={dragScroll.contentRef} className="caregiver-profile__scroll-content">
-          <div className="caregiver-profile__top">
+          <div ref={topRef} className="caregiver-profile__top">
             <div className="caregiver-nav-spacer" aria-hidden="true" />
 
             <div className="caregiver-profile__photo-wrap">

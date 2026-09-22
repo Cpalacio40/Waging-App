@@ -1,9 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { CAREGIVERS, findCaregiver, type Caregiver } from '../data/caregivers'
+import {
+  loadSavedAddress,
+  saveAddress,
+  type BuildingType,
+  type SavedAddress,
+} from '../data/savedAddress'
 import type { SearchPhase } from '../data/screens'
 import { useDragScroll } from '../hooks/useDragScroll'
 import { assetUrl } from '../utils/assetUrl'
-import { AddressLocateScreen } from './AddressLocateScreen'
+import { AddressDetailsScreen } from './AddressDetailsScreen'
+import { AddressLocateScreen, type LocatedPlace } from './AddressLocateScreen'
 import { CaregiverProfileScreen } from './CaregiverProfileScreen'
 import './screens.css'
 
@@ -12,6 +19,13 @@ const SEARCH_DELAY_MS = 2000
 const SKELETON_COUNT = 3
 /** Gap above a focused result card (clears the sticky nav banner). */
 const CARD_TOP_INSET_PX = 128
+
+const DEMO_PLACE: LocatedPlace = {
+  label: 'Carrer Petrarca 42',
+  secondary: 'Barcelona, España',
+  lat: 41.4036,
+  lng: 2.1744,
+}
 
 type CaregiverSearchOverlay = 'none' | 'profile' | 'calendar'
 
@@ -45,7 +59,13 @@ function CaregiverCardSkeleton() {
   )
 }
 
-/** Address search + caregiver cards — Figma 164:6857 / 120:6900. */
+function locateModeFromPhase(phase: SearchPhase) {
+  if (phase === 'building') return 'building' as const
+  if (phase === 'locate' || phase === 'idle') return 'search' as const
+  return 'map' as const
+}
+
+/** First-run address gate + caregiver cards — Figma 3.1 address workflow. */
 export function CaregiverSearchScreen({
   onBack,
   phase: phaseProp,
@@ -57,7 +77,11 @@ export function CaregiverSearchScreen({
   onOpenCalendar,
   onCloseCalendar,
 }: CaregiverSearchScreenProps) {
-  const [internalPhase, setInternalPhase] = useState<SearchPhase>('locate')
+  const [internalPhase, setInternalPhase] = useState<SearchPhase>(() =>
+    loadSavedAddress() ? 'results' : 'map',
+  )
+  const [draftPlace, setDraftPlace] = useState<LocatedPlace | null>(null)
+  const [buildingType, setBuildingType] = useState<BuildingType>('casa')
   const [selected, setSelected] = useState<Caregiver | null>(() =>
     overlayProp === 'profile' || overlayProp === 'calendar' ? findCaregiver(caregiverId) : null,
   )
@@ -67,10 +91,9 @@ export function CaregiverSearchScreen({
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const phase = phaseProp ?? internalPhase
   const overlay = overlayProp ?? (profileOpen ? 'profile' : 'none')
-  const locating = phase === 'locate' || phase === 'map' || phase === 'idle'
+  const locating =
+    phase === 'locate' || phase === 'map' || phase === 'building' || phase === 'idle'
   const showList = phase === 'loading' || phase === 'results'
-  // Keep scroll enabled while the profile covers the list so opening doesn't
-  // jump the list mid-slide (we re-align to the clicked card after open).
   const dragScroll = useDragScroll({
     enabled: showList,
     ignoreSelector: 'a, input, textarea, .caregiver-back, .caregiver-cta',
@@ -94,6 +117,13 @@ export function CaregiverSearchScreen({
     }
   }, [phase])
 
+  // Navigator shortcuts: seed demo place for building/details jumps.
+  useEffect(() => {
+    if ((phase === 'building' || phase === 'details') && !draftPlace) {
+      setDraftPlace(DEMO_PLACE)
+    }
+  }, [phase, draftPlace])
+
   useEffect(() => {
     const wantsProfile = overlay === 'profile' || overlay === 'calendar'
     if (wantsProfile) {
@@ -114,7 +144,14 @@ export function CaregiverSearchScreen({
     }, SEARCH_DELAY_MS)
   }
 
-  const onAddressConfirmed = () => {
+  const onBuildingSelected = (place: LocatedPlace, type: BuildingType) => {
+    setDraftPlace(place)
+    setBuildingType(type)
+    setPhase('details')
+  }
+
+  const onSaveAddress = (address: SavedAddress) => {
+    saveAddress(address)
     startCaregiverSearch()
   }
 
@@ -132,7 +169,6 @@ export function CaregiverSearchScreen({
     )
     if (!card) return
     const isLast = selected.id === CAREGIVERS[CAREGIVERS.length - 1]?.id
-    // Last card stays at the bottom (shows previous ones); others pin near the top.
     if (isLast) {
       dragScroll.scrollToElement(card, 'end')
     } else {
@@ -157,13 +193,30 @@ export function CaregiverSearchScreen({
   if (locating) {
     return (
       <AddressLocateScreen
-        mode={phase === 'map' ? 'map' : 'search'}
+        mode={locateModeFromPhase(phase)}
         onBack={() => {
-          if (phase === 'map') setPhase('locate')
+          if (phase === 'building') setPhase('map')
+          else if (phase === 'locate') setPhase('map')
           else onBack?.()
         }}
-        onModeChange={(next) => setPhase(next === 'map' ? 'map' : 'locate')}
-        onConfirm={onAddressConfirmed}
+        onModeChange={(next) => {
+          if (next === 'search') setPhase('locate')
+          else setPhase(next)
+        }}
+        onBuildingSelected={onBuildingSelected}
+      />
+    )
+  }
+
+  if (phase === 'details') {
+    const place = draftPlace ?? DEMO_PLACE
+    return (
+      <AddressDetailsScreen
+        place={place}
+        buildingType={buildingType}
+        onBack={() => setPhase('building')}
+        onAdjustPin={() => setPhase('building')}
+        onSave={onSaveAddress}
       />
     )
   }

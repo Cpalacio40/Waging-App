@@ -5,6 +5,7 @@ import { ScreenNavigator } from './components/ScreenNavigator'
 import { DEFAULT_CAREGIVER_ID } from './data/caregivers'
 import { DEFAULT_SCENARIO, type HomeScenarioId } from './data/homeScenarios'
 import { SCENARIO_HOLD_MS, useHeldValue } from './hooks/useHeldScenario'
+import { clearSavedAddress, loadSavedAddress, subscribeAddressChange } from './data/savedAddress'
 import {
   DEFAULT_SCREEN,
   activeNavId,
@@ -55,13 +56,16 @@ function App() {
   const [layerAnim, setLayerAnim] = useState<LayerAnim>(null)
   const [scenario, setScenario] = useState<HomeScenarioId>(DEFAULT_SCENARIO)
   const [widgetIndex, setWidgetIndex] = useState(0)
-  const [searchPhase, setSearchPhase] = useState<SearchPhase>('locate')
+  const [searchPhase, setSearchPhase] = useState<SearchPhase>('map')
   const [searchBackTo, setSearchBackTo] = useState<'app-home' | 'caregiver-intro'>('caregiver-intro')
   const [caregiverId, setCaregiverId] = useState(DEFAULT_CAREGIVER_ID)
   const [banner, setBanner] = useState<IosNotificationPhase | 'idle'>('idle')
+  const [hasSavedAddress, setHasSavedAddress] = useState(() => Boolean(loadSavedAddress()))
   const layerAnimRef = useRef<LayerAnim>(null)
   const bannerTimerRef = useRef<number | null>(null)
   layerAnimRef.current = layerAnim
+
+  useEffect(() => subscribeAddressChange(() => setHasSavedAddress(Boolean(loadSavedAddress()))), [])
 
   const appOpen = isInApp(screen)
   const showHome = screen === 'ios-home' || appOpen
@@ -125,6 +129,13 @@ function App() {
   const toggleAttention = useCallback(() => {
     setScenario((current) => (current === 'attention' ? 'ok' : 'attention'))
   }, [])
+
+  const resetAddressCache = useCallback(() => {
+    clearSavedAddress()
+    setSearchPhase('map')
+    setSearchBackTo('caregiver-intro')
+    if (appOpen) setScreen('caregiver-intro')
+  }, [appOpen])
 
   useEffect(() => {
     if (bannerTimerRef.current != null) {
@@ -224,10 +235,18 @@ function App() {
                     >
                       <AppHomeScreen
                         scenario={scenario}
-                        onAgendar={() => setScreen('caregiver-intro')}
+                        onAgendar={() => {
+                          if (loadSavedAddress()) {
+                            setSearchBackTo('app-home')
+                            setSearchPhase('results')
+                            setScreen('caregiver-search')
+                            return
+                          }
+                          setScreen('caregiver-intro')
+                        }}
                         onCuidador={() => {
                           setSearchBackTo('app-home')
-                          setSearchPhase('locate')
+                          setSearchPhase(loadSavedAddress() ? 'results' : 'map')
                           setScreen('caregiver-search')
                         }}
                       />
@@ -241,7 +260,7 @@ function App() {
                         onBack={() => setScreen('app-home')}
                         onContinue={() => {
                           setSearchBackTo('caregiver-intro')
-                          setSearchPhase('locate')
+                          setSearchPhase(loadSavedAddress() ? 'results' : 'map')
                           setScreen('caregiver-search')
                         }}
                       />
@@ -252,7 +271,9 @@ function App() {
                       inert={shownView !== 'caregiver-search' ? true : undefined}
                     >
                       <CaregiverSearchScreen
-                        onBack={() => setScreen(searchBackTo)}
+                        onBack={() =>
+                          setScreen(loadSavedAddress() ? 'app-home' : searchBackTo)
+                        }
                         phase={searchPhase}
                         overlay={searchOverlay(screen)}
                         caregiverId={caregiverId}
@@ -295,6 +316,14 @@ function App() {
               </span>
               <span className="scenario-toggle__hint">
                 {needsAttention ? 'Actividad ≤ 30' : 'Simular inactividad'}
+              </span>
+            </button>
+            <button type="button" className={`scenario-toggle${hasSavedAddress ? ' is-active' : ''}`} onClick={resetAddressCache}>
+              <span className="scenario-toggle__label">Reset dirección</span>
+              <span className="scenario-toggle__hint">
+                {hasSavedAddress
+                  ? 'Borrar caché y repetir el onboarding'
+                  : 'Sin dirección · volver al intro'}
               </span>
             </button>
             <ScreenNavigator

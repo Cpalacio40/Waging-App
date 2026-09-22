@@ -55,7 +55,7 @@ function App() {
   const [layerAnim, setLayerAnim] = useState<LayerAnim>(null)
   const [scenario, setScenario] = useState<HomeScenarioId>(DEFAULT_SCENARIO)
   const [widgetIndex, setWidgetIndex] = useState(0)
-  const [searchPhase, setSearchPhase] = useState<SearchPhase>('idle')
+  const [searchPhase, setSearchPhase] = useState<SearchPhase>('locate')
   const [searchBackTo, setSearchBackTo] = useState<'app-home' | 'caregiver-intro'>('caregiver-intro')
   const [caregiverId, setCaregiverId] = useState(DEFAULT_CAREGIVER_ID)
   const [banner, setBanner] = useState<IosNotificationPhase | 'idle'>('idle')
@@ -227,7 +227,7 @@ function App() {
                         onAgendar={() => setScreen('caregiver-intro')}
                         onCuidador={() => {
                           setSearchBackTo('app-home')
-                          setSearchPhase('idle')
+                          setSearchPhase('locate')
                           setScreen('caregiver-search')
                         }}
                       />
@@ -241,7 +241,7 @@ function App() {
                         onBack={() => setScreen('app-home')}
                         onContinue={() => {
                           setSearchBackTo('caregiver-intro')
-                          setSearchPhase('idle')
+                          setSearchPhase('locate')
                           setScreen('caregiver-search')
                         }}
                       />

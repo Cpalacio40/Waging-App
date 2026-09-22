@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { CAREGIVERS, findCaregiver, type Caregiver } from '../data/caregivers'
 import type { SearchPhase } from '../data/screens'
 import { useDragScroll } from '../hooks/useDragScroll'
 import { assetUrl } from '../utils/assetUrl'
+import { AddressLocateScreen } from './AddressLocateScreen'
 import { CaregiverProfileScreen } from './CaregiverProfileScreen'
 import './screens.css'
 
@@ -56,8 +57,7 @@ export function CaregiverSearchScreen({
   onOpenCalendar,
   onCloseCalendar,
 }: CaregiverSearchScreenProps) {
-  const [query, setQuery] = useState('')
-  const [internalPhase, setInternalPhase] = useState<SearchPhase>('idle')
+  const [internalPhase, setInternalPhase] = useState<SearchPhase>('locate')
   const [selected, setSelected] = useState<Caregiver | null>(() =>
     overlayProp === 'profile' || overlayProp === 'calendar' ? findCaregiver(caregiverId) : null,
   )
@@ -67,6 +67,7 @@ export function CaregiverSearchScreen({
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const phase = phaseProp ?? internalPhase
   const overlay = overlayProp ?? (profileOpen ? 'profile' : 'none')
+  const locating = phase === 'locate' || phase === 'map' || phase === 'idle'
   const showList = phase === 'loading' || phase === 'results'
   // Keep scroll enabled while the profile covers the list so opening doesn't
   // jump the list mid-slide (we re-align to the clicked card after open).
@@ -103,15 +104,18 @@ export function CaregiverSearchScreen({
     setProfileOpen(false)
   }, [overlay, caregiverId])
 
-  const onSearch = (e?: FormEvent) => {
-    e?.preventDefault()
-    if (!query.trim() || phase === 'loading') return
+  const startCaregiverSearch = () => {
+    if (phase === 'loading') return
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
     setPhase('loading')
     searchTimerRef.current = setTimeout(() => {
       setPhase('results')
       searchTimerRef.current = null
     }, SEARCH_DELAY_MS)
+  }
+
+  const onAddressConfirmed = () => {
+    startCaregiverSearch()
   }
 
   const openProfile = (caregiver: Caregiver) => {
@@ -150,6 +154,20 @@ export function CaregiverSearchScreen({
     setSelected(null)
   }
 
+  if (locating) {
+    return (
+      <AddressLocateScreen
+        mode={phase === 'map' ? 'map' : 'search'}
+        onBack={() => {
+          if (phase === 'map') setPhase('locate')
+          else onBack?.()
+        }}
+        onModeChange={(next) => setPhase(next === 'map' ? 'map' : 'locate')}
+        onConfirm={onAddressConfirmed}
+      />
+    )
+  }
+
   return (
     <div className={`screen caregiver-search${showList ? ' is-scrollable' : ''}`}>
       <header className={`caregiver-nav${dragScroll.scrolled ? ' is-scrolled' : ''}`}>
@@ -172,30 +190,6 @@ export function CaregiverSearchScreen({
             <p className="caregiver-search__lead">
               El cuidador correcto hace la diferencia entre un paseo y una salida que enriquece
             </p>
-
-            <form className="caregiver-search__form" onSubmit={onSearch}>
-              <div className="caregiver-search__field">
-                <label className="caregiver-search__label" htmlFor="caregiver-address">
-                  ¿Cuál es tu dirección?
-                </label>
-                <input
-                  id="caregiver-address"
-                  className="caregiver-search__input"
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Buscar aquí"
-                  autoComplete="street-address"
-                />
-              </div>
-              <button
-                type="submit"
-                className="caregiver-cta"
-                disabled={!query.trim() || phase === 'loading'}
-              >
-                Buscar
-              </button>
-            </form>
 
             {phase === 'loading' ? (
               <ul className="caregiver-search__results" aria-busy="true" aria-label="Buscando cuidadores">

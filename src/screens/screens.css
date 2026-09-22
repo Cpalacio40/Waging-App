@@ -2228,7 +2228,7 @@ button.caregiver-review__play:active:not(:disabled):not([aria-disabled='true']) 
   box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.1);
 }
 
-/* Caregiver calendar booking sheet (180:6825) — slides in from the right */
+/* Caregiver calendar booking sheet (180:6825) ? slides in from the right */
 .caregiver-calendar-sheet {
   position: absolute;
   inset: 0;
@@ -2875,4 +2875,309 @@ button.caregiver-review__play:active:not(:disabled):not([aria-disabled='true']) 
   line-height: 20px;
   color: #fcfcfc;
   cursor: pointer;
+}
+
+/* Address locate (OSM map) ? Figma 164:6857 / 257:6132 / 255:2784 */
+.address-locate {
+  background: #fcfcfc;
+  color: var(--ink);
+}
+
+.address-locate__top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 48px 23px 0;
+}
+
+.address-locate__field {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px;
+  border: 1.5px solid #f3f3f3;
+  border-radius: 12px;
+  background: #f3f3f3;
+}
+
+.address-locate__field--map {
+  width: 100%;
+  padding-left: 16px;
+}
+
+.address-locate__field img {
+  flex-shrink: 0;
+  display: block;
+}
+
+.address-locate__input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--ink);
+  outline: none;
+}
+
+.address-locate__input::placeholder {
+  color: #8e8e8e;
+}
+
+.address-locate__body {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 42px 23px 24px;
+}
+
+.address-locate__status,
+.address-locate__error {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+}
+
+.address-locate__error {
+  color: #c0392b;
+}
+
+.address-locate__status {
+  color: rgba(52, 6, 22, 0.75);
+}
+
+.address-locate__results {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.address-locate__result {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  width: 100%;
+  margin: 0;
+  padding: 8px 12px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border-radius: 12px;
+}
+
+.address-locate__result:active {
+  background: #f3f3f3;
+}
+
+.address-locate__result img {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.address-locate__result-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.address-locate__result-label {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 18px;
+  color: var(--ink);
+}
+
+.address-locate__result-secondary {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  color: rgba(52, 6, 22, 0.75);
+}
+
+.address-locate__map-cta {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  width: 100%;
+  margin: 0;
+  padding: 12px;
+  border: 0;
+  border-radius: 14px;
+  background: rgba(255, 144, 95, 0.1);
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.address-locate__map-cta img {
+  flex-shrink: 0;
+}
+
+.address-locate__map-cta-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.address-locate__map-cta-title {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--ink);
+}
+
+.address-locate__map-cta-link {
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 18px;
+  color: var(--orange);
+  text-decoration: underline;
+}
+
+.address-locate--map {
+  background: #e8eef2;
+}
+
+.address-locate__map {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+/* Soft blue wash ? closer to Google Maps / Waging --blue, tiles only (pin stays brand orange). */
+.address-locate__map .leaflet-tile-pane {
+  filter: saturate(0.85) hue-rotate(195deg) brightness(1.06) contrast(0.95);
+}
+
+.address-locate__map .leaflet-control-attribution {
+  font-size: 9px;
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.address-locate__map-nav {
+  position: absolute;
+  top: 22px;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  height: 101px;
+  padding: 12px 17px;
+  pointer-events: none;
+}
+
+.address-locate__back-chip {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: #fcfcfc;
+  box-shadow: 0 4px 16px rgba(88, 92, 95, 0.12);
+}
+
+.address-locate__tooltip {
+  position: absolute;
+  top: 28%;
+  left: 50%;
+  z-index: 5;
+  display: flex;
+  gap: 13px;
+  align-items: center;
+  width: 278px;
+  min-height: 48px;
+  padding: 10px 11px;
+  border-radius: 8px;
+  background: #fcfcfc;
+  box-shadow: 0 16px 32px -12px rgba(88, 92, 95, 0.1);
+  transform: translateX(-50%);
+}
+
+.address-locate__tooltip::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid #fcfcfc;
+  transform: translateX(-50%);
+}
+
+.address-locate__tooltip-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.address-locate__tooltip-title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  color: var(--ink);
+}
+
+.address-locate__tooltip-sub {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 14px;
+  color: var(--ink);
+}
+
+.address-locate__sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 40px 22px 24px;
+  border-radius: 28px 28px 0 0;
+  background: #fff;
+  box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.1);
+}
+
+.address-locate__sheet-hint {
+  margin: 0;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--ink);
+}
+
+.address-locate__sheet-hint span {
+  font-weight: 400;
+}
+
+.address-locate__map-form {
+  width: 100%;
+}
+
+.address-locate__confirm {
+  margin-top: 4px;
 }

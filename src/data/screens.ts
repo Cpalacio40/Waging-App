@@ -10,7 +10,7 @@ export type ScreenId =
   | 'caregiver-profile'
   | 'caregiver-calendar'
 
-export type SearchPhase = 'idle' | 'loading' | 'results'
+export type SearchPhase = 'locate' | 'map' | 'idle' | 'loading' | 'results'
 
 export type ScreenMeta = {
   id: ScreenId
@@ -116,7 +116,8 @@ export const NAV_GROUPS: NavGroup[] = [
     id: 'caregiver-search',
     label: 'App · Buscar cuidador',
     items: [
-      { id: 'search-idle', label: 'Sin cuidadores', screen: 'caregiver-search', searchPhase: 'idle' },
+      { id: 'search-locate', label: 'Dirección', screen: 'caregiver-search', searchPhase: 'locate' },
+      { id: 'search-map', label: 'Mapa', screen: 'caregiver-search', searchPhase: 'map' },
       { id: 'search-results', label: 'Con cuidadores', screen: 'caregiver-search', searchPhase: 'results' },
     ],
   },
@@ -165,7 +166,9 @@ export function activeNavId({
     return scenario === 'attention' ? 'app-home-alert' : 'app-home-ok'
   }
   if (screen === 'caregiver-search') {
-    return searchPhase === 'results' || searchPhase === 'loading' ? 'search-results' : 'search-idle'
+    if (searchPhase === 'results' || searchPhase === 'loading') return 'search-results'
+    if (searchPhase === 'map') return 'search-map'
+    return 'search-locate'
   }
   if (screen === 'caregiver-profile') return `profile-${caregiverId}`
   if (screen === 'caregiver-calendar') return 'calendar'

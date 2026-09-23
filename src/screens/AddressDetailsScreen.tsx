@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import {
-  BUILDING_OPTIONS,
-  DEFAULT_ADDRESS_TAGS,
+  buildingOption,
   type BuildingType,
   type SavedAddress,
 } from '../data/savedAddress'
@@ -20,9 +19,9 @@ type AddressDetailsScreenProps = {
   onSave?: (address: SavedAddress) => void
 }
 
-function miniPinIcon() {
+function miniPinIcon(buildingType: BuildingType) {
   return L.icon({
-    iconUrl: addressAsset('pin-house.svg'),
+    iconUrl: addressAsset(buildingOption(buildingType).pin),
     iconSize: [44, 51],
     iconAnchor: [22, 51],
   })
@@ -35,15 +34,17 @@ export function AddressDetailsScreen({
   onAdjustPin,
   onSave,
 }: AddressDetailsScreenProps) {
+  const initialTag = buildingOption(buildingType).label
   const [floor, setFloor] = useState('')
   const [door, setDoor] = useState('')
   const [notes, setNotes] = useState('')
-  const [tags, setTags] = useState<string[]>([...DEFAULT_ADDRESS_TAGS])
-  const [tag, setTag] = useState(DEFAULT_ADDRESS_TAGS[0])
+  const [tags, setTags] = useState<string[]>([initialTag])
+  const [tag, setTag] = useState(initialTag)
   const [tagModalOpen, setTagModalOpen] = useState(false)
   const [newTagDraft, setNewTagDraft] = useState('')
   const miniMapRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<L.Map | null>(null)
+  const markerRef = useRef<L.Marker | null>(null)
   const tagInputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
@@ -65,15 +66,22 @@ export function AddressDetailsScreen({
       { maxZoom: 19 },
     ).addTo(map)
 
-    L.marker([place.lat, place.lng], { icon: miniPinIcon() }).addTo(map)
+    markerRef.current = L.marker([place.lat, place.lng], {
+      icon: miniPinIcon(buildingType),
+    }).addTo(map)
     mapRef.current = map
     requestAnimationFrame(() => map.invalidateSize())
 
     return () => {
       map.remove()
       mapRef.current = null
+      markerRef.current = null
     }
   }, [place.lat, place.lng])
+
+  useEffect(() => {
+    markerRef.current?.setIcon(miniPinIcon(buildingType))
+  }, [buildingType])
 
   useEffect(() => {
     if (!tagModalOpen) return
@@ -81,8 +89,7 @@ export function AddressDetailsScreen({
     return () => cancelAnimationFrame(id)
   }, [tagModalOpen])
 
-  const buildingIcon =
-    BUILDING_OPTIONS.find((o) => o.id === buildingType)?.icon ?? 'house.svg'
+  const buildingIcon = buildingOption(buildingType).icon
 
   const openTagModal = () => {
     setNewTagDraft('')

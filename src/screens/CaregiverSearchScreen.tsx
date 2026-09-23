@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState, type AnimationEvent } from 'react'
 import { CAREGIVERS, findCaregiver, type Caregiver } from '../data/caregivers'
 import {
+  buildingOption,
   loadSavedAddress,
+  loadSavedAddresses,
   saveAddress,
+  setActiveAddressTag,
+  subscribeAddressChange,
   type BuildingType,
   type SavedAddress,
 } from '../data/savedAddress'
@@ -15,6 +19,7 @@ import { CaregiverProfileScreen } from './CaregiverProfileScreen'
 import './screens.css'
 
 const caregiverAsset = (name: string) => assetUrl(`caregiver/${name}`)
+const addressAsset = (name: string) => assetUrl(`address/${name}`)
 const SEARCH_DELAY_MS = 2000
 const SKELETON_COUNT = 3
 /** Gap above a focused result card (clears the sticky nav banner). */
@@ -69,6 +74,13 @@ function isLocatePhase(phase: SearchPhase) {
   return phase === 'locate' || phase === 'map' || phase === 'building' || phase === 'idle'
 }
 
+function formatSavedAddressLine(address: SavedAddress) {
+  const parts = [address.label]
+  if (address.floor.trim()) parts.push(`Piso ${address.floor.trim()}`)
+  if (address.door.trim()) parts.push(`Puerta ${address.door.trim()}`)
+  return parts.join(' · ')
+}
+
 /** First-run address gate + caregiver cards — Figma 3.1 address workflow. */
 export function CaregiverSearchScreen({
   onBack,
@@ -96,6 +108,9 @@ export function CaregiverSearchScreen({
   const [leavingPanel, setLeavingPanel] = useState<'details' | 'list' | null>(null)
   /** Where details should land after its leave animation. */
   const [leavingDetailsTo, setLeavingDetailsTo] = useState<'building' | 'map'>('building')
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>(() => loadSavedAddresses())
+  const [activeAddress, setActiveAddress] = useState<SavedAddress | null>(() => loadSavedAddress())
+  const [addressMenuOpen, setAddressMenuOpen] = useState(false)
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const phase = phaseProp ?? internalPhase
   const overlay = overlayProp ?? (profileOpen ? 'profile' : 'none')
@@ -106,13 +121,25 @@ export function CaregiverSearchScreen({
   const showLocate = locating || phase === 'details' || leavingPanel === 'details'
   const dragScroll = useDragScroll({
     enabled: (phase === 'loading' || phase === 'results') && leavingPanel !== 'list',
-    ignoreSelector: 'a, input, textarea, .caregiver-back, .caregiver-cta',
+    ignoreSelector:
+      'a, input, textarea, .caregiver-back, .caregiver-cta, .caregiver-address-select, .caregiver-address-menu',
   })
 
   const setPhase = (next: SearchPhase) => {
     onPhaseChange?.(next)
     if (phaseProp === undefined) setInternalPhase(next)
   }
+
+  useEffect(() => {
+    return subscribeAddressChange(() => {
+      setSavedAddresses(loadSavedAddresses())
+      setActiveAddress(loadSavedAddress())
+    })
+  }, [])
+
+  useEffect(() => {
+    if (!showList) setAddressMenuOpen(false)
+  }, [showList])
 
   useEffect(() => {
     return () => {
@@ -144,11 +171,14 @@ export function CaregiverSearchScreen({
     setProfileOpen(false)
   }, [overlay, caregiverId])
 
-  // Clear leave flag if phase jumps via navigator.
+  // Clear leave flag only when the navigator jumps away from the panel being left.
+  // Do not clear while phase is still the leaving panel (that cancels the exit animation
+  // and traps the user on details/list).
   useEffect(() => {
-    if (phase === 'details' && leavingPanel === 'details') setLeavingPanel(null)
-    if ((phase === 'loading' || phase === 'results') && leavingPanel === 'list') setLeavingPanel(null)
-    if (isLocatePhase(phase) && leavingPanel === 'list') setLeavingPanel(null)
+    if (leavingPanel === 'details' && phase !== 'details') setLeavingPanel(null)
+    if (leavingPanel === 'list' && phase !== 'loading' && phase !== 'results') {
+      setLeavingPanel(null)
+    }
   }, [phase, leavingPanel])
 
   const startCaregiverSearch = () => {
@@ -171,7 +201,31 @@ export function CaregiverSearchScreen({
 
   const onSaveAddress = (address: SavedAddress) => {
     saveAddress(address)
+    setDraftPlace(null)
+    setAddressMenuOpen(false)
     startCaregiverSearch()
+  }
+
+  const selectAddressTag = (tag: string) => {
+    const changed = tag !== activeAddress?.tag
+    setActiveAddressTag(tag)
+    setAddressMenuOpen(false)
+    if (changed) startCaregiverSearch()
+  }
+
+  const addAnotherAddress = () => {
+    setAddressMenuOpen(false)
+    setDraftPlace(null)
+    setLeavingPanel(null)
+    setPhase('map')
+  }
+
+  /** Leave the locate/details flow and return to the caregiver list. */
+  const returnToCaregiverResults = () => {
+    setDraftPlace(null)
+    setLeavingPanel(null)
+    setAddressMenuOpen(false)
+    setPhase('results')
   }
 
   const openProfile = (caregiver: Caregiver) => {
@@ -253,9 +307,21 @@ export function CaregiverSearchScreen({
           <AddressLocateScreen
             mode={locateModeFromPhase(isLocatePhase(phase) ? phase : 'building')}
             onBack={() => {
-              if (phase === 'building') setPhase('map')
-              else if (phase === 'locate') setPhase('map')
-              else onBack?.()
+              if (phase === 'building') {
+                setPhase('map')
+                return
+              }
+              if (phase === 'locate') {
+                setPhase('map')
+                return
+              }
+              // Map (or idle): if addresses already exist we came from the caregiver
+              // list via "Añadir dirección" — go back there instead of leaving the flow.
+              if (savedAddresses.length > 0) {
+                returnToCaregiverResults()
+                return
+              }
+              onBack?.()
             }}
             onModeChange={(next) => {
               if (next === 'search') setPhase('locate')
@@ -287,22 +353,106 @@ export function CaregiverSearchScreen({
           onAnimationEnd={(e) => onPushPanelAnimationEnd('list', e)}
         >
           <div className={`screen caregiver-search${listActive ? ' is-scrollable' : ''}`}>
-            <header className={`caregiver-nav${dragScroll.scrolled ? ' is-scrolled' : ''}`}>
+            <header className={`caregiver-nav caregiver-nav--address${dragScroll.scrolled ? ' is-scrolled' : ''}`}>
+              {activeAddress ? (
+                <div className="caregiver-address-select">
+                  <button
+                    type="button"
+                    className={`caregiver-address-select__trigger${addressMenuOpen ? ' is-open' : ''}`}
+                    aria-haspopup="listbox"
+                    aria-expanded={addressMenuOpen}
+                    onClick={() => setAddressMenuOpen((open) => !open)}
+                  >
+                    <img
+                      className="caregiver-address-select__icon"
+                      src={addressAsset(buildingOption(activeAddress.buildingType).icon)}
+                      alt=""
+                      width={20}
+                      height={20}
+                      draggable={false}
+                    />
+                    <span className="caregiver-address-select__label">{activeAddress.tag}</span>
+                    <img
+                      className="caregiver-address-select__chevron"
+                      src={assetUrl('app-inicio/icon-chevron-down.svg')}
+                      alt=""
+                      width={20}
+                      height={20}
+                      draggable={false}
+                    />
+                  </button>
+                  {addressMenuOpen ? (
+                    <ul
+                      className="caregiver-address-menu"
+                      role="listbox"
+                      aria-label="Direcciones guardadas"
+                    >
+                      {savedAddresses.map((item) => (
+                        <li key={`${item.tag}-${item.savedAt}`}>
+                          <button
+                            type="button"
+                            className={`caregiver-address-menu__item${
+                              item.tag === activeAddress.tag ? ' is-active' : ''
+                            }`}
+                            role="option"
+                            aria-selected={item.tag === activeAddress.tag}
+                            onClick={() => selectAddressTag(item.tag)}
+                          >
+                            <img
+                              className="caregiver-address-menu__icon"
+                              src={addressAsset(buildingOption(item.buildingType).icon)}
+                              alt=""
+                              width={20}
+                              height={20}
+                              draggable={false}
+                            />
+                            <span className="caregiver-address-menu__copy">
+                              <span className="caregiver-address-menu__tag">{item.tag}</span>
+                              <span className="caregiver-address-menu__addr">
+                                {formatSavedAddressLine(item)}
+                              </span>
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                      <li>
+                        <button
+                          type="button"
+                          className="caregiver-address-menu__item caregiver-address-menu__item--add"
+                          onClick={addAnotherAddress}
+                        >
+                          Añadir dirección
+                        </button>
+                      </li>
+                    </ul>
+                  ) : null}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="caregiver-back"
+                  aria-label="Volver"
+                  onClick={requestListBack}
+                >
+                  <img
+                    src={caregiverAsset('arrow-left.svg')}
+                    alt=""
+                    width={32}
+                    height={32}
+                    draggable={false}
+                  />
+                </button>
+              )}
+            </header>
+
+            {addressMenuOpen ? (
               <button
                 type="button"
-                className="caregiver-back"
-                aria-label="Volver"
-                onClick={requestListBack}
-              >
-                <img
-                  src={caregiverAsset('arrow-left.svg')}
-                  alt=""
-                  width={32}
-                  height={32}
-                  draggable={false}
-                />
-              </button>
-            </header>
+                className="caregiver-address-select__backdrop"
+                aria-label="Cerrar"
+                onClick={() => setAddressMenuOpen(false)}
+              />
+            ) : null}
 
             <div
               ref={dragScroll.ref}

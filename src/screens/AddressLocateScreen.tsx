@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type AnimationEvent } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { BUILDING_OPTIONS, type BuildingType } from '../data/savedAddress'
+import { BUILDING_OPTIONS, buildingOption, type BuildingType } from '../data/savedAddress'
 import { assetUrl } from '../utils/assetUrl'
 import { isInCoverage, reverseGeocode, searchAddress, type GeoResult } from '../utils/geocode'
 import './screens.css'
@@ -87,6 +87,7 @@ export function AddressLocateScreen({
   const [searchLeaving, setSearchLeaving] = useState(false)
   const [mapMoving, setMapMoving] = useState(false)
   const [resolvingAddress, setResolvingAddress] = useState(false)
+  const [previewBuilding, setPreviewBuilding] = useState<BuildingType | null>(null)
 
   const mapHostRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<L.Map | null>(null)
@@ -102,9 +103,13 @@ export function AddressLocateScreen({
   const showSearchSheet = mode === 'search' || searchLeaving
   const showMapChrome = mode === 'map' || mode === 'building'
   const inCoverage = isInCoverage(coords.lat, coords.lng)
-  const pinKind = !inCoverage ? 'out' : mode === 'building' ? 'house' : 'ok'
+  const pinKind = !inCoverage ? 'out' : mode === 'building' ? 'building' : 'ok'
   const pinSrc =
-    pinKind === 'out' ? 'pin-marker.svg' : pinKind === 'house' ? 'pin-house.svg' : 'pin-ok.svg'
+    pinKind === 'out'
+      ? 'pin-marker.svg'
+      : pinKind === 'building'
+        ? buildingOption(previewBuilding ?? 'casa').pin
+        : 'pin-ok.svg'
 
   const place: LocatedPlace = {
     label: selected?.label || query.trim() || 'Ubicación seleccionada',
@@ -335,6 +340,7 @@ export function AddressLocateScreen({
 
   // When switching map ↔ building, re-align pin target and invalidate size
   useEffect(() => {
+    if (mode !== 'building') setPreviewBuilding(null)
     const map = mapRef.current
     if (!map || !showMapChrome) return
     requestAnimationFrame(() => {
@@ -441,7 +447,13 @@ export function AddressLocateScreen({
                   <button
                     key={opt.id}
                     type="button"
-                    className="address-locate__building-card"
+                    className={`address-locate__building-card${
+                      previewBuilding === opt.id ? ' is-preview' : ''
+                    }`}
+                    onPointerEnter={() => setPreviewBuilding(opt.id)}
+                    onPointerLeave={() => setPreviewBuilding(null)}
+                    onFocus={() => setPreviewBuilding(opt.id)}
+                    onBlur={() => setPreviewBuilding(null)}
                     onClick={() => pickBuilding(opt.id)}
                   >
                     <img src={addressAsset(opt.icon)} alt="" width={24} height={24} draggable={false} />

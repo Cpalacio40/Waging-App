@@ -1330,6 +1330,160 @@
   pointer-events: auto;
 }
 
+.caregiver-nav--address {
+  justify-content: center;
+  padding-left: 22px;
+  padding-right: 22px;
+}
+
+.caregiver-address-select {
+  position: relative;
+  z-index: 7;
+  pointer-events: auto;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.caregiver-address-select__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  min-width: 132px;
+  height: 40px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--orange);
+  color: #fcfcfc;
+  cursor: pointer;
+}
+
+.caregiver-address-select__trigger img {
+  display: block;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}
+
+.caregiver-address-select__icon {
+  filter: brightness(0) invert(1);
+}
+
+.caregiver-address-select__label {
+  max-width: 140px;
+  padding: 0 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  color: #fcfcfc;
+}
+
+.caregiver-address-select__chevron {
+  transition: transform 0.2s ease;
+}
+
+.caregiver-address-select__trigger.is-open .caregiver-address-select__chevron {
+  transform: rotate(180deg);
+}
+
+.caregiver-address-select__backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  border: 0;
+  background: transparent;
+  cursor: default;
+}
+
+.caregiver-address-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: min(280px, calc(100% + 40px));
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border: 0.5px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  background: rgba(250, 250, 250, 0.98);
+  box-shadow: 0 12px 32px rgba(30, 15, 20, 0.18);
+  transform: translateX(-50%);
+}
+
+.caregiver-address-menu__item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.caregiver-address-menu__item:active {
+  background: rgba(237, 125, 76, 0.1);
+}
+
+.caregiver-address-menu__item.is-active {
+  background: rgba(237, 125, 76, 0.14);
+}
+
+.caregiver-address-menu__icon {
+  display: block;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}
+
+.caregiver-address-menu__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+
+.caregiver-address-menu__tag {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--ink);
+}
+
+.caregiver-address-menu__addr {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  color: rgba(52, 6, 22, 0.75);
+}
+
+.caregiver-address-menu__item--add {
+  margin-top: 2px;
+  border-top: 0.5px solid rgba(60, 60, 67, 0.16);
+  border-radius: 0 0 12px 12px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 20px;
+  color: #da6938;
+}
+
 /* Match .caregiver-profile__top surface under the arrow. */
 .caregiver-nav--muted {
   --caregiver-nav-bg: #f3f3f3;
@@ -3446,7 +3600,8 @@ button.caregiver-review__play:active:not(:disabled):not([aria-disabled='true']) 
   cursor: pointer;
 }
 
-.address-locate__building-card:active {
+.address-locate__building-card:active,
+.address-locate__building-card.is-preview {
   background: rgba(255, 144, 95, 0.08);
 }
 

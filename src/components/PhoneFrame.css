@@ -5,14 +5,10 @@
 }
 
 .phone-scale {
-  /* Prefer a larger device when there’s room; never exceed ~1.22× native */
+  /* --scale is set from JS (zoom-stable). Fallback keeps layout before hydration. */
   --phone-outer-w: calc(var(--phone-w) + 2 * var(--bezel));
   --phone-outer-h: calc(var(--phone-h) + 2 * var(--bezel));
-  --scale: min(
-    1.22,
-    (100vh - 6.5rem) / var(--phone-outer-h),
-    (100vw - 2rem) / var(--phone-outer-w)
-  );
+  --scale: 1;
   width: calc(var(--phone-outer-w) * var(--scale));
   height: calc(var(--phone-outer-h) * var(--scale));
 }

@@ -94,6 +94,8 @@ export function CaregiverSearchScreen({
   )
   /** Panel sliding out to the right before the phase actually changes. */
   const [leavingPanel, setLeavingPanel] = useState<'details' | 'list' | null>(null)
+  /** Where details should land after its leave animation. */
+  const [leavingDetailsTo, setLeavingDetailsTo] = useState<'building' | 'map'>('building')
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const phase = phaseProp ?? internalPhase
   const overlay = overlayProp ?? (profileOpen ? 'profile' : 'none')
@@ -209,6 +211,13 @@ export function CaregiverSearchScreen({
 
   const requestDetailsBack = () => {
     if (leavingPanel) return
+    setLeavingDetailsTo('building')
+    setLeavingPanel('details')
+  }
+
+  const requestAdjustPin = () => {
+    if (leavingPanel) return
+    setLeavingDetailsTo('map')
     setLeavingPanel('details')
   }
 
@@ -226,7 +235,7 @@ export function CaregiverSearchScreen({
     if (leavingPanel !== panel) return
     if (!e.animationName.includes('flow-out-right')) return
     setLeavingPanel(null)
-    if (panel === 'details') setPhase('building')
+    if (panel === 'details') setPhase(leavingDetailsTo)
     else setPhase('map')
   }
 
@@ -266,7 +275,7 @@ export function CaregiverSearchScreen({
             place={place}
             buildingType={buildingType}
             onBack={requestDetailsBack}
-            onAdjustPin={requestDetailsBack}
+            onAdjustPin={requestAdjustPin}
             onSave={onSaveAddress}
           />
         </div>

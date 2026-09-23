@@ -1,6 +1,7 @@
 export type BuildingType = 'casa' | 'apartamento' | 'oficina' | 'otro'
 
-export type AddressLabel = 'casa' | 'personalizado'
+/** Free-text label for the saved address (e.g. "Casa", "Trabajo"). */
+export type AddressLabel = string
 
 export type SavedAddress = {
   label: string
@@ -14,6 +15,8 @@ export type SavedAddress = {
   tag: AddressLabel
   savedAt: string
 }
+
+export const DEFAULT_ADDRESS_TAGS = ['Casa'] as const
 
 const STORAGE_KEY = 'waging.savedAddress'
 const ADDRESS_EVENT = 'waging:address'

@@ -3,7 +3,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import {
   BUILDING_OPTIONS,
-  type AddressLabel,
+  DEFAULT_ADDRESS_TAGS,
   type BuildingType,
   type SavedAddress,
 } from '../data/savedAddress'
@@ -38,9 +38,13 @@ export function AddressDetailsScreen({
   const [floor, setFloor] = useState('')
   const [door, setDoor] = useState('')
   const [notes, setNotes] = useState('')
-  const [tag, setTag] = useState<AddressLabel>('casa')
+  const [tags, setTags] = useState<string[]>([...DEFAULT_ADDRESS_TAGS])
+  const [tag, setTag] = useState(DEFAULT_ADDRESS_TAGS[0])
+  const [tagModalOpen, setTagModalOpen] = useState(false)
+  const [newTagDraft, setNewTagDraft] = useState('')
   const miniMapRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<L.Map | null>(null)
+  const tagInputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
     if (!miniMapRef.current || mapRef.current) return
@@ -71,8 +75,40 @@ export function AddressDetailsScreen({
     }
   }, [place.lat, place.lng])
 
+  useEffect(() => {
+    if (!tagModalOpen) return
+    const id = requestAnimationFrame(() => tagInputRef.current?.focus())
+    return () => cancelAnimationFrame(id)
+  }, [tagModalOpen])
+
   const buildingIcon =
     BUILDING_OPTIONS.find((o) => o.id === buildingType)?.icon ?? 'house.svg'
+
+  const openTagModal = () => {
+    setNewTagDraft('')
+    setTagModalOpen(true)
+  }
+
+  const closeTagModal = () => {
+    setTagModalOpen(false)
+    setNewTagDraft('')
+  }
+
+  const addTag = () => {
+    const value = newTagDraft.trim()
+    if (!value) return
+
+    const existing = tags.find((t) => t.toLowerCase() === value.toLowerCase())
+    if (existing) {
+      setTag(existing)
+      closeTagModal()
+      return
+    }
+
+    setTags((prev) => [...prev, value])
+    setTag(value)
+    closeTagModal()
+  }
 
   const submit = () => {
     onSave?.({
@@ -152,31 +188,40 @@ export function AddressDetailsScreen({
 
         <div className="address-details__entrance">
           <h2 className="address-details__section-title">Marca tu entrada</h2>
-          <p className="address-details__section-sub">Ayuda al cuidador a llegar más rápido</p>
+          <p className="address-details__section-sub">
+            Ayuda al cuidador a encontrarte más rápido
+          </p>
           <div className="address-details__mini-wrap">
             <div ref={miniMapRef} className="address-details__mini-map" role="presentation" />
             <button type="button" className="address-details__adjust" onClick={onAdjustPin}>
-              Ajustar pin
+              Ajustar marcador
             </button>
           </div>
         </div>
 
         <div className="address-details__labels">
           <h2 className="address-details__section-title">Añade una etiqueta</h2>
+          <p className="address-details__section-sub">
+            Identifica esta dirección más fácilmente la próxima vez
+          </p>
           <div className="address-details__chips" role="group" aria-label="Etiqueta">
+            {tags.map((item) => (
+              <button
+                key={item}
+                type="button"
+                className={`address-details__chip${tag === item ? ' is-active' : ''}`}
+                onClick={() => setTag(item)}
+              >
+                {item}
+              </button>
+            ))}
             <button
               type="button"
-              className={`address-details__chip${tag === 'casa' ? ' is-active' : ''}`}
-              onClick={() => setTag('casa')}
+              className="address-details__chip-add"
+              aria-label="Añadir etiqueta"
+              onClick={openTagModal}
             >
-              Casa
-            </button>
-            <button
-              type="button"
-              className={`address-details__chip${tag === 'personalizado' ? ' is-active' : ''}`}
-              onClick={() => setTag('personalizado')}
-            >
-              Personalizado
+              <img src={addressAsset('plus.svg')} alt="" width={24} height={24} draggable={false} />
             </button>
           </div>
         </div>
@@ -187,6 +232,67 @@ export function AddressDetailsScreen({
           Guardar dirección
         </button>
       </div>
+
+      {tagModalOpen ? (
+        <div className="address-details__modal">
+          <button
+            type="button"
+            className="address-details__modal-backdrop"
+            aria-label="Cerrar"
+            onClick={closeTagModal}
+          />
+          <div
+            className="address-details__modal-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="address-tag-modal-title"
+          >
+            <h2 id="address-tag-modal-title" className="address-details__modal-title">
+              Nueva etiqueta
+            </h2>
+            <div className="address-details__modal-field">
+              <input
+                ref={tagInputRef}
+                className="address-details__input"
+                type="text"
+                value={newTagDraft}
+                onChange={(e) => setNewTagDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    addTag()
+                  }
+                  if (e.key === 'Escape') {
+                    e.preventDefault()
+                    closeTagModal()
+                  }
+                }}
+                placeholder="Ej. Trabajo, Casa de mamá…"
+                maxLength={24}
+                autoComplete="off"
+                aria-labelledby="address-tag-modal-title"
+              />
+            </div>
+            <div className="address-details__modal-actions">
+              <button
+                type="button"
+                className="address-details__modal-action"
+                onClick={closeTagModal}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="address-details__modal-action address-details__modal-action--confirm"
+                onClick={addTag}
+                disabled={!newTagDraft.trim()}
+              >
+                Añadir
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

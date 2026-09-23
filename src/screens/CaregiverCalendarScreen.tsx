@@ -115,6 +115,7 @@ type CaregiverCalendarScreenProps = {
   caregiver: Caregiver
   open: boolean
   onBack: () => void
+  onOpened?: () => void
   onClosed: () => void
 }
 
@@ -123,6 +124,7 @@ export function CaregiverCalendarScreen({
   caregiver,
   open,
   onBack,
+  onOpened,
   onClosed,
 }: CaregiverCalendarScreenProps) {
   const [today] = useState(() => startOfDay(new Date()))
@@ -205,7 +207,11 @@ export function CaregiverCalendarScreen({
   const onSheetTransitionEnd = (e: TransitionEvent<HTMLDivElement>) => {
     if (e.target !== e.currentTarget) return
     if (e.propertyName !== 'transform') return
-    if (!open) onClosed()
+    if (!open) {
+      onClosed()
+      return
+    }
+    if (entered) onOpened?.()
   }
 
   const sheetClass = [

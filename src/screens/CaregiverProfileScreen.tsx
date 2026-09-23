@@ -207,6 +207,7 @@ export function CaregiverProfileScreen({
       setPlayingKey(null)
       return
     }
+    dragScroll.resetScroll()
     setReviews(shuffleReviews(caregiver.reviews))
     videoEls.current.forEach((el) => el.pause())
     setPlayingKey(null)
@@ -219,6 +220,8 @@ export function CaregiverProfileScreen({
       window.cancelAnimationFrame(outer)
       window.cancelAnimationFrame(inner)
     }
+    // resetScroll is stable; omit dragScroll object to avoid re-running on scroll state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, caregiver.id, caregiver.reviews])
 
   useEffect(() => {
@@ -272,6 +275,13 @@ export function CaregiverProfileScreen({
 
   const onCalendarClosed = () => {
     setCalendarMounted(false)
+  }
+
+  const onCalendarOpened = () => {
+    // Reset profile scroll only once the calendar fully covers the sheet.
+    dragScroll.resetScroll()
+    mutedSurfaceRef.current = true
+    navRef.current?.style.setProperty('--caregiver-nav-bg', NAV_SURFACE_MUTED)
   }
 
   const onSheetTransitionEnd = (e: TransitionEvent<HTMLDivElement>) => {
@@ -451,6 +461,7 @@ export function CaregiverProfileScreen({
           caregiver={caregiver}
           open={calendarOpen}
           onBack={closeCalendar}
+          onOpened={onCalendarOpened}
           onClosed={onCalendarClosed}
         />
       ) : null}

@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useRef, useState, type AnimationEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type AnimationEvent, type TransitionEvent } from 'react'
 import { IosNotification, type IosNotificationPhase } from './components/IosNotification'
 import { PhoneFrame } from './components/PhoneFrame'
 import { ScreenNavigator } from './components/ScreenNavigator'
 import { DEFAULT_CAREGIVER_ID } from './data/caregivers'
 import { DEFAULT_SCENARIO, type HomeScenarioId } from './data/homeScenarios'
-import { SCENARIO_HOLD_MS, useHeldValue } from './hooks/useHeldScenario'
+import { SCENARIO_HOLD_MS } from './hooks/useHeldScenario'
 import { clearSavedAddress, loadSavedAddress, subscribeAddressChange } from './data/savedAddress'
 import {
   DEFAULT_SCREEN,
@@ -25,6 +25,12 @@ const ALERT_BANNER_HOLD_MS = 4000
 
 type LayerAnim = 'enter' | 'leave' | null
 type AppViewId = 'app-home' | 'caregiver-intro' | 'caregiver-search'
+
+const APP_VIEW_ORDER: Record<AppViewId, number> = {
+  'app-home': 0,
+  'caregiver-intro': 1,
+  'caregiver-search': 2,
+}
 
 function isInApp(id: ScreenId) {
   return (
@@ -51,6 +57,39 @@ function searchOverlay(id: ScreenId) {
   return 'none' as const
 }
 
+/** Canonical path from home so a back destination can sit under the leaving top. */
+function pathToView(view: AppViewId, stack: AppViewId[] = []): AppViewId[] {
+  if (view === 'app-home') return ['app-home']
+  if (view === 'caregiver-intro') return ['app-home', 'caregiver-intro']
+  if (stack.includes('caregiver-intro') || stack[stack.length - 1] === 'caregiver-intro') {
+    return ['app-home', 'caregiver-intro', 'caregiver-search']
+  }
+  // Opened search from home (Cuidador tab) — skip intro in the path.
+  if (stack.includes('caregiver-search') && !stack.includes('caregiver-intro')) {
+    return ['app-home', 'caregiver-search']
+  }
+  return ['app-home', 'caregiver-intro', 'caregiver-search']
+}
+
+function stackLayerClass(
+  view: AppViewId,
+  stack: AppViewId[],
+  leavingView: AppViewId | null,
+  snapViews: AppViewId[],
+) {
+  const top = stack[stack.length - 1]
+  const inStack = stack.includes(view)
+  return [
+    'app-screen-stack__layer',
+    inStack ? 'is-in-stack' : '',
+    view === top && leavingView !== view ? 'is-top' : '',
+    leavingView === view ? 'is-leaving' : '',
+    snapViews.includes(view) ? 'is-snap' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+}
+
 function App() {
   const [screen, setScreen] = useState<ScreenId>(DEFAULT_SCREEN)
   const [layerAnim, setLayerAnim] = useState<LayerAnim>(null)
@@ -61,8 +100,14 @@ function App() {
   const [caregiverId, setCaregiverId] = useState(DEFAULT_CAREGIVER_ID)
   const [banner, setBanner] = useState<IosNotificationPhase | 'idle'>('idle')
   const [hasSavedAddress, setHasSavedAddress] = useState(() => Boolean(loadSavedAddress()))
+  const [viewStack, setViewStack] = useState<AppViewId[]>(() =>
+    pathToView(appViewFromScreen(DEFAULT_SCREEN)),
+  )
+  const [leavingView, setLeavingView] = useState<AppViewId | null>(null)
+  const [snapViews, setSnapViews] = useState<AppViewId[]>([])
   const layerAnimRef = useRef<LayerAnim>(null)
   const bannerTimerRef = useRef<number | null>(null)
+  const pendingStackRef = useRef<AppViewId[] | null>(null)
   layerAnimRef.current = layerAnim
 
   useEffect(() => subscribeAddressChange(() => setHasSavedAddress(Boolean(loadSavedAddress()))), [])
@@ -72,7 +117,63 @@ function App() {
   const canGoHome = appOpen && layerAnim !== 'leave'
   const needsAttention = scenario === 'attention'
   const appView = appViewFromScreen(screen)
-  const shownView = useHeldValue(appView)
+  const stackTop = viewStack[viewStack.length - 1] ?? 'app-home'
+  const interactiveTop =
+    leavingView && viewStack.length > 1
+      ? (viewStack[viewStack.length - 2] ?? 'app-home')
+      : stackTop
+
+  useEffect(() => {
+    if (leavingView) return
+    const next = appView
+    const top = viewStack[viewStack.length - 1] ?? 'app-home'
+    if (next === top) return
+
+    if (APP_VIEW_ORDER[next] > APP_VIEW_ORDER[top]) {
+      if (next === 'caregiver-search' && top === 'app-home') {
+        setViewStack(['app-home', 'caregiver-search'])
+      } else {
+        setViewStack((stack) => [...stack.filter((v) => v !== next), next])
+      }
+      return
+    }
+
+    const destinationPath = pathToView(next, viewStack)
+    const injected = destinationPath.filter((v) => !viewStack.includes(v))
+    const withTop =
+      destinationPath[destinationPath.length - 1] === top
+        ? destinationPath
+        : [...destinationPath.filter((v) => v !== top), top]
+
+    pendingStackRef.current = destinationPath
+    if (injected.length > 0) {
+      setSnapViews(injected)
+      setViewStack(withTop)
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setSnapViews([])
+          setLeavingView(top)
+        })
+      })
+      return
+    }
+
+    setViewStack(withTop)
+    setLeavingView(top)
+  }, [appView, viewStack, leavingView])
+
+  const onStackLayerTransitionEnd = useCallback(
+    (view: AppViewId, e: TransitionEvent<HTMLDivElement>) => {
+      if (view !== leavingView) return
+      if (e.target !== e.currentTarget) return
+      if (e.propertyName !== 'transform') return
+      const pending = pendingStackRef.current ?? pathToView(appView, viewStack)
+      pendingStackRef.current = null
+      setViewStack(pending)
+      setLeavingView(null)
+    },
+    [appView, leavingView, viewStack],
+  )
 
   const openApp = useCallback(() => {
     if (appOpen && layerAnim !== 'leave') return
@@ -229,9 +330,10 @@ function App() {
                 >
                   <div className="app-screen-stack">
                     <div
-                      className={`app-screen-stack__layer${shownView === 'app-home' ? ' is-visible' : ''}`}
-                      aria-hidden={shownView !== 'app-home'}
-                      inert={shownView !== 'app-home' ? true : undefined}
+                      className={stackLayerClass('app-home', viewStack, leavingView, snapViews)}
+                      aria-hidden={interactiveTop !== 'app-home'}
+                      inert={interactiveTop !== 'app-home' ? true : undefined}
+                      onTransitionEnd={(e) => onStackLayerTransitionEnd('app-home', e)}
                     >
                       <AppHomeScreen
                         scenario={scenario}
@@ -252,9 +354,10 @@ function App() {
                       />
                     </div>
                     <div
-                      className={`app-screen-stack__layer${shownView === 'caregiver-intro' ? ' is-visible' : ''}`}
-                      aria-hidden={shownView !== 'caregiver-intro'}
-                      inert={shownView !== 'caregiver-intro' ? true : undefined}
+                      className={stackLayerClass('caregiver-intro', viewStack, leavingView, snapViews)}
+                      aria-hidden={interactiveTop !== 'caregiver-intro'}
+                      inert={interactiveTop !== 'caregiver-intro' ? true : undefined}
+                      onTransitionEnd={(e) => onStackLayerTransitionEnd('caregiver-intro', e)}
                     >
                       <CaregiverIntroScreen
                         onBack={() => setScreen('app-home')}
@@ -266,9 +369,10 @@ function App() {
                       />
                     </div>
                     <div
-                      className={`app-screen-stack__layer${shownView === 'caregiver-search' ? ' is-visible' : ''}`}
-                      aria-hidden={shownView !== 'caregiver-search'}
-                      inert={shownView !== 'caregiver-search' ? true : undefined}
+                      className={stackLayerClass('caregiver-search', viewStack, leavingView, snapViews)}
+                      aria-hidden={interactiveTop !== 'caregiver-search'}
+                      inert={interactiveTop !== 'caregiver-search' ? true : undefined}
+                      onTransitionEnd={(e) => onStackLayerTransitionEnd('caregiver-search', e)}
                     >
                       <CaregiverSearchScreen
                         onBack={() =>

@@ -43,7 +43,7 @@ export function useDragScroll({ enabled, ignoreSelector, onOffsetChange }: UseDr
   const paint = useCallback((value: number) => {
     const content = contentRef.current
     if (!content) return
-    if (!enabledRef.current || value === 0) {
+    if (value === 0) {
       content.style.transform = ''
       return
     }
@@ -238,18 +238,15 @@ export function useDragScroll({ enabled, ignoreSelector, onOffsetChange }: UseDr
     return () => el.removeEventListener('wheel', onWheel)
   }, [applyOffset, enabled, ignoreSelector])
 
-  // Reset / reclamp when enabling or content size changes.
+  // Freeze scroll position while disabled (e.g. calendar covering the profile).
+  // Call resetScroll() explicitly when the view should jump back to top.
   useEffect(() => {
     if (!enabled) {
-      offsetRef.current = 0
-      paint(0)
-      syncScrolled(0)
-      onOffsetChangeRef.current?.(0)
       if (pointerId.current != null) clear(ref.current, pointerId.current, true)
       return
     }
     applyOffset(offsetRef.current)
-  }, [applyOffset, clear, enabled, paint, syncScrolled])
+  }, [applyOffset, clear, enabled])
 
   useEffect(() => {
     if (!enabled) return

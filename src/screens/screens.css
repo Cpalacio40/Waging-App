@@ -441,8 +441,7 @@
   overflow: hidden;
 }
 
-.app-home-stack__layer,
-.app-screen-stack__layer {
+.app-home-stack__layer {
   position: absolute;
   inset: 0;
   opacity: 0;
@@ -452,15 +451,49 @@
   will-change: opacity;
 }
 
-.app-home-stack__layer.is-visible,
-.app-screen-stack__layer.is-visible {
+.app-home-stack__layer.is-visible {
   opacity: 1;
   pointer-events: auto;
   z-index: 1;
 }
 
+/* In-app push: new screens from the right; lower stack stays put underneath. */
+.app-screen-stack__layer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  transform: translate3d(100%, 0, 0);
+  transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: transform;
+  background: #fcfcfc;
+}
+
+.app-screen-stack__layer.is-in-stack {
+  transform: translate3d(0, 0, 0);
+  z-index: 1;
+}
+
+.app-screen-stack__layer.is-top {
+  z-index: 2;
+  pointer-events: auto;
+}
+
+.app-screen-stack__layer.is-leaving {
+  z-index: 3;
+  transform: translate3d(100%, 0, 0);
+  pointer-events: none;
+}
+
+.app-screen-stack__layer.is-snap {
+  transition: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .app-home-stack__layer,
+  .app-home-stack__layer {
+    transition-duration: 0.01ms;
+  }
+
   .app-screen-stack__layer {
     transition-duration: 0.01ms;
   }
@@ -2961,11 +2994,11 @@ button.caregiver-review__play:active:not(:disabled):not([aria-disabled='true']) 
   display: flex;
   flex-direction: column;
   background: #fcfcfc;
-  animation: address-sheet-up 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: flow-sheet-up 0.38s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .address-locate__search-sheet.is-leaving {
-  animation: address-sheet-down 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: flow-sheet-down 0.34s cubic-bezier(0.32, 0.72, 0, 1) forwards;
   pointer-events: none;
 }
 
@@ -2988,6 +3021,84 @@ button.caregiver-review__play:active:not(:disabled):not([aria-disabled='true']) 
   to {
     transform: translateY(18%);
     opacity: 0;
+  }
+}
+
+@keyframes flow-sheet-up {
+  from {
+    transform: translate3d(0, 100%, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes flow-sheet-down {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 100%, 0);
+  }
+}
+
+@keyframes flow-in-right {
+  from {
+    transform: translate3d(100%, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes flow-out-right {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(100%, 0, 0);
+  }
+}
+
+/* Nested caregiver phases: full views push from the right over the map. */
+.caregiver-flow {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #fcfcfc;
+}
+
+.caregiver-flow__base {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.caregiver-flow__base.is-covered {
+  pointer-events: none;
+}
+
+.caregiver-flow__push {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background: #fcfcfc;
+  animation: flow-in-right 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: transform;
+}
+
+.caregiver-flow__push.is-leaving {
+  animation: flow-out-right 0.36s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .address-locate__sheet,
+  .address-locate__search-sheet,
+  .caregiver-flow__push,
+  .app-screen-stack__layer:not(.is-in-stack) .address-locate__sheet {
+    animation-duration: 0.01ms !important;
   }
 }
 
@@ -3244,6 +3355,14 @@ button.caregiver-review__play:active:not(:disabled):not([aria-disabled='true']) 
   border-radius: 28px 28px 0 0;
   background: #fff;
   box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.1);
+  animation: flow-sheet-up 0.42s cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: transform;
+}
+
+/* When the locate screen pops off the app stack, bottom chrome returns downward. */
+.app-screen-stack__layer.is-leaving .address-locate__sheet,
+.app-screen-stack__layer:not(.is-in-stack) .address-locate__sheet {
+  animation: flow-sheet-down 0.4s cubic-bezier(0.32, 0.72, 0, 1) forwards;
 }
 
 .address-locate__sheet-hint {
@@ -3557,4 +3676,5 @@ button.caregiver-review__play:active:not(:disabled):not([aria-disabled='true']) 
 .address-details__footer {
   flex-shrink: 0;
   padding: 12px 22px 24px;
+  animation: flow-sheet-up 0.42s cubic-bezier(0.32, 0.72, 0, 1);
 }

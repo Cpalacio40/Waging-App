@@ -40,7 +40,7 @@ export const HOME_SCENARIOS: Record<HomeScenarioId, HomeScenario> = {
     id: 'attention',
     activity: DEMO_ACTIVITY_LOW,
     rest: 60,
-    headline: 'Actividad por debajo de lo normal',
+    headline: 'Actividad por debajo\nde lo normal',
     body: 'Normalmente a estas horas ya lleva más actividad. Quizá le vendría bien salir un rato.',
     widgetTitle: 'Actividad',
     widgetValue: '30/100',

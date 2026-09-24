@@ -1198,6 +1198,7 @@
   line-height: 48px;
   text-align: center;
   color: #fcfcfc;
+  white-space: pre-line;
 }
 
 .app-home__body {

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type AnimationEvent, type Tra
 import { Trash2 } from 'lucide-react'
 import { AppTabBar } from './components/AppTabBar'
 import { IosNotification, type IosNotificationPhase } from './components/IosNotification'
+import { IosStatusBar, type StatusBarTone } from './components/IosStatusBar'
 import { PhoneFrame } from './components/PhoneFrame'
 import { ScreenNavigator } from './components/ScreenNavigator'
 import { DEFAULT_CAREGIVER_ID } from './data/caregivers'
@@ -56,6 +57,17 @@ function isInApp(id: ScreenId) {
     id === 'caregiver-pay' ||
     id === 'caregiver-success'
   )
+}
+
+/** White icons on SpringBoard / dark screens / Apple Pay overlay; black on light screens. */
+function statusBarTone(
+  id: ScreenId,
+  opts: { hasBookingExit: boolean; applePayActive: boolean },
+): StatusBarTone {
+  if (opts.hasBookingExit) return 'light'
+  if (opts.applePayActive || id === 'caregiver-pay') return 'dark'
+  if (id === 'ios-home' || id === 'splash' || id === 'app-home') return 'dark'
+  return 'light'
 }
 
 function appViewFromScreen(id: ScreenId): AppViewId {
@@ -137,6 +149,8 @@ function App() {
   const [bookingExit, setBookingExit] = useState<BookingSuccessDetails | null>(null)
   const [bookingExitVisible, setBookingExitVisible] = useState(false)
   const [bookingExitSnap, setBookingExitSnap] = useState(false)
+  /** Apple Pay capture overlay (calendar) — white status icons while the dark scrim is up. */
+  const [applePayActive, setApplePayActive] = useState(false)
   /** Low-activity alert minimized to the bell. */
   const [homeAlertDismissed, setHomeAlertDismissed] = useState(false)
   /** “Yo me ocupo” — alert gone for this low-activity episode (no bell). */
@@ -483,6 +497,7 @@ function App() {
                         onOpenCalendar={() => setScreen('caregiver-calendar')}
                         onCloseCalendar={() => setScreen('caregiver-profile')}
                         onBookingComplete={finishBookingToHome}
+                        onApplePayChange={setApplePayActive}
                       />
                     </div>
                   </div>
@@ -524,6 +539,13 @@ function App() {
                 ) : null}
               </div>
             ) : null}
+
+            <IosStatusBar
+              tone={statusBarTone(screen, {
+                hasBookingExit: Boolean(bookingExit),
+                applePayActive,
+              })}
+            />
 
             {banner !== 'idle' ? (
               <IosNotification phase={banner} onAnimationEnd={onBannerAnimationEnd} />

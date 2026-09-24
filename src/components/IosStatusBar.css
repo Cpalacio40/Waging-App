@@ -1,0 +1,66 @@
+/* Figma Status Bar — 375×44; stretched to phone width 390. */
+.ios-status-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 16;
+  box-sizing: border-box;
+  width: 100%;
+  height: 44px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ios-status-bar__time {
+  position: absolute;
+  left: 21px;
+  top: 12px;
+  width: 54px;
+  height: 21px;
+  overflow: hidden;
+  border-radius: 20px;
+}
+
+.ios-status-bar__time img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 33px;
+  height: 15px;
+  transform: translate(calc(-50% + 0.5px), -50%);
+  display: block;
+}
+
+.ios-status-bar__icons {
+  position: absolute;
+  right: 24px;
+  top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ios-status-bar__network {
+  display: block;
+  width: 20px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.ios-status-bar__wifi {
+  display: block;
+  width: 16px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.ios-status-bar__battery {
+  display: block;
+  width: 25px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+.ios-status-bar--light .ios-status-bar__battery {
+  height: 14px;
+}

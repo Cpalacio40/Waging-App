@@ -51,6 +51,7 @@ type CaregiverSearchScreenProps = {
   onOpenCalendar?: () => void
   onCloseCalendar?: () => void
   onBookingComplete?: (details: import('./BookingSuccessScreen').BookingSuccessDetails) => void
+  onApplePayChange?: (active: boolean) => void
 }
 
 function CaregiverCardSkeleton() {
@@ -98,6 +99,7 @@ export function CaregiverSearchScreen({
   onOpenCalendar,
   onCloseCalendar,
   onBookingComplete,
+  onApplePayChange,
 }: CaregiverSearchScreenProps) {
   const [internalPhase, setInternalPhase] = useState<SearchPhase>(() =>
     loadSavedAddress() ? 'results' : 'map',
@@ -615,6 +617,7 @@ export function CaregiverSearchScreen({
                   setProfileOpen(false)
                   setSelected(null)
                 }}
+                onApplePayChange={onApplePayChange}
               />
             ) : null}
           </div>

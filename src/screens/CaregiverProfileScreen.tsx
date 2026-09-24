@@ -247,6 +247,7 @@ type CaregiverProfileScreenProps = {
   onShowCalendar?: () => void
   onHideCalendar?: () => void
   onBookingComplete?: (details: import('./BookingSuccessScreen').BookingSuccessDetails) => void
+  onApplePayChange?: (active: boolean) => void
 }
 
 /** Profile sheet — Figma 160:4038 / 180:5520 / 180:5599 / 180:5678. */
@@ -261,6 +262,7 @@ export function CaregiverProfileScreen({
   onShowCalendar,
   onHideCalendar,
   onBookingComplete,
+  onApplePayChange,
 }: CaregiverProfileScreenProps) {
   const [entered, setEntered] = useState(false)
   const [reviews, setReviews] = useState(() => shuffleReviews(caregiver.reviews))
@@ -700,6 +702,7 @@ export function CaregiverProfileScreen({
           onOpened={onCalendarOpened}
           onClosed={onCalendarClosed}
           onBookingComplete={completeBooking}
+          onApplePayChange={onApplePayChange}
         />
       ) : null}
     </div>

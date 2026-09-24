@@ -203,6 +203,8 @@ type CaregiverCalendarScreenProps = {
   onClosed: () => void
   /** After booking success “Aceptar” — typically return to app home. */
   onBookingComplete?: (details: import('./BookingSuccessScreen').BookingSuccessDetails) => void
+  /** True while the Apple Pay capture overlay is showing (dark scrim → white status icons). */
+  onApplePayChange?: (active: boolean) => void
 }
 
 type PayPhase = BookingPhase
@@ -216,6 +218,7 @@ export function CaregiverCalendarScreen({
   onOpened,
   onClosed,
   onBookingComplete,
+  onApplePayChange,
 }: CaregiverCalendarScreenProps) {
   const [today] = useState(() => startOfDay(new Date()))
   const [entered, setEntered] = useState(false)
@@ -529,6 +532,11 @@ export function CaregiverCalendarScreen({
       window.clearTimeout(hold)
     }
   }, [payPhase, payAutoAdvance])
+
+  useEffect(() => {
+    onApplePayChange?.(payPhase === 'apple-pay')
+    return () => onApplePayChange?.(false)
+  }, [payPhase, onApplePayChange])
 
   const startPayment = () => {
     if (!canPay) return

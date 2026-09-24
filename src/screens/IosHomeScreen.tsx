@@ -34,7 +34,7 @@ export function IosHomeScreen({
     <div className="screen ios-home">
       <img
         className="ios-home__base"
-        src={iosAsset('home-base.png')}
+        src={iosAsset('home-springboard.png')}
         alt=""
         draggable={false}
       />

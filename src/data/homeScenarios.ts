@@ -24,6 +24,8 @@ export const ACTIVITY_ALERT_THRESHOLD = 30
 /** Demo presets for the side panel / navigator. */
 export const DEMO_ACTIVITY_OK = 80
 export const DEMO_ACTIVITY_LOW = 30
+/** After a finished walk — normal home + sesión terminada card. */
+export const DEMO_ACTIVITY_WALK_DONE = 52
 
 export const DEFAULT_ACTIVITY = DEMO_ACTIVITY_OK
 

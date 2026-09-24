@@ -517,12 +517,18 @@
   --alert-shift: 206px;
 }
 
-.app-home.is-alert-open .app-home__scroller {
+.app-home.is-session-done {
+  --alert-shift: 168px;
+}
+
+.app-home.is-alert-open .app-home__scroller,
+.app-home.is-session-done .app-home__scroller {
   cursor: grab;
   touch-action: none;
 }
 
-.app-home.is-alert-open .app-home__scroller.is-dragging {
+.app-home.is-alert-open .app-home__scroller.is-dragging,
+.app-home.is-session-done .app-home__scroller.is-dragging {
   cursor: grabbing;
   user-select: none;
 }
@@ -544,7 +550,8 @@
   transition: height 0.45s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-.app-home.is-alert-open .app-home__scroll-extent {
+.app-home.is-alert-open .app-home__scroll-extent,
+.app-home.is-session-done .app-home__scroll-extent {
   /* Match stage bottom (top: alert-shift + height phone-h) so max scroll = alert-shift */
   height: calc(var(--phone-h) + var(--alert-shift));
 }
@@ -669,6 +676,80 @@
   opacity: 1;
   transform: scale(1) translate3d(0, 0, 0);
   pointer-events: auto;
+}
+
+/* Post-walk card — Figma 286:3494 */
+.app-home__session-done {
+  position: absolute;
+  left: 22px;
+  top: 243px;
+  z-index: 3;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  width: 346px;
+  min-height: 154px;
+  margin: 0;
+  padding: 14px;
+  border: 0;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #f1743c 0%, #fd8d5d 100%);
+  color: #fcfcfc;
+  text-align: left;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.app-home__session-done-eyebrow {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 22px;
+  color: #fcfcfc;
+}
+
+.app-home__session-done-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.app-home__session-done-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 400;
+  line-height: 38px;
+  color: #fcfcfc;
+}
+
+.app-home__session-done-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.app-home__session-done-meta {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  color: #fcfcfc;
+}
+
+.app-home__session-done-chevron {
+  display: block;
+  flex-shrink: 0;
+  width: 19px;
+  height: 19px;
 }
 
 @media (prefers-reduced-motion: reduce) {

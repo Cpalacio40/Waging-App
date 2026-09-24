@@ -1,5 +1,10 @@
 import type { HomeScenarioId } from './homeScenarios'
-import { DEMO_ACTIVITY_LOW, DEMO_ACTIVITY_OK } from './homeScenarios'
+import {
+  DEMO_ACTIVITY_LOW,
+  DEMO_ACTIVITY_OK,
+  DEMO_ACTIVITY_WALK_DONE,
+  isLowActivity,
+} from './homeScenarios'
 import { CAREGIVERS } from './caregivers'
 
 export type ScreenId =
@@ -40,6 +45,8 @@ export type NavItem = {
   searchPhase?: SearchPhase
   caregiverId?: string
   scenario?: HomeScenarioId
+  /** Collar activity for home demos (overrides scenario presets). */
+  activity?: number
   bookingPhase?: BookingPhase
 }
 
@@ -134,12 +141,27 @@ export const NAV_GROUPS: NavGroup[] = [
         label: `Actividad ${DEMO_ACTIVITY_OK}`,
         screen: 'app-home',
         scenario: 'ok',
+        activity: DEMO_ACTIVITY_OK,
       },
       {
         id: 'app-home-alert',
         label: `Actividad ${DEMO_ACTIVITY_LOW}`,
         screen: 'app-home',
         scenario: 'attention',
+        activity: DEMO_ACTIVITY_LOW,
+      },
+    ],
+  },
+  {
+    id: 'salida-terminada',
+    label: 'Salida terminada',
+    items: [
+      {
+        id: 'app-home-walk-done',
+        label: `Actividad ${DEMO_ACTIVITY_WALK_DONE}`,
+        screen: 'app-home',
+        scenario: 'ok',
+        activity: DEMO_ACTIVITY_WALK_DONE,
       },
     ],
   },
@@ -201,6 +223,7 @@ export function navItemById(id: string): NavItem | undefined {
 type NavMatchInput = {
   screen: ScreenId
   scenario: HomeScenarioId
+  activity: number
   searchPhase: SearchPhase
   caregiverId: string
 }
@@ -208,12 +231,15 @@ type NavMatchInput = {
 export function activeNavId({
   screen,
   scenario,
+  activity,
   searchPhase,
   caregiverId,
 }: NavMatchInput): string {
   if (screen === 'ios-home') return 'ios-home'
   if (screen === 'app-home') {
-    return scenario === 'attention' ? 'app-home-alert' : 'app-home-ok'
+    if (activity === DEMO_ACTIVITY_WALK_DONE) return 'app-home-walk-done'
+    if (isLowActivity(activity) || scenario === 'attention') return 'app-home-alert'
+    return 'app-home-ok'
   }
   if (screen === 'caregiver-search') {
     if (searchPhase === 'results' || searchPhase === 'loading') return 'search-results'

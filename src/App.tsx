@@ -10,6 +10,7 @@ import {
   DEFAULT_ACTIVITY,
   DEMO_ACTIVITY_LOW,
   DEMO_ACTIVITY_OK,
+  DEMO_ACTIVITY_WALK_DONE,
   isLowActivity,
   scenarioFromActivity,
 } from './data/homeScenarios'
@@ -295,9 +296,13 @@ function App() {
 
   const selectNav = useCallback(
     (item: NavItem) => {
-      if (item.scenario) {
+      if (item.activity != null) {
+        setActivity(item.activity)
+        setHomeAlertDismissed(false)
+        setHomeAlertResolved(false)
+      } else if (item.scenario) {
         setActivity(item.scenario === 'attention' ? DEMO_ACTIVITY_LOW : DEMO_ACTIVITY_OK)
-        // Demo jump to ≤30 shows a fresh alert; jump to 62 clears notification state.
+        // Demo jump to ≤30 shows a fresh alert; jump to normal clears notification state.
         setHomeAlertDismissed(false)
         setHomeAlertResolved(false)
       }
@@ -442,6 +447,8 @@ function App() {
                     >
                       <AppHomeScreen
                         scenario={scenario}
+                        activity={activity}
+                        sessionDone={activity === DEMO_ACTIVITY_WALK_DONE}
                         alertDismissed={homeAlertDismissed}
                         alertResolved={homeAlertResolved}
                         onMinimizeAlert={minimizeHomeAlert}
@@ -579,6 +586,7 @@ function App() {
               activeId={activeNavId({
                 screen,
                 scenario,
+                activity,
                 searchPhase,
                 caregiverId,
               })}

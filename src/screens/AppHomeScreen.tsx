@@ -1,4 +1,5 @@
 import { useEffect, useState, type CSSProperties, type TransitionEvent } from 'react'
+import { CAREGIVERS, DEFAULT_CAREGIVER_ID } from '../data/caregivers'
 import { HOME_SCENARIOS, type HomeScenarioId } from '../data/homeScenarios'
 import { useDragScroll } from '../hooks/useDragScroll'
 import { useHeldScenario } from '../hooks/useHeldScenario'
@@ -6,6 +7,12 @@ import { assetUrl } from '../utils/assetUrl'
 import './screens.css'
 
 const inicioAsset = (name: string) => assetUrl(`app-inicio/${name}`)
+
+const SESSION_CAREGIVER_NAME =
+  (CAREGIVERS.find((c) => c.id === DEFAULT_CAREGIVER_ID)?.name ?? 'María Camila Rodríguez')
+    .split(' ')
+    .slice(0, 2)
+    .join(' ')
 
 /** Same cubic as Figma Ellipse 39 (track), left → right. */
 const GAUGE = { width: 303.5, height: 63 } as const
@@ -80,6 +87,10 @@ function gaugePoint(value: number) {
 
 type AppHomeScreenProps = {
   scenario?: HomeScenarioId
+  /** Live collar activity (may differ from scenario presets, e.g. 52 after a walk). */
+  activity?: number
+  /** Show the post-walk “Sesión terminada” card. */
+  sessionDone?: boolean
   onAgendar?: () => void
   /** Alert minimized to the bell (persists across leaving the app). */
   alertDismissed?: boolean
@@ -92,6 +103,8 @@ type AppHomeScreenProps = {
 
 function AppHomeView({
   scenario,
+  activity: activityProp,
+  sessionDone = false,
   onAgendar,
   alertOpen,
   alertResolved = false,
@@ -100,6 +113,8 @@ function AppHomeView({
   onBellClick,
 }: {
   scenario: HomeScenarioId
+  activity?: number
+  sessionDone?: boolean
   onAgendar?: () => void
   alertOpen: boolean
   /** Owner chose “Yo me ocupo” — no card, no bell until activity rises again. */
@@ -109,17 +124,18 @@ function AppHomeView({
   onBellClick?: () => void
 }) {
   const data = HOME_SCENARIOS[scenario]
+  const activity = activityProp ?? data.activity
   const needsAttention = scenario === 'attention'
   const showBellBadge = needsAttention && !alertOpen && !alertResolved
   const cardOpen = alertOpen && !alertResolved
   const [alertMounted, setAlertMounted] = useState(cardOpen)
   const [alertShown, setAlertShown] = useState(cardOpen)
   const dragScroll = useDragScroll({
-    enabled: needsAttention && cardOpen,
+    enabled: (needsAttention && cardOpen) || sessionDone,
     ignoreSelector: 'button, a, input, textarea, [role="button"]',
   })
   const { resetScroll } = dragScroll
-  const gauge = gaugePoint(data.activity)
+  const gauge = gaugePoint(activity)
 
   useEffect(() => {
     if (cardOpen) {
@@ -145,6 +161,7 @@ function AppHomeView({
         'screen app-home',
         needsAttention ? 'is-attention' : '',
         alertShown ? 'is-alert-open' : '',
+        sessionDone ? 'is-session-done' : '',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -239,7 +256,7 @@ function AppHomeView({
                 <div className="app-home__metric-paw">
                   <img src={inicioAsset('icon-paw.svg')} alt="" width={18} height={18} draggable={false} />
                 </div>
-                <span className="app-home__metric-value">{data.activity}</span>
+                <span className="app-home__metric-value">{activity}</span>
               </div>
               <p>Actividad</p>
             </div>
@@ -311,6 +328,32 @@ function AppHomeView({
             </aside>
           ) : null}
 
+          {sessionDone ? (
+            <button
+              type="button"
+              className="app-home__session-done"
+              aria-label="Sesión terminada — ver fotos y resumen"
+            >
+              <p className="app-home__session-done-eyebrow">Sesión terminada</p>
+              <div className="app-home__session-done-body">
+                <p className="app-home__session-done-title">Luca ya está de vuelta</p>
+                <span className="app-home__session-done-row">
+                  <span className="app-home__session-done-meta">
+                    Fotos y resumen de cómo le fue con {SESSION_CAREGIVER_NAME}
+                  </span>
+                  <img
+                    className="app-home__session-done-chevron"
+                    src={inicioAsset('icon-chevron-right-white.svg')}
+                    alt=""
+                    width={19}
+                    height={19}
+                    draggable={false}
+                  />
+                </span>
+              </div>
+            </button>
+          ) : null}
+
           <div className="app-home__stage">
             <div className="app-home__veil" aria-hidden="true" />
 
@@ -325,7 +368,7 @@ function AppHomeView({
                   fill="none"
                   overflow="visible"
                 >
-                  {data.activity > 0 ? (
+                  {activity > 0 ? (
                     <path
                       d={GAUGE_PATH}
                       pathLength={100}
@@ -348,7 +391,7 @@ function AppHomeView({
                 <img
                   key={bone.mark}
                   className={`app-home__bone ${bone.className}`}
-                  src={inicioAsset(data.activity >= bone.mark ? 'bone.svg' : 'bone-outline.svg')}
+                  src={inicioAsset(activity >= bone.mark ? 'bone.svg' : 'bone-outline.svg')}
                   alt=""
                   width={22}
                   height={9}
@@ -366,7 +409,7 @@ function AppHomeView({
             <p className="app-home__scale app-home__scale--0">0</p>
             <p className="app-home__scale app-home__scale--100">100</p>
             <p className="app-home__kpi-label">Actividad</p>
-            <p className="app-home__kpi">{data.activity}</p>
+            <p className="app-home__kpi">{activity}</p>
 
             <section className="app-home__copy">
               <div className="app-home__copy-text">
@@ -389,6 +432,8 @@ function AppHomeView({
 /** In-app home — Figma iPhone 13 & 14 - 54 (ok, 48:3198) / 58 (attention, 116:4672). */
 export function AppHomeScreen({
   scenario = 'ok',
+  activity,
+  sessionDone = false,
   onAgendar,
   alertDismissed = false,
   alertResolved = false,
@@ -406,7 +451,13 @@ export function AppHomeScreen({
         aria-hidden={shown !== 'ok'}
         inert={shown !== 'ok' ? true : undefined}
       >
-        <AppHomeView scenario="ok" alertOpen={false} onAgendar={onAgendar} />
+        <AppHomeView
+          scenario="ok"
+          activity={activity}
+          sessionDone={sessionDone}
+          alertOpen={false}
+          onAgendar={onAgendar}
+        />
       </div>
       <div
         className={`app-home-stack__layer${shown === 'attention' ? ' is-visible' : ''}`}
@@ -415,6 +466,7 @@ export function AppHomeScreen({
       >
         <AppHomeView
           scenario="attention"
+          activity={activity}
           alertOpen={alertOpen}
           alertResolved={alertResolved}
           onAgendar={onAgendar}

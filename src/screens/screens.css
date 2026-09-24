@@ -4277,16 +4277,20 @@ button.caregiver-review__play:active:not(:disabled):not([aria-disabled='true']) 
 }
 
 .address-details__required {
-  margin-left: 2px;
+  margin-left: 3px;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
   color: var(--orange);
+  vertical-align: baseline;
 }
 
 .address-details__required-hint {
   grid-column: 1 / -1;
   margin: 0;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
-  line-height: 16px;
+  line-height: 20px;
   color: rgba(52, 6, 22, 0.65);
 }
 

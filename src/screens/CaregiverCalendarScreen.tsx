@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type TransitionEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type AnimationEvent, type TransitionEvent } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -162,15 +162,34 @@ export function CaregiverCalendarScreen({
   const [pendingTime, setPendingTime] = useState<string>(TIME_SLOTS[0])
   const [timeOpen, setTimeOpen] = useState(false)
   const [policyOpen, setPolicyOpen] = useState(false)
+  const [policyClosing, setPolicyClosing] = useState(false)
   const wheelRef = useRef<HTMLDivElement>(null)
   const meetMapRef = useRef<HTMLDivElement>(null)
   const meetMapInstance = useRef<L.Map | null>(null)
   const [meetPlace, setMeetPlace] = useState(() => loadSavedAddress() ?? FALLBACK_MEET)
 
   const dragScroll = useDragScroll({
-    enabled: open && entered && !timeOpen && !policyOpen,
+    enabled: open && entered && !timeOpen && !policyOpen && !policyClosing,
     ignoreSelector: 'button, a, select, .caregiver-calendar__time',
   })
+  const showPolicyModal = policyOpen || policyClosing
+
+  const openPolicyModal = () => {
+    setPolicyClosing(false)
+    setPolicyOpen(true)
+  }
+
+  const closePolicyModal = () => {
+    if (!policyOpen || policyClosing) return
+    setPolicyClosing(true)
+  }
+
+  const onPolicyModalAnimationEnd = (event: AnimationEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) return
+    if (!policyClosing) return
+    setPolicyClosing(false)
+    setPolicyOpen(false)
+  }
 
   const year = cursor.getFullYear()
   const month = cursor.getMonth()
@@ -250,6 +269,7 @@ export function CaregiverCalendarScreen({
       setEntered(false)
       setTimeOpen(false)
       setPolicyOpen(false)
+      setPolicyClosing(false)
       return
     }
     let inner = 0
@@ -507,7 +527,7 @@ export function CaregiverCalendarScreen({
                     type="button"
                     className="caregiver-calendar__policy-help"
                     aria-label="Más información sobre la política de cancelación"
-                    onClick={() => setPolicyOpen(true)}
+                    onClick={openPolicyModal}
                   >
                     ?
                   </button>
@@ -520,7 +540,7 @@ export function CaregiverCalendarScreen({
                   <button
                     type="button"
                     className="caregiver-calendar__policy-more"
-                    onClick={() => setPolicyOpen(true)}
+                    onClick={openPolicyModal}
                   >
                     Leer más
                   </button>
@@ -531,26 +551,27 @@ export function CaregiverCalendarScreen({
         </div>
       </div>
 
-      {policyOpen ? (
-        <div className="caregiver-policy-modal">
+      {showPolicyModal ? (
+        <div className={`caregiver-policy-modal${policyClosing ? ' is-closing' : ''}`}>
           <button
             type="button"
             className="caregiver-policy-modal__backdrop"
             aria-label="Cerrar"
-            onClick={() => setPolicyOpen(false)}
+            onClick={closePolicyModal}
           />
           <div
             className="caregiver-policy-modal__dialog"
             role="dialog"
             aria-modal="true"
             aria-labelledby="caregiver-policy-modal-title"
+            onAnimationEnd={onPolicyModalAnimationEnd}
           >
             <div className="caregiver-policy-modal__toolbar">
               <button
                 type="button"
                 className="caregiver-policy-modal__close"
                 aria-label="Cerrar"
-                onClick={() => setPolicyOpen(false)}
+                onClick={closePolicyModal}
               >
                 <img
                   src={caregiverAsset('cancel-close.svg')}
@@ -597,7 +618,7 @@ export function CaregiverCalendarScreen({
               <button
                 type="button"
                 className="caregiver-policy-modal__confirm"
-                onClick={() => setPolicyOpen(false)}
+                onClick={closePolicyModal}
               >
                 Entendido
               </button>

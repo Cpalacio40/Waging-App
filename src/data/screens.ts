@@ -142,9 +142,6 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'App · Buscar cuidador',
     items: [
       { id: 'search-map', label: 'Mapa', screen: 'caregiver-search', searchPhase: 'map' },
-      { id: 'search-locate', label: 'Búsqueda', screen: 'caregiver-search', searchPhase: 'locate' },
-      { id: 'search-building', label: 'Tipo edificio', screen: 'caregiver-search', searchPhase: 'building' },
-      { id: 'search-details', label: 'Detalles', screen: 'caregiver-search', searchPhase: 'details' },
       { id: 'search-results', label: 'Con cuidadores', screen: 'caregiver-search', searchPhase: 'results' },
     ],
   },
@@ -169,13 +166,6 @@ export const NAV_GROUPS: NavGroup[] = [
         screen: 'caregiver-calendar',
         searchPhase: 'results',
         bookingPhase: 'idle',
-      },
-      {
-        id: 'calendar-pay',
-        label: 'Apple Pay',
-        screen: 'caregiver-pay',
-        searchPhase: 'results',
-        bookingPhase: 'apple-pay',
       },
       {
         id: 'calendar-success',
@@ -216,14 +206,10 @@ export function activeNavId({
   }
   if (screen === 'caregiver-search') {
     if (searchPhase === 'results' || searchPhase === 'loading') return 'search-results'
-    if (searchPhase === 'details') return 'search-details'
-    if (searchPhase === 'building') return 'search-building'
-    if (searchPhase === 'locate' || searchPhase === 'idle') return 'search-locate'
     return 'search-map'
   }
   if (screen === 'caregiver-profile') return `profile-${caregiverId}`
-  if (screen === 'caregiver-calendar') return 'calendar'
-  if (screen === 'caregiver-pay') return 'calendar-pay'
+  if (screen === 'caregiver-calendar' || screen === 'caregiver-pay') return 'calendar'
   if (screen === 'caregiver-success') return 'calendar-success'
   return screen
 }

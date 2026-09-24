@@ -1309,7 +1309,7 @@
   z-index: 6;
   display: flex;
   align-items: flex-end;
-  height: 92px;
+  height: 104px;
   padding: 0 17px 12px;
   pointer-events: none;
   background: var(--caregiver-nav-bg);
@@ -1525,13 +1525,13 @@
 }
 
 .caregiver-nav-spacer {
-  height: 128px;
+  height: 140px;
   flex-shrink: 0;
 }
 
-/* Figma 120:6900 — dropdown bottom → title ≈ 32px (content top 125). */
+/* Keep ~32px from address dropdown bottom to the results title. */
 .caregiver-search .caregiver-nav-spacer {
-  height: 112px;
+  height: 124px;
 }
 
 .caregiver-cta {
@@ -3148,7 +3148,7 @@ button.caregiver-review__play:active:not(:disabled):not([aria-disabled='true']) 
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 48px 23px 0;
+  padding: 60px 23px 0;
 }
 
 .address-locate__field {
@@ -3493,7 +3493,7 @@ button.caregiver-review__play:active:not(:disabled):not([aria-disabled='true']) 
 
 .address-locate__map-nav {
   position: absolute;
-  top: 22px;
+  top: 34px;
   left: 0;
   right: 0;
   z-index: 5;
@@ -3720,7 +3720,7 @@ button.caregiver-review__play:active:not(:disabled):not([aria-disabled='true']) 
   display: flex;
   align-items: center;
   gap: 0;
-  padding: 53px 23px 12px;
+  padding: 65px 23px 12px;
 }
 
 .address-details__title {

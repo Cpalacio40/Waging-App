@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState, type AnimationEvent } from 'react'
-import { CAREGIVERS, findCaregiver, type Caregiver } from '../data/caregivers'
+import {
+  caregiversForAddress,
+  findCaregiver,
+  type Caregiver,
+} from '../data/caregivers'
 import {
   buildingOption,
   loadSavedAddress,
@@ -23,7 +27,7 @@ const addressAsset = (name: string) => assetUrl(`address/${name}`)
 const SEARCH_DELAY_MS = 2000
 const SKELETON_COUNT = 3
 /** Gap above a focused result card (clears the sticky address nav + title inset). */
-const CARD_TOP_INSET_PX = 112
+const CARD_TOP_INSET_PX = 124
 
 const DEMO_PLACE: LocatedPlace = {
   label: 'Carrer Petrarca 42',
@@ -228,6 +232,13 @@ export function CaregiverSearchScreen({
     setPhase('results')
   }
 
+  const visibleCaregivers = caregiversForAddress(activeAddress, savedAddresses)
+  const menuAddresses = (() => {
+    if (!activeAddress) return savedAddresses
+    const rest = savedAddresses.filter((item) => item.tag !== activeAddress.tag)
+    return [activeAddress, ...rest]
+  })()
+
   const openProfile = (caregiver: Caregiver) => {
     if (dragScroll.consumeClickSuppression()) return
     setSelected(caregiver)
@@ -241,7 +252,7 @@ export function CaregiverSearchScreen({
       `[data-caregiver-id="${selected.id}"]`,
     )
     if (!card) return
-    const isLast = selected.id === CAREGIVERS[CAREGIVERS.length - 1]?.id
+    const isLast = selected.id === visibleCaregivers[visibleCaregivers.length - 1]?.id
     if (isLast) {
       dragScroll.scrollToElement(card, 'end')
     } else {
@@ -387,7 +398,7 @@ export function CaregiverSearchScreen({
                       role="listbox"
                       aria-label="Direcciones guardadas"
                     >
-                      {savedAddresses.map((item) => (
+                      {menuAddresses.map((item) => (
                         <li key={`${item.tag}-${item.savedAt}`}>
                           <button
                             type="button"
@@ -475,15 +486,18 @@ export function CaregiverSearchScreen({
                       aria-busy="true"
                       aria-label="Buscando cuidadores"
                     >
-                      {Array.from({ length: SKELETON_COUNT }, (_, i) => (
-                        <CaregiverCardSkeleton key={i} />
-                      ))}
+                      {Array.from(
+                        { length: visibleCaregivers.length || SKELETON_COUNT },
+                        (_, i) => (
+                          <CaregiverCardSkeleton key={i} />
+                        ),
+                      )}
                     </ul>
                   ) : null}
 
                   {phase === 'results' || leavingPanel === 'list' ? (
                     <ul className="caregiver-search__results">
-                      {CAREGIVERS.map((caregiver) => (
+                      {visibleCaregivers.map((caregiver) => (
                         <li key={caregiver.id}>
                           <button
                             type="button"

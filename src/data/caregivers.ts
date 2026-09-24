@@ -361,3 +361,63 @@ export const DEFAULT_CAREGIVER_ID = CAREGIVERS[0]?.id ?? 'maria'
 export function findCaregiver(id: string | undefined): Caregiver {
   return CAREGIVERS.find((caregiver) => caregiver.id === id) ?? CAREGIVERS[0]!
 }
+
+/** Minimal address shape used to seed demo “zone” results. */
+export type CaregiverAddressSeed = {
+  lat: number
+  lng: number
+  tag: string
+}
+
+function hashSeed(input: string): number {
+  let h = 2166136261
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return h >>> 0
+}
+
+function mulberry32(seed: number) {
+  return () => {
+    let t = (seed += 0x6d2b79f5)
+    t = Math.imul(t ^ (t >>> 15), t | 1)
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+function seededShuffle<T>(items: readonly T[], rand: () => number): T[] {
+  const next = [...items]
+  for (let i = next.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1))
+    const a = next[i]!
+    const b = next[j]!
+    next[i] = b
+    next[j] = a
+  }
+  return next
+}
+
+/**
+ * Demo search results by address.
+ * The first saved address keeps the full canonical list; any extra address gets a
+ * deterministic shuffle + subset (2–4) so the same place always shows the same “zone”.
+ */
+export function caregiversForAddress(
+  address: CaregiverAddressSeed | null,
+  savedAddresses: readonly CaregiverAddressSeed[],
+): Caregiver[] {
+  if (!address || !savedAddresses.length) return [...CAREGIVERS]
+
+  const isPrimary = savedAddresses[0]?.tag === address.tag
+  if (isPrimary) return [...CAREGIVERS]
+
+  const seed = hashSeed(
+    `${address.lat.toFixed(5)},${address.lng.toFixed(5)}|${address.tag.toLowerCase()}`,
+  )
+  const rand = mulberry32(seed)
+  const shuffled = seededShuffle(CAREGIVERS, rand)
+  const count = Math.min(shuffled.length, 2 + Math.floor(rand() * 3))
+  return shuffled.slice(0, count)
+}

@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react'
+import { useEffect, useState, type CSSProperties, type TransitionEvent } from 'react'
 import { HOME_SCENARIOS, type HomeScenarioId } from '../data/homeScenarios'
 import { useDragScroll } from '../hooks/useDragScroll'
 import { useHeldScenario } from '../hooks/useHeldScenario'
@@ -81,25 +81,74 @@ function gaugePoint(value: number) {
 type AppHomeScreenProps = {
   scenario?: HomeScenarioId
   onAgendar?: () => void
+  /** Alert minimized to the bell (persists across leaving the app). */
+  alertDismissed?: boolean
+  /** “Yo me ocupo” — no card, no bell until activity rises again. */
+  alertResolved?: boolean
+  onMinimizeAlert?: () => void
+  onResolveAlert?: () => void
+  onRestoreAlert?: () => void
 }
 
 function AppHomeView({
   scenario,
   onAgendar,
+  alertOpen,
+  alertResolved = false,
+  onCloseAlert,
+  onOwnerHandles,
+  onBellClick,
 }: {
   scenario: HomeScenarioId
   onAgendar?: () => void
+  alertOpen: boolean
+  /** Owner chose “Yo me ocupo” — no card, no bell until activity rises again. */
+  alertResolved?: boolean
+  onCloseAlert?: () => void
+  onOwnerHandles?: () => void
+  onBellClick?: () => void
 }) {
   const data = HOME_SCENARIOS[scenario]
   const needsAttention = scenario === 'attention'
+  const showBellBadge = needsAttention && !alertOpen && !alertResolved
+  const cardOpen = alertOpen && !alertResolved
+  const [alertMounted, setAlertMounted] = useState(cardOpen)
+  const [alertShown, setAlertShown] = useState(cardOpen)
   const dragScroll = useDragScroll({
-    enabled: needsAttention,
+    enabled: needsAttention && cardOpen,
     ignoreSelector: 'button, a, input, textarea, [role="button"]',
   })
+  const { resetScroll } = dragScroll
   const gauge = gaugePoint(data.activity)
 
+  useEffect(() => {
+    if (cardOpen) {
+      setAlertMounted(true)
+      const frame = window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => setAlertShown(true))
+      })
+      return () => window.cancelAnimationFrame(frame)
+    }
+    setAlertShown(false)
+    resetScroll()
+  }, [cardOpen, resetScroll])
+
+  const onAlertTransitionEnd = (event: TransitionEvent<HTMLElement>) => {
+    if (event.target !== event.currentTarget) return
+    if (event.propertyName !== 'opacity') return
+    if (!cardOpen) setAlertMounted(false)
+  }
+
   return (
-    <div className={`screen app-home${needsAttention ? ' is-alert' : ''}`}>
+    <div
+      className={[
+        'screen app-home',
+        needsAttention ? 'is-attention' : '',
+        alertShown ? 'is-alert-open' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
       <div
         ref={dragScroll.ref}
         className={`app-home__scroller${dragScroll.dragging ? ' is-dragging' : ''}`}
@@ -143,8 +192,14 @@ function AppHomeView({
                   draggable={false}
                 />
               </button>
-              <button type="button" className="app-home__icon-btn" aria-label="Notificaciones">
+              <button
+                type="button"
+                className="app-home__icon-btn"
+                aria-label={showBellBadge ? 'Notificaciones (1 nueva)' : 'Notificaciones'}
+                onClick={onBellClick}
+              >
                 <img src={inicioAsset('icon-bell.svg')} alt="" width={24} height={24} draggable={false} />
+                {showBellBadge ? <span className="app-home__notif-dot" aria-hidden="true" /> : null}
               </button>
               <span className="app-home__battery" aria-label="Estado del collar">
                 <img
@@ -212,14 +267,24 @@ function AppHomeView({
             </div>
           </div>
 
-          {needsAttention ? (
-            <aside className="app-home__alert" aria-label="Aviso de inactividad">
+          {alertMounted ? (
+            <aside
+              className={`app-home__alert${alertShown ? ' is-open' : ''}`}
+              aria-label="Aviso de inactividad"
+              aria-hidden={!alertShown}
+              onTransitionEnd={onAlertTransitionEnd}
+            >
               <div className="app-home__alert-top">
                 <div className="app-home__alert-badge">
                   <img src={inicioAsset('icon-info.svg')} alt="" width={14} height={14} draggable={false} />
                   <span>Inactividad acumulada: Alta</span>
                 </div>
-                <button type="button" className="app-home__alert-close" aria-label="Cerrar aviso">
+                <button
+                  type="button"
+                  className="app-home__alert-close"
+                  aria-label="Cerrar aviso"
+                  onClick={onCloseAlert}
+                >
                   <img src={inicioAsset('icon-close.svg')} alt="" width={22} height={22} draggable={false} />
                 </button>
               </div>
@@ -235,7 +300,11 @@ function AppHomeView({
                 >
                   <span>Agendar</span>
                 </button>
-                <button type="button" className="app-home__alert-btn app-home__alert-btn--ghost">
+                <button
+                  type="button"
+                  className="app-home__alert-btn app-home__alert-btn--ghost"
+                  onClick={onOwnerHandles}
+                >
                   <span>Yo me ocupo</span>
                 </button>
               </div>
@@ -318,8 +387,17 @@ function AppHomeView({
 }
 
 /** In-app home — Figma iPhone 13 & 14 - 54 (ok, 48:3198) / 58 (attention, 116:4672). */
-export function AppHomeScreen({ scenario = 'ok', onAgendar }: AppHomeScreenProps) {
+export function AppHomeScreen({
+  scenario = 'ok',
+  onAgendar,
+  alertDismissed = false,
+  alertResolved = false,
+  onMinimizeAlert,
+  onResolveAlert,
+  onRestoreAlert,
+}: AppHomeScreenProps) {
   const shown = useHeldScenario(scenario)
+  const alertOpen = scenario === 'attention' && !alertDismissed && !alertResolved
 
   return (
     <div className="app-home-stack">
@@ -328,14 +406,22 @@ export function AppHomeScreen({ scenario = 'ok', onAgendar }: AppHomeScreenProps
         aria-hidden={shown !== 'ok'}
         inert={shown !== 'ok' ? true : undefined}
       >
-        <AppHomeView scenario="ok" onAgendar={onAgendar} />
+        <AppHomeView scenario="ok" alertOpen={false} onAgendar={onAgendar} />
       </div>
       <div
         className={`app-home-stack__layer${shown === 'attention' ? ' is-visible' : ''}`}
         aria-hidden={shown !== 'attention'}
         inert={shown !== 'attention' ? true : undefined}
       >
-        <AppHomeView scenario="attention" onAgendar={onAgendar} />
+        <AppHomeView
+          scenario="attention"
+          alertOpen={alertOpen}
+          alertResolved={alertResolved}
+          onAgendar={onAgendar}
+          onCloseAlert={onMinimizeAlert}
+          onOwnerHandles={onResolveAlert}
+          onBellClick={onRestoreAlert}
+        />
       </div>
     </div>
   )

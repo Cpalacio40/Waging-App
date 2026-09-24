@@ -1,10 +1,17 @@
 import { useCallback, useEffect, useRef, useState, type AnimationEvent, type TransitionEvent } from 'react'
+import { Trash2 } from 'lucide-react'
 import { AppTabBar } from './components/AppTabBar'
 import { IosNotification, type IosNotificationPhase } from './components/IosNotification'
 import { PhoneFrame } from './components/PhoneFrame'
 import { ScreenNavigator } from './components/ScreenNavigator'
 import { DEFAULT_CAREGIVER_ID } from './data/caregivers'
-import { DEFAULT_SCENARIO, type HomeScenarioId } from './data/homeScenarios'
+import {
+  DEFAULT_ACTIVITY,
+  DEMO_ACTIVITY_LOW,
+  DEMO_ACTIVITY_OK,
+  isLowActivity,
+  scenarioFromActivity,
+} from './data/homeScenarios'
 import { SCENARIO_HOLD_MS } from './hooks/useHeldScenario'
 import { clearSavedAddress, loadSavedAddress, subscribeAddressChange } from './data/savedAddress'
 import {
@@ -115,7 +122,7 @@ function stackLayerClass(
 function App() {
   const [screen, setScreen] = useState<ScreenId>(DEFAULT_SCREEN)
   const [layerAnim, setLayerAnim] = useState<LayerAnim>(null)
-  const [scenario, setScenario] = useState<HomeScenarioId>(DEFAULT_SCENARIO)
+  const [activity, setActivity] = useState(DEFAULT_ACTIVITY)
   const [widgetIndex, setWidgetIndex] = useState(0)
   const [searchPhase, setSearchPhase] = useState<SearchPhase>('map')
   const [searchBackTo, setSearchBackTo] = useState<'app-home' | 'caregiver-intro'>('caregiver-intro')
@@ -130,6 +137,10 @@ function App() {
   const [bookingExit, setBookingExit] = useState<BookingSuccessDetails | null>(null)
   const [bookingExitVisible, setBookingExitVisible] = useState(false)
   const [bookingExitSnap, setBookingExitSnap] = useState(false)
+  /** Low-activity alert minimized to the bell. */
+  const [homeAlertDismissed, setHomeAlertDismissed] = useState(false)
+  /** “Yo me ocupo” — alert gone for this low-activity episode (no bell). */
+  const [homeAlertResolved, setHomeAlertResolved] = useState(false)
   const layerAnimRef = useRef<LayerAnim>(null)
   const bannerTimerRef = useRef<number | null>(null)
   const pendingStackRef = useRef<AppViewId[] | null>(null)
@@ -137,10 +148,11 @@ function App() {
 
   useEffect(() => subscribeAddressChange(() => setHasSavedAddress(Boolean(loadSavedAddress()))), [])
 
+  const scenario = scenarioFromActivity(activity)
   const appOpen = isInApp(screen)
   const showHome = screen === 'ios-home' || appOpen
   const canGoHome = appOpen && layerAnim !== 'leave'
-  const needsAttention = scenario === 'attention'
+  const needsAttention = isLowActivity(activity)
   const appView = appViewFromScreen(screen)
   const stackTop = viewStack[viewStack.length - 1] ?? 'app-home'
   const interactiveTop =
@@ -223,6 +235,7 @@ function App() {
 
   const finishBookingToHome = useCallback((details: BookingSuccessDetails) => {
     // Cover stays on top while we snap the stack to home, then fades out (fuaaa).
+    // Activity points stay as they were — booking does not reset the collar.
     setBookingExit(details)
     setBookingExitSnap(true)
     setBookingExitVisible(true)
@@ -232,8 +245,6 @@ function App() {
     setViewStack(['app-home'])
     setSearchPhase('results')
     setScreen('app-home')
-    // Booking resolved the inactivity alert — don't show it again on home.
-    setScenario('ok')
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         setBookingExitSnap(false)
@@ -270,7 +281,12 @@ function App() {
 
   const selectNav = useCallback(
     (item: NavItem) => {
-      if (item.scenario) setScenario(item.scenario)
+      if (item.scenario) {
+        setActivity(item.scenario === 'attention' ? DEMO_ACTIVITY_LOW : DEMO_ACTIVITY_OK)
+        // Demo jump to ≤30 shows a fresh alert; jump to 62 clears notification state.
+        setHomeAlertDismissed(false)
+        setHomeAlertResolved(false)
+      }
       if (item.widgetIndex != null) setWidgetIndex(item.widgetIndex)
       if (item.searchPhase) setSearchPhase(item.searchPhase)
       if (item.caregiverId) setCaregiverId(item.caregiverId)
@@ -283,9 +299,28 @@ function App() {
     setWidgetIndex((current) => (current === index ? current : index))
   }, [])
 
-  const toggleAttention = useCallback(() => {
-    setScenario((current) => (current === 'attention' ? 'ok' : 'attention'))
+  const toggleActivityLevel = useCallback(() => {
+    setActivity((current) => {
+      const next = isLowActivity(current) ? DEMO_ACTIVITY_OK : DEMO_ACTIVITY_LOW
+      setHomeAlertDismissed(false)
+      setHomeAlertResolved(false)
+      return next
+    })
   }, [])
+
+  const minimizeHomeAlert = useCallback(() => {
+    setHomeAlertDismissed(true)
+  }, [])
+
+  const resolveHomeAlert = useCallback(() => {
+    setHomeAlertResolved(true)
+    setHomeAlertDismissed(false)
+  }, [])
+
+  const restoreHomeAlert = useCallback(() => {
+    if (homeAlertResolved) return
+    setHomeAlertDismissed(false)
+  }, [homeAlertResolved])
 
   const resetAddressCache = useCallback(() => {
     clearSavedAddress()
@@ -393,6 +428,11 @@ function App() {
                     >
                       <AppHomeScreen
                         scenario={scenario}
+                        alertDismissed={homeAlertDismissed}
+                        alertResolved={homeAlertResolved}
+                        onMinimizeAlert={minimizeHomeAlert}
+                        onResolveAlert={resolveHomeAlert}
+                        onRestoreAlert={restoreHomeAlert}
                         onAgendar={() => {
                           if (loadSavedAddress()) {
                             setSearchBackTo('app-home')
@@ -495,22 +535,23 @@ function App() {
               type="button"
               className={`scenario-toggle${needsAttention ? ' is-active' : ''}`}
               aria-pressed={needsAttention}
-              onClick={toggleAttention}
+              onClick={toggleActivityLevel}
             >
               <span className="scenario-toggle__label">
-                {needsAttention ? 'Alerta activa' : 'Activar alerta'}
+                {needsAttention ? `Actividad ${DEMO_ACTIVITY_LOW}` : `Actividad ${DEMO_ACTIVITY_OK}`}
               </span>
               <span className="scenario-toggle__hint">
-                {needsAttention ? 'Actividad ≤ 30' : 'Simular inactividad'}
+                {needsAttention
+                  ? `Cambiar a ${DEMO_ACTIVITY_OK} (día normal)`
+                  : `Bajar a ${DEMO_ACTIVITY_LOW} (sale la alerta)`}
               </span>
             </button>
-            <button type="button" className={`scenario-toggle${hasSavedAddress ? ' is-active' : ''}`} onClick={resetAddressCache}>
-              <span className="scenario-toggle__label">Reset dirección</span>
-              <span className="scenario-toggle__hint">
-                {hasSavedAddress
-                  ? 'Borrar caché y repetir el onboarding'
-                  : 'Sin dirección · volver al intro'}
+            <button type="button" className={`scenario-toggle scenario-toggle--with-icon${hasSavedAddress ? ' is-active' : ''}`} onClick={resetAddressCache}>
+              <span className="scenario-toggle__copy">
+                <span className="scenario-toggle__label">Repetir onboarding</span>
+                <span className="scenario-toggle__hint">Empezar de nuevo</span>
               </span>
+              <Trash2 className="scenario-toggle__icon" size={18} strokeWidth={1.75} aria-hidden="true" />
             </button>
             <ScreenNavigator
               activeId={activeNavId({

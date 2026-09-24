@@ -190,6 +190,26 @@
   background: linear-gradient(135deg, rgba(255, 144, 95, 0.2), rgba(232, 91, 41, 0.08));
 }
 
+.scenario-toggle--with-icon {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.scenario-toggle__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.scenario-toggle__icon {
+  flex-shrink: 0;
+  color: var(--muted);
+}
+
 .scenario-toggle__label {
   font-family: var(--font-display);
   font-size: 1.1rem;

@@ -1,4 +1,5 @@
 import type { HomeScenarioId } from './homeScenarios'
+import { DEMO_ACTIVITY_LOW, DEMO_ACTIVITY_OK } from './homeScenarios'
 import { CAREGIVERS } from './caregivers'
 
 export type ScreenId =
@@ -128,8 +129,18 @@ export const NAV_GROUPS: NavGroup[] = [
     id: 'app-home',
     label: 'App · Inicio',
     items: [
-      { id: 'app-home-ok', label: 'Día normal', screen: 'app-home', scenario: 'ok' },
-      { id: 'app-home-alert', label: 'Alerta de actividad', screen: 'app-home', scenario: 'attention' },
+      {
+        id: 'app-home-ok',
+        label: `Actividad ${DEMO_ACTIVITY_OK}`,
+        screen: 'app-home',
+        scenario: 'ok',
+      },
+      {
+        id: 'app-home-alert',
+        label: `Actividad ${DEMO_ACTIVITY_LOW}`,
+        screen: 'app-home',
+        scenario: 'attention',
+      },
     ],
   },
   {

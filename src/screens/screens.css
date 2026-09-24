@@ -513,16 +513,16 @@
   overflow: hidden;
 }
 
-.app-home.is-alert {
+.app-home.is-alert-open {
   --alert-shift: 206px;
 }
 
-.app-home.is-alert .app-home__scroller {
+.app-home.is-alert-open .app-home__scroller {
   cursor: grab;
   touch-action: none;
 }
 
-.app-home.is-alert .app-home__scroller.is-dragging {
+.app-home.is-alert-open .app-home__scroller.is-dragging {
   cursor: grabbing;
   user-select: none;
 }
@@ -541,9 +541,10 @@
   height: var(--phone-h);
   pointer-events: none;
   visibility: hidden;
+  transition: height 0.45s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-.app-home.is-alert .app-home__scroll-extent {
+.app-home.is-alert-open .app-home__scroll-extent {
   /* Match stage bottom (top: alert-shift + height phone-h) so max scroll = alert-shift */
   height: calc(var(--phone-h) + var(--alert-shift));
 }
@@ -622,6 +623,7 @@
   height: 844px;
   z-index: 2;
   pointer-events: none;
+  transition: top 0.45s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .app-home__stage .app-home__cta,
@@ -654,7 +656,27 @@
   backdrop-filter: blur(2.4px);
   -webkit-backdrop-filter: blur(2.4px);
   box-sizing: border-box;
+  pointer-events: none;
+  transform-origin: top center;
+  opacity: 0;
+  transform: scale(0.88) translate3d(0, -8px, 0);
+  transition:
+    opacity 0.32s ease,
+    transform 0.45s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.app-home__alert.is-open {
+  opacity: 1;
+  transform: scale(1) translate3d(0, 0, 0);
   pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-home__stage,
+  .app-home__scroll-extent,
+  .app-home__alert {
+    transition-duration: 0.01ms;
+  }
 }
 
 .app-home__alert-top {

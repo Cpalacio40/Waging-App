@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState, type AnimationEvent } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { BUILDING_OPTIONS, buildingOption, type BuildingType } from '../data/savedAddress'
+import {
+  BUILDING_OPTIONS,
+  buildingOption,
+  type BuildingType,
+  type SavedAddress,
+} from '../data/savedAddress'
 import { assetUrl } from '../utils/assetUrl'
 import { isInCoverage, reverseGeocode, searchAddress, type GeoResult } from '../utils/geocode'
 import './screens.css'
@@ -32,6 +37,12 @@ type AddressLocateScreenProps = {
   onBack?: () => void
   onModeChange?: (mode: AddressLocateMode) => void
   onBuildingSelected?: (place: LocatedPlace, buildingType: BuildingType) => void
+  /**
+   * When set (add-from-dropdown flow), the map sheet shows the current address +
+   * “Añadir una nueva dirección” CTA instead of the first-visit search field — Figma 264:6869.
+   */
+  manageAddress?: SavedAddress | null
+  onEditManageAddress?: () => void
 }
 
 /** Screen Y ratio where the fixed pin tip sits (map = screen center). */
@@ -73,6 +84,8 @@ export function AddressLocateScreen({
   onBack,
   onModeChange,
   onBuildingSelected,
+  manageAddress = null,
+  onEditManageAddress,
 }: AddressLocateScreenProps) {
   const [internalMode, setInternalMode] = useState<AddressLocateMode>('map')
   const [query, setQuery] = useState('')
@@ -88,6 +101,8 @@ export function AddressLocateScreen({
   const [mapMoving, setMapMoving] = useState(false)
   const [resolvingAddress, setResolvingAddress] = useState(false)
   const [previewBuilding, setPreviewBuilding] = useState<BuildingType | null>(null)
+  /** After “Añadir una nueva dirección”, keep the pick flow (search/building) until manage ends. */
+  const [startedAddFromManage, setStartedAddFromManage] = useState(false)
 
   const mapHostRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<L.Map | null>(null)
@@ -97,18 +112,31 @@ export function AddressLocateScreen({
   const geoTriedRef = useRef(false)
   const skipNextReverseRef = useRef(false)
   const modeRef = useRef<AddressLocateMode>('map')
+  const manageAddressRef = useRef(manageAddress)
+  manageAddressRef.current = manageAddress
 
   const mode = modeProp ?? internalMode
   modeRef.current = mode
   const showSearchSheet = mode === 'search' || searchLeaving
   const showMapChrome = mode === 'map' || mode === 'building'
+  const showManageSheet = Boolean(manageAddress) && mode === 'map' && !startedAddFromManage
   const inCoverage = isInCoverage(coords.lat, coords.lng)
-  const pinKind = !inCoverage ? 'out' : mode === 'building' ? 'building' : 'ok'
+  const pinKind = !inCoverage
+    ? 'out'
+    : showManageSheet
+      ? 'building'
+      : mode === 'building'
+        ? 'building'
+        : 'ok'
   const pinSrc =
     pinKind === 'out'
       ? 'pin-marker.svg'
       : pinKind === 'building'
-        ? buildingOption(previewBuilding ?? 'casa').pin
+        ? buildingOption(
+            showManageSheet
+              ? manageAddress!.buildingType
+              : (previewBuilding ?? 'casa'),
+          ).pin
         : 'pin-ok.svg'
 
   const place: LocatedPlace = {
@@ -128,6 +156,11 @@ export function AddressLocateScreen({
     setMode('search')
   }
 
+  const startAddFromManage = () => {
+    setStartedAddFromManage(true)
+    openSearch()
+  }
+
   const closeSearch = () => {
     if (searchLeaving) return
     setSearchLeaving(true)
@@ -137,6 +170,8 @@ export function AddressLocateScreen({
     if (e.target !== e.currentTarget) return
     if (!searchLeaving) return
     setSearchLeaving(false)
+    // Cancelled search while adding another address → return to manage sheet.
+    if (manageAddress) setStartedAddFromManage(false)
     setMode('map')
   }
 
@@ -246,6 +281,76 @@ export function AddressLocateScreen({
   )
 
   useEffect(() => {
+    if (!manageAddress) setStartedAddFromManage(false)
+  }, [manageAddress])
+
+  // Center map on the saved address while the manage sheet is visible.
+  useEffect(() => {
+    if (!showManageSheet || !manageAddress) return
+    setCoords({ lat: manageAddress.lat, lng: manageAddress.lng })
+    setSelected({
+      id: `saved-${manageAddress.tag}`,
+      label: manageAddress.label,
+      secondary: manageAddress.secondary,
+      lat: manageAddress.lat,
+      lng: manageAddress.lng,
+    })
+    setQuery(manageAddress.label)
+
+    let cancelled = false
+    const tryPan = () => {
+      const map = mapRef.current
+      if (!map) return false
+      skipNextReverseRef.current = true
+      map.invalidateSize()
+      panLatLngUnderPin(map, manageAddress.lat, manageAddress.lng, 'map', {
+        zoom: STREET_ZOOM,
+        animate: true,
+      })
+      return true
+    }
+    if (tryPan()) return
+    const id = window.setInterval(() => {
+      if (cancelled) return
+      if (tryPan()) window.clearInterval(id)
+    }, 40)
+    return () => {
+      cancelled = true
+      window.clearInterval(id)
+    }
+  }, [showManageSheet, manageAddress?.tag, manageAddress?.lat, manageAddress?.lng])
+
+  // Lock panning while reviewing the current address on the manage sheet.
+  useEffect(() => {
+    let cancelled = false
+    const apply = () => {
+      const map = mapRef.current
+      if (!map) return false
+      if (showManageSheet) {
+        map.dragging.disable()
+        map.touchZoom.disable()
+        map.scrollWheelZoom.disable()
+        map.doubleClickZoom.disable()
+      } else {
+        map.dragging.enable()
+        map.touchZoom.enable()
+        map.scrollWheelZoom.enable()
+        map.doubleClickZoom.enable()
+      }
+      return true
+    }
+    if (apply()) return
+    const id = window.setInterval(() => {
+      if (cancelled) return
+      if (apply()) window.clearInterval(id)
+    }, 40)
+    return () => {
+      cancelled = true
+      window.clearInterval(id)
+    }
+  }, [showManageSheet])
+
+  useEffect(() => {
     if (mode !== 'search') return
     const id = window.requestAnimationFrame(() => searchInputRef.current?.focus())
     return () => window.cancelAnimationFrame(id)
@@ -296,6 +401,19 @@ export function AddressLocateScreen({
     // Align default overview under the pin + first reverse geocode
     requestAnimationFrame(() => {
       map.invalidateSize()
+      const saved = manageAddressRef.current
+      if (saved) {
+        skipNextReverseRef.current = true
+        panLatLngUnderPin(map, saved.lat, saved.lng, 'map', {
+          animate: false,
+          zoom: STREET_ZOOM,
+        })
+        map.dragging.disable()
+        map.touchZoom.disable()
+        map.scrollWheelZoom.disable()
+        map.doubleClickZoom.disable()
+        return
+      }
       panLatLngUnderPin(map, DEFAULT_LAT, DEFAULT_LNG, 'map', {
         animate: false,
         zoom: OVERVIEW_ZOOM,
@@ -314,9 +432,13 @@ export function AddressLocateScreen({
     }
   }, [])
 
-  // Geolocation: pan under pin + reverse
+  // Geolocation: pan under pin + reverse (skip when opening on a saved address).
   useEffect(() => {
     if (geoTriedRef.current || !navigator.geolocation) return
+    if (manageAddress) {
+      geoTriedRef.current = true
+      return
+    }
     geoTriedRef.current = true
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -336,7 +458,7 @@ export function AddressLocateScreen({
       () => undefined,
       { enableHighAccuracy: false, timeout: 5000 },
     )
-  }, [])
+  }, [manageAddress])
 
   // When switching map ↔ building, re-align pin target and invalidate size
   useEffect(() => {
@@ -373,10 +495,12 @@ export function AddressLocateScreen({
   }
 
   const showSuggestions = mode === 'search' && query.trim().length >= 2
+  const manageTag = manageAddress?.tag ?? ''
+  const manageLabel = manageAddress?.label ?? ''
 
   return (
     <div
-      className={`screen address-locate address-locate--map${mode === 'search' && !searchLeaving ? ' is-searching' : ''}${mode === 'building' ? ' is-building' : ''}`}
+      className={`screen address-locate address-locate--map${mode === 'search' && !searchLeaving ? ' is-searching' : ''}${mode === 'building' ? ' is-building' : ''}${showManageSheet ? ' is-manage' : ''}`}
     >
       <div
         ref={mapHostRef}
@@ -391,6 +515,9 @@ export function AddressLocateScreen({
             className={`address-locate__pin${mapMoving ? ' is-lifting' : ''}`}
             aria-hidden="true"
           >
+            {showManageSheet && manageTag ? (
+              <span className="address-locate__pin-tag">{manageTag}</span>
+            ) : null}
             <img src={addressAsset(pinSrc)} alt="" width={44} height={51} draggable={false} />
           </div>
 
@@ -411,7 +538,7 @@ export function AddressLocateScreen({
             </button>
           </header>
 
-          {!inCoverage ? (
+          {!inCoverage && !showManageSheet ? (
             <div className="address-locate__tooltip" role="status">
               <img src={addressAsset('pin-x.svg')} alt="" width={32} height={32} draggable={false} />
               <div className="address-locate__tooltip-copy">
@@ -461,6 +588,51 @@ export function AddressLocateScreen({
                   </button>
                 ))}
               </div>
+            </div>
+          ) : showManageSheet && manageAddress ? (
+            <div className="address-locate__sheet address-locate__sheet--manage">
+              <div className="address-locate__sheet-handle" aria-hidden="true" />
+              <div className="address-locate__manage-body">
+                <h2 className="address-locate__manage-title display-title">
+                  ¿Dónde pasamos por Luca?
+                </h2>
+                <div className="address-locate__manage-row">
+                  <img
+                    src={addressAsset('map-pin.svg')}
+                    alt=""
+                    width={24}
+                    height={24}
+                    draggable={false}
+                  />
+                  <div className="address-locate__manage-copy">
+                    <p className="address-locate__manage-tag">
+                      {manageTag} (Ubicación actual)
+                    </p>
+                    <p className="address-locate__manage-addr">{manageLabel}</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="address-locate__manage-edit"
+                    aria-label="Editar dirección"
+                    onClick={onEditManageAddress}
+                  >
+                    <img
+                      src={addressAsset('square-pen.svg')}
+                      alt=""
+                      width={40}
+                      height={40}
+                      draggable={false}
+                    />
+                  </button>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="address-locate__add-cta"
+                onClick={startAddFromManage}
+              >
+                Añadir una nueva dirección
+              </button>
             </div>
           ) : mode === 'map' ? (
             <div className="address-locate__sheet">

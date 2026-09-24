@@ -81,17 +81,14 @@ function gaugePoint(value: number) {
 type AppHomeScreenProps = {
   scenario?: HomeScenarioId
   onAgendar?: () => void
-  onCuidador?: () => void
 }
 
 function AppHomeView({
   scenario,
   onAgendar,
-  onCuidador,
 }: {
   scenario: HomeScenarioId
   onAgendar?: () => void
-  onCuidador?: () => void
 }) {
   const data = HOME_SCENARIOS[scenario]
   const needsAttention = scenario === 'attention'
@@ -316,38 +313,12 @@ function AppHomeView({
       </div>
 
       <div className="app-home__bottom-fade" aria-hidden="true" />
-
-      <nav className="app-home__tabbar" aria-label="Navegación principal">
-        <button type="button" className="is-active">
-          <img src={inicioAsset('nav-sun.svg')} alt="" width={24} height={24} draggable={false} />
-          Hoy
-        </button>
-        <button type="button">
-          <img src={inicioAsset('nav-heart.svg')} alt="" width={24} height={24} draggable={false} />
-          Salud
-        </button>
-        <button type="button" onClick={onCuidador}>
-          <img src={inicioAsset('nav-handshake.svg')} alt="" width={24} height={24} draggable={false} />
-          Cuidador
-        </button>
-        <button type="button">
-          <img
-            className="app-home__tab-avatar"
-            src={inicioAsset('bg-dog.jpg')}
-            alt=""
-            width={24}
-            height={24}
-            draggable={false}
-          />
-          Perfil
-        </button>
-      </nav>
     </div>
   )
 }
 
 /** In-app home — Figma iPhone 13 & 14 - 54 (ok, 48:3198) / 58 (attention, 116:4672). */
-export function AppHomeScreen({ scenario = 'ok', onAgendar, onCuidador }: AppHomeScreenProps) {
+export function AppHomeScreen({ scenario = 'ok', onAgendar }: AppHomeScreenProps) {
   const shown = useHeldScenario(scenario)
 
   return (
@@ -357,14 +328,14 @@ export function AppHomeScreen({ scenario = 'ok', onAgendar, onCuidador }: AppHom
         aria-hidden={shown !== 'ok'}
         inert={shown !== 'ok' ? true : undefined}
       >
-        <AppHomeView scenario="ok" onAgendar={onAgendar} onCuidador={onCuidador} />
+        <AppHomeView scenario="ok" onAgendar={onAgendar} />
       </div>
       <div
         className={`app-home-stack__layer${shown === 'attention' ? ' is-visible' : ''}`}
         aria-hidden={shown !== 'attention'}
         inert={shown !== 'attention' ? true : undefined}
       >
-        <AppHomeView scenario="attention" onAgendar={onAgendar} onCuidador={onCuidador} />
+        <AppHomeView scenario="attention" onAgendar={onAgendar} />
       </div>
     </div>
   )

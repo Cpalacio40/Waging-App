@@ -112,6 +112,10 @@ export function CaregiverSearchScreen({
   const [leavingPanel, setLeavingPanel] = useState<'details' | 'list' | null>(null)
   /** Where details should land after its leave animation. */
   const [leavingDetailsTo, setLeavingDetailsTo] = useState<'building' | 'map'>('building')
+  /** Origin of the details panel (manage edit → map, building pick → building). */
+  const [detailsOrigin, setDetailsOrigin] = useState<'building' | 'map'>('building')
+  /** Add-another-address flow from the caregiver dropdown (Figma 264:6869 manage sheet). */
+  const [addingAddress, setAddingAddress] = useState(false)
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>(() => loadSavedAddresses())
   const [activeAddress, setActiveAddress] = useState<SavedAddress | null>(() => loadSavedAddress())
   const [addressMenuOpen, setAddressMenuOpen] = useState(false)
@@ -199,6 +203,7 @@ export function CaregiverSearchScreen({
   const onBuildingSelected = (place: LocatedPlace, type: BuildingType) => {
     setDraftPlace(place)
     setBuildingType(type)
+    setDetailsOrigin('building')
     setLeavingPanel(null)
     setPhase('details')
   }
@@ -207,6 +212,7 @@ export function CaregiverSearchScreen({
     saveAddress(address)
     setDraftPlace(null)
     setAddressMenuOpen(false)
+    setAddingAddress(false)
     startCaregiverSearch()
   }
 
@@ -221,6 +227,7 @@ export function CaregiverSearchScreen({
     setAddressMenuOpen(false)
     setDraftPlace(null)
     setLeavingPanel(null)
+    setAddingAddress(true)
     setPhase('map')
   }
 
@@ -229,7 +236,22 @@ export function CaregiverSearchScreen({
     setDraftPlace(null)
     setLeavingPanel(null)
     setAddressMenuOpen(false)
+    setAddingAddress(false)
     setPhase('results')
+  }
+
+  const editManageAddress = () => {
+    if (!activeAddress) return
+    setDraftPlace({
+      label: activeAddress.label,
+      secondary: activeAddress.secondary,
+      lat: activeAddress.lat,
+      lng: activeAddress.lng,
+    })
+    setBuildingType(activeAddress.buildingType)
+    setDetailsOrigin('map')
+    setLeavingPanel(null)
+    setPhase('details')
   }
 
   const visibleCaregivers = caregiversForAddress(activeAddress, savedAddresses)
@@ -276,7 +298,7 @@ export function CaregiverSearchScreen({
 
   const requestDetailsBack = () => {
     if (leavingPanel) return
-    setLeavingDetailsTo('building')
+    setLeavingDetailsTo(detailsOrigin)
     setLeavingPanel('details')
   }
 
@@ -317,6 +339,8 @@ export function CaregiverSearchScreen({
         >
           <AddressLocateScreen
             mode={locateModeFromPhase(isLocatePhase(phase) ? phase : 'building')}
+            manageAddress={addingAddress ? activeAddress : null}
+            onEditManageAddress={editManageAddress}
             onBack={() => {
               if (phase === 'building') {
                 setPhase('map')

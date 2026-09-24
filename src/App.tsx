@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type AnimationEvent, type TransitionEvent } from 'react'
+import { AppTabBar } from './components/AppTabBar'
 import { IosNotification, type IosNotificationPhase } from './components/IosNotification'
 import { PhoneFrame } from './components/PhoneFrame'
 import { ScreenNavigator } from './components/ScreenNavigator'
@@ -122,6 +123,11 @@ function App() {
     leavingView && viewStack.length > 1
       ? (viewStack[viewStack.length - 2] ?? 'app-home')
       : stackTop
+  const showAppTabBar =
+    screen === 'app-home' ||
+    (screen === 'caregiver-search' &&
+      (searchPhase === 'results' || searchPhase === 'loading'))
+  const tabBarActive = screen === 'app-home' ? 'hoy' : 'cuidador'
 
   useEffect(() => {
     if (leavingView) return
@@ -346,11 +352,6 @@ function App() {
                           }
                           setScreen('caregiver-intro')
                         }}
-                        onCuidador={() => {
-                          setSearchBackTo('app-home')
-                          setSearchPhase(loadSavedAddress() ? 'results' : 'map')
-                          setScreen('caregiver-search')
-                        }}
                       />
                     </div>
                     <div
@@ -393,6 +394,21 @@ function App() {
                       />
                     </div>
                   </div>
+                  {showAppTabBar ? (
+                    <AppTabBar
+                      active={tabBarActive}
+                      onHoy={() => setScreen('app-home')}
+                      onCuidador={() => {
+                        if (loadSavedAddress()) {
+                          setSearchBackTo('app-home')
+                          setSearchPhase('results')
+                          setScreen('caregiver-search')
+                          return
+                        }
+                        setScreen('caregiver-intro')
+                      }}
+                    />
+                  ) : null}
                 </div>
                 <div
                   className={`app-pane app-pane--splash${screen === 'splash' ? ' is-visible' : ''}`}

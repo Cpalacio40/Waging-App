@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, useState, type TransitionEvent } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type TransitionEvent,
+} from 'react'
 import { Play } from 'lucide-react'
 import type { Caregiver, CaregiverReview } from '../data/caregivers'
 import { useDragScroll } from '../hooks/useDragScroll'
@@ -146,36 +153,120 @@ export function CaregiverProfileScreen({
   const videoEls = useRef(new Map<string, HTMLVideoElement>())
   const navRef = useRef<HTMLElement>(null)
   const topRef = useRef<HTMLDivElement>(null)
+  const nameRef = useRef<HTMLHeadingElement>(null)
   const mutedSurfaceRef = useRef(true)
+  const titlePinnedRef = useRef(false)
+  const titleSettledRef = useRef(false)
 
-  const syncNavSurface = useCallback((offset: number) => {
+  // Keep nav/photo classes in sync via the DOM so a transparent header never
+  // reveals the photo. Re-applied after React renders (className would wipe
+  // imperative classList changes when is-scrolled etc. update).
+  const applyTitleChromeClasses = useCallback((show: boolean, pinned: boolean) => {
+    const nav = navRef.current
+    const name = nameRef.current
+    const photo = topRef.current?.querySelector('.caregiver-profile__photo-wrap')
+    if (!nav || !name) return
+
+    name.classList.toggle('is-sticky', show)
+    name.classList.toggle('is-pinned', pinned)
+
+    if (show) {
+      photo?.classList.add('is-under-header')
+      nav.classList.add('has-title')
+      nav.classList.toggle('is-title-pinned', pinned)
+    } else {
+      // Opaque first (no bg transition on profile nav), then reveal photo.
+      nav.classList.remove('has-title', 'is-title-pinned')
+      photo?.classList.remove('is-under-header')
+    }
+  }, [])
+
+  useLayoutEffect(() => {
+    applyTitleChromeClasses(titlePinnedRef.current, titleSettledRef.current)
+  })
+
+  const syncNavChrome = useCallback((offset: number) => {
     const nav = navRef.current
     const top = topRef.current
-    if (!nav || !top) return
-    // Sample the content row sitting under the nav bottom edge.
-    const underNavY = offset + nav.offsetHeight
-    const muted = underNavY < top.offsetHeight
-    if (muted === mutedSurfaceRef.current) return
-    mutedSurfaceRef.current = muted
-    nav.style.setProperty(
-      '--caregiver-nav-bg',
-      muted ? NAV_SURFACE_MUTED : NAV_SURFACE_DEFAULT,
-    )
-  }, [])
+    const name = nameRef.current
+
+    if (nav && top) {
+      // Sample the content row sitting under the nav bottom edge.
+      const underNavY = offset + nav.offsetHeight
+      const muted = underNavY < top.offsetHeight
+      mutedSurfaceRef.current = muted
+      const nextSurface = muted ? NAV_SURFACE_MUTED : NAV_SURFACE_DEFAULT
+      nav.style.setProperty('--caregiver-nav-bg', nextSurface)
+      name?.style.setProperty('--caregiver-nav-bg', nextSurface)
+    }
+
+    if (!nav || !name) return
+
+    const content = name.closest('.caregiver-profile__scroll-content') as HTMLElement | null
+    if (!content) return
+
+    let nameTop = 0
+    let node: HTMLElement | null = name
+    while (node && node !== content) {
+      nameTop += node.offsetTop
+      node = node.offsetParent as HTMLElement | null
+    }
+    if (!node) {
+      nameTop =
+        name.getBoundingClientRect().top -
+        content.getBoundingClientRect().top +
+        offset
+    }
+
+    const navBottom = nav.offsetHeight
+    // Park the title in the nav band (aligned with the back control).
+    const stickPoint = Math.max(0, navBottom - 12 - name.offsetHeight)
+    const nameViewportTop = nameTop - offset
+    // While the title crosses the nav, keep it on top (nav goes transparent)
+    // instead of letting it slide underneath and disappear.
+    const crossingNav = nameViewportTop < navBottom
+    const pin = Math.max(0, offset - (nameTop - stickPoint))
+    const pinned = pin > 0.5
+    const showTitleChrome = crossingNav || pinned
+
+    name.style.transform = pinned ? `translate3d(0, ${pin}px, 0)` : ''
+    // Stretch the title surface up to the top of the nav so the photo
+    // never flashes through the transparent header.
+    const visualTop = pinned ? stickPoint : Math.max(0, nameViewportTop)
+    const coverTop = showTitleChrome ? -visualTop : 14
+    name.style.setProperty('--sticky-cover-top', `${coverTop}px`)
+
+    titlePinnedRef.current = showTitleChrome
+    titleSettledRef.current = pinned
+    applyTitleChromeClasses(showTitleChrome, pinned)
+  }, [applyTitleChromeClasses])
 
   const dragScroll = useDragScroll({
     enabled: open && entered && !calendarOpen,
     ignoreSelector: 'button, a, input, textarea, .caregiver-profile__reviews',
-    onOffsetChange: syncNavSurface,
+    onOffsetChange: syncNavChrome,
   })
   const reviewsScroll = useHorizontalDragScroll({ enabled: open && entered && !calendarOpen })
 
   useEffect(() => {
     if (!open || !entered) return
     mutedSurfaceRef.current = true
+    titlePinnedRef.current = false
+    titleSettledRef.current = false
+    const name = nameRef.current
+    if (name) {
+      name.style.transform = ''
+      name.style.removeProperty('--sticky-cover-top')
+      name.classList.remove('is-sticky', 'is-pinned')
+    }
+    topRef.current
+      ?.querySelector('.caregiver-profile__photo-wrap')
+      ?.classList.remove('is-under-header')
+    navRef.current?.classList.remove('has-title', 'is-title-pinned')
     navRef.current?.style.setProperty('--caregiver-nav-bg', NAV_SURFACE_MUTED)
-    syncNavSurface(0)
-  }, [open, entered, caregiver.id, syncNavSurface])
+    nameRef.current?.style.setProperty('--caregiver-nav-bg', NAV_SURFACE_MUTED)
+    syncNavChrome(0)
+  }, [open, entered, caregiver.id, syncNavChrome])
 
   const pausePlaying = () => {
     if (!playingKey) return
@@ -281,7 +372,20 @@ export function CaregiverProfileScreen({
     // Reset profile scroll only once the calendar fully covers the sheet.
     dragScroll.resetScroll()
     mutedSurfaceRef.current = true
+    titlePinnedRef.current = false
+    titleSettledRef.current = false
+    const name = nameRef.current
+    if (name) {
+      name.style.transform = ''
+      name.style.removeProperty('--sticky-cover-top')
+      name.classList.remove('is-sticky', 'is-pinned')
+    }
+    topRef.current
+      ?.querySelector('.caregiver-profile__photo-wrap')
+      ?.classList.remove('is-under-header')
+    navRef.current?.classList.remove('has-title', 'is-title-pinned')
     navRef.current?.style.setProperty('--caregiver-nav-bg', NAV_SURFACE_MUTED)
+    name?.style.setProperty('--caregiver-nav-bg', NAV_SURFACE_MUTED)
   }
 
   const onSheetTransitionEnd = (e: TransitionEvent<HTMLDivElement>) => {
@@ -312,7 +416,9 @@ export function CaregiverProfileScreen({
     >
       <header
         ref={navRef}
-        className={`caregiver-nav caregiver-nav--muted${dragScroll.scrolled ? ' is-scrolled' : ''}`}
+        className={`caregiver-nav caregiver-nav--muted caregiver-nav--profile${
+          dragScroll.scrolled ? ' is-scrolled' : ''
+        }`}
       >
         <button type="button" className="caregiver-back" aria-label="Volver" onClick={onBack}>
           <img src={caregiverAsset('arrow-left.svg')} alt="" width={32} height={32} draggable={false} />
@@ -338,7 +444,9 @@ export function CaregiverProfileScreen({
             </div>
 
             <div className="caregiver-profile__intro">
-              <h1 className="caregiver-profile__name display-title">{caregiver.name}</h1>
+              <h1 ref={nameRef} className="caregiver-profile__name display-title">
+                {caregiver.name}
+              </h1>
               <p className="caregiver-profile__tagline">{caregiver.tagline}</p>
               <p className="caregiver-profile__stats">
                 <img src={profileAsset('icon-repeat.svg')} alt="" width={10} height={10} draggable={false} />

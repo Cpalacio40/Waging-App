@@ -1292,7 +1292,14 @@
 /*
  * Sticky back-nav banner: solid bar matching the screen surface below.
  * Divider line fades in only after the content has scrolled.
+ * Registered so muted ↔ default surface colors can interpolate.
  */
+@property --caregiver-nav-bg {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #fcfcfc;
+}
+
 .caregiver-nav {
   --caregiver-nav-bg: #fcfcfc;
   position: absolute;
@@ -1306,7 +1313,9 @@
   padding: 0 17px 12px;
   pointer-events: none;
   background: var(--caregiver-nav-bg);
-  transition: background-color 0.18s ease;
+  transition:
+    background-color 0.18s ease,
+    --caregiver-nav-bg 0.55s ease;
 }
 
 .caregiver-nav::after {
@@ -1328,6 +1337,32 @@
 
 .caregiver-nav .caregiver-back {
   pointer-events: auto;
+}
+
+.caregiver-nav--profile {
+  z-index: 7;
+  /* Only the surface color eases — background itself stays instant so
+     has-title transparent ↔ opaque never flashes the photo. */
+  transition: --caregiver-nav-bg 0.55s ease;
+}
+
+.caregiver-nav--profile .caregiver-back {
+  position: relative;
+  z-index: 2;
+}
+
+.caregiver-nav--profile.has-title {
+  background: transparent;
+}
+
+.caregiver-nav--profile.has-title::after,
+.caregiver-nav--profile.has-title.is-scrolled::after {
+  opacity: 0;
+}
+
+.caregiver-nav--profile.has-title.is-title-pinned::after,
+.caregiver-nav--profile.has-title.is-title-pinned.is-scrolled::after {
+  opacity: 1;
 }
 
 .caregiver-nav--address {
@@ -1492,6 +1527,11 @@
 .caregiver-nav-spacer {
   height: 128px;
   flex-shrink: 0;
+}
+
+/* Figma 120:6900 — dropdown bottom → title ≈ 32px (content top 125). */
+.caregiver-search .caregiver-nav-spacer {
+  height: 112px;
 }
 
 .caregiver-cta {
@@ -2045,6 +2085,11 @@
   border-radius: 28px;
 }
 
+.caregiver-profile__photo-wrap.is-under-header {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .caregiver-profile__photo {
   width: 100%;
   height: 100%;
@@ -2061,6 +2106,8 @@
 }
 
 .caregiver-profile__intro {
+  position: relative;
+  z-index: 5;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -2086,6 +2133,33 @@
   font-weight: 400;
   line-height: 38px;
   color: var(--ink);
+  transition: --caregiver-nav-bg 0.55s ease;
+}
+
+.caregiver-profile__name.is-sticky {
+  position: relative;
+  z-index: 5;
+  align-self: stretch;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0 40px;
+  will-change: transform;
+}
+
+.caregiver-profile__name.is-sticky::before {
+  content: '';
+  position: absolute;
+  top: var(--sticky-cover-top, -14px);
+  bottom: -12px;
+  left: -20px;
+  right: -20px;
+  z-index: -1;
+  background: var(--caregiver-nav-bg, #fcfcfc);
+  box-shadow: none;
+}
+
+.caregiver-profile__name.is-sticky.is-pinned::before {
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
 }
 
 .caregiver-profile__tagline {

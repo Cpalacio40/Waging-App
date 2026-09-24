@@ -22,8 +22,8 @@ const caregiverAsset = (name: string) => assetUrl(`caregiver/${name}`)
 const addressAsset = (name: string) => assetUrl(`address/${name}`)
 const SEARCH_DELAY_MS = 2000
 const SKELETON_COUNT = 3
-/** Gap above a focused result card (clears the sticky nav banner). */
-const CARD_TOP_INSET_PX = 128
+/** Gap above a focused result card (clears the sticky address nav + title inset). */
+const CARD_TOP_INSET_PX = 112
 
 const DEMO_PLACE: LocatedPlace = {
   label: 'Carrer Petrarca 42',

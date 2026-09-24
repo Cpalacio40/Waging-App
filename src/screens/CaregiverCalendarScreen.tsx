@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type AnimationEvent, type TransitionEvent } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { Caregiver } from '../data/caregivers'
+import { getDayAvailability, hasAvailability } from '../data/caregiverAvailability'
 import type { BookingPhase } from '../data/screens'
 import { buildingOption, loadSavedAddress, subscribeAddressChange } from '../data/savedAddress'
 import { useDragScroll } from '../hooks/useDragScroll'
@@ -42,14 +43,12 @@ const MONTH_SHORT = [
   'Dic',
 ] as const
 
-function parseHour(slot: string) {
-  const [h] = slot.split(':')
-  return Number(h) || 0
-}
-
 function endTimeSlot(slot: string) {
-  const end = (parseHour(slot) + 1) % 24
-  return `${end}:00`
+  const [hourPart, minutePart = '0'] = slot.split(':')
+  const total = (Number(hourPart) || 0) * 60 + (Number(minutePart) || 0) + 60
+  const endHour = Math.floor(total / 60) % 24
+  const endMinute = total % 60
+  return `${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}`
 }
 
 function formatSessionLine(date: Date, start: string) {
@@ -106,12 +105,9 @@ const MONTHS = [
   'Diciembre',
 ] as const
 
-const TIME_SLOTS = ['8:00', '9:00', '10:00', '11:00', '12:00', '16:00', '17:00', '18:00'] as const
 const SESSION_DURATION = '60 min'
 const SESSION_PRICE = '29,99€'
 const SESSION_SUBTITLE = 'Salidas por tu barrio o sesiones en casa'
-const OCCUPIED_DAY_OFFSETS = [4, 7, 8] as const
-const WHEEL_ITEM_HEIGHT = 44
 
 type DayStatus = 'default' | 'available' | 'unavailable' | 'outside'
 
@@ -227,8 +223,6 @@ export function CaregiverCalendarScreen({
   )
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [time, setTime] = useState<string | null>(null)
-  const [pendingTime, setPendingTime] = useState<string>(TIME_SLOTS[0])
-  const [timeOpen, setTimeOpen] = useState(false)
   const [policyOpen, setPolicyOpen] = useState(false)
   const [policyClosing, setPolicyClosing] = useState(false)
   const [payPhase, setPayPhase] = useState<PayPhase>('idle')
@@ -236,14 +230,13 @@ export function CaregiverCalendarScreen({
   const [successVisible, setSuccessVisible] = useState(false)
   /** false when jumped here from the side navigator (hold Apple Pay). */
   const [payAutoAdvance, setPayAutoAdvance] = useState(true)
-  const wheelRef = useRef<HTMLDivElement>(null)
   const meetMapRef = useRef<HTMLDivElement>(null)
   const meetMapInstance = useRef<L.Map | null>(null)
   const [meetPlace, setMeetPlace] = useState(() => loadSavedAddress() ?? FALLBACK_MEET)
 
   const payBusy = payPhase !== 'idle'
   const dragScroll = useDragScroll({
-    enabled: open && entered && !timeOpen && !policyOpen && !policyClosing && !payBusy,
+    enabled: open && entered && !policyOpen && !policyClosing && !payBusy,
     ignoreSelector: 'button, a, select, .caregiver-calendar__time',
   })
   const showPolicyModal = policyOpen || policyClosing
@@ -279,27 +272,27 @@ export function CaregiverCalendarScreen({
     () => new Date(today.getFullYear(), today.getMonth() + 2, 0),
     [today],
   )
-  const occupiedKeys = useMemo(
-    () => new Set(OCCUPIED_DAY_OFFSETS.map((offset) => dateKey(addDays(today, offset)))),
-    [today],
-  )
   const statusFor = (date: Date): DayStatus => {
     const normalized = startOfDay(date)
     if (normalized < today || normalized > lastVisibleDay) return 'default'
-    if (occupiedKeys.has(dateKey(normalized))) return 'unavailable'
-    return 'available'
+    return hasAvailability(caregiver.id, normalized, today) ? 'available' : 'unavailable'
   }
   const days = useMemo(
     () => buildMonthGrid(year, month, statusFor),
-    // The calendar status is fixed for the lifetime of this screen instance.
+    // Availability is deterministic for caregiver + today window.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [year, month, today, lastVisibleDay, occupiedKeys],
+    [year, month, today, lastVisibleDay, caregiver.id],
   )
   const cursorMonthIndex = monthIndex(cursor)
   const firstMonthIndex = monthIndex(firstMonth)
   const secondMonthIndex = monthIndex(secondMonth)
   const isFirstMonth = cursorMonthIndex === firstMonthIndex
   const isSecondMonth = cursorMonthIndex === secondMonthIndex
+
+  useEffect(() => {
+    setSelectedKey(null)
+    setTime(null)
+  }, [caregiver.id])
 
   useEffect(() => subscribeAddressChange(() => setMeetPlace(loadSavedAddress() ?? FALLBACK_MEET)), [])
 
@@ -345,7 +338,6 @@ export function CaregiverCalendarScreen({
       setSuccessVisible(false)
       setPayAutoAdvance(true)
       setEntered(false)
-      setTimeOpen(false)
       setPolicyOpen(false)
       setPolicyClosing(false)
       return
@@ -379,15 +371,15 @@ export function CaregiverCalendarScreen({
       return
     }
 
-    let seed = addDays(today, 1)
-    while (seed <= lastVisibleDay && occupiedKeys.has(dateKey(seed))) {
+    let seed = today
+    while (seed <= lastVisibleDay && !hasAvailability(caregiver.id, seed, today)) {
       seed = addDays(seed, 1)
     }
     if (seed > lastVisibleDay) seed = today
+    const seedSlots = getDayAvailability(caregiver.id, seed, today).availableSlots
     setSelectedKey(dateKey(seed))
     setCursor(new Date(seed.getFullYear(), seed.getMonth(), 1))
-    setTime('16:00')
-    setTimeOpen(false)
+    setTime(seedSlots[0] ?? null)
     setPolicyOpen(false)
     setPolicyClosing(false)
 
@@ -407,17 +399,34 @@ export function CaregiverCalendarScreen({
       window.requestAnimationFrame(() => setSuccessVisible(true))
     })
     return () => window.cancelAnimationFrame(frame)
-  }, [open, entered, bookingPhase, today, lastVisibleDay, occupiedKeys])
+  }, [open, entered, bookingPhase, today, lastVisibleDay, caregiver.id])
+
+  const selectedDate = useMemo(() => {
+    if (!selectedKey) return today
+    const match = days.find((d) => d.key === selectedKey)
+    if (match) return match.date
+    const [yearPart, monthPart, dayPart] = selectedKey.split('-').map(Number)
+    if (
+      Number.isFinite(yearPart) &&
+      Number.isFinite(monthPart) &&
+      Number.isFinite(dayPart)
+    ) {
+      return new Date(yearPart, monthPart, dayPart)
+    }
+    return today
+  }, [selectedKey, days, today])
+
+  const availableTimeSlots = useMemo(() => {
+    if (!selectedKey) return [] as string[]
+    return getDayAvailability(caregiver.id, selectedDate, today).availableSlots
+  }, [selectedKey, selectedDate, caregiver.id, today])
 
   useEffect(() => {
-    if (!timeOpen) return
-    const frame = window.requestAnimationFrame(() => {
-      const current = time ?? TIME_SLOTS[0]
-      const index = TIME_SLOTS.indexOf(current as (typeof TIME_SLOTS)[number])
-      wheelRef.current?.scrollTo({ top: Math.max(0, index) * WHEEL_ITEM_HEIGHT })
-    })
-    return () => window.cancelAnimationFrame(frame)
-  }, [timeOpen, time])
+    if (!selectedKey) return
+    if (time && !availableTimeSlots.includes(time)) {
+      setTime(null)
+    }
+  }, [selectedKey, availableTimeSlots, time])
 
   const onSheetTransitionEnd = (e: TransitionEvent<HTMLDivElement>) => {
     if (e.target !== e.currentTarget) return
@@ -445,7 +454,6 @@ export function CaregiverCalendarScreen({
       if (candidateIndex > secondMonthIndex) return secondMonth
       return candidate
     })
-    setTimeOpen(false)
   }
 
   const resolvedStatus = (cell: CalendarDay): DayStatus => {
@@ -457,52 +465,24 @@ export function CaregiverCalendarScreen({
 
   const onSelectDay = (cell: CalendarDay) => {
     if (!canSelect(cell)) return
+    const daySlots = getDayAvailability(caregiver.id, cell.date, today).availableSlots
     setSelectedKey(cell.key)
+    setTime((prev) => (prev && daySlots.includes(prev) ? prev : null))
     if (cell.outside && monthIndex(cell.date) <= secondMonthIndex) {
       setCursor(new Date(cell.date.getFullYear(), cell.date.getMonth(), 1))
     }
   }
 
-  const openTimePicker = () => {
-    if (!selectedKey) return
-    setPendingTime(time ?? TIME_SLOTS[0])
-    setTimeOpen(true)
-  }
-
-  const onWheelScroll = () => {
-    const index = Math.round((wheelRef.current?.scrollTop ?? 0) / WHEEL_ITEM_HEIGHT)
-    const slot = TIME_SLOTS[Math.max(0, Math.min(index, TIME_SLOTS.length - 1))]
-    if (slot) setPendingTime(slot)
-  }
-
-  const selectWheelTime = (slot: string) => {
-    if (slot === pendingTime) {
-      setTime(slot)
-      setTimeOpen(false)
-      return
-    }
-
-    setPendingTime(slot)
-    const index = TIME_SLOTS.indexOf(slot as (typeof TIME_SLOTS)[number])
-    wheelRef.current?.scrollTo({
-      top: index * WHEEL_ITEM_HEIGHT,
-      behavior: 'smooth',
-    })
-  }
-
-  const selectedDate = useMemo(() => {
-    if (!selectedKey) return addDays(today, 1)
-    const match = days.find((d) => d.key === selectedKey)
-    return match?.date ?? addDays(today, 1)
-  }, [selectedKey, days, today])
-
   const successDetails = useMemo(
     () => ({
       caregiverName: caregiver.name,
-      sessionLine: formatSessionLine(selectedDate, time ?? TIME_SLOTS[0]),
+      sessionLine: formatSessionLine(
+        selectedDate,
+        time ?? availableTimeSlots[0] ?? '08:30',
+      ),
       addressLine: formatAddressLine(meetPlace),
     }),
-    [caregiver.name, selectedDate, time, meetPlace],
+    [caregiver.name, selectedDate, time, availableTimeSlots, meetPlace],
   )
 
   const canPay = Boolean(selectedKey && time) && !payBusy
@@ -540,7 +520,6 @@ export function CaregiverCalendarScreen({
 
   const startPayment = () => {
     if (!canPay) return
-    setTimeOpen(false)
     setPolicyOpen(false)
     setPolicyClosing(false)
     setPaySheetOpen(false)
@@ -590,11 +569,11 @@ export function CaregiverCalendarScreen({
                 <div className="caregiver-calendar__legend" aria-hidden="true">
                   <div className="caregiver-calendar__legend-item">
                     <span className="caregiver-calendar__swatch caregiver-calendar__swatch--available" />
-                    <span>Disponible</span>
+                    <span>Con disponibilidad</span>
                   </div>
                   <div className="caregiver-calendar__legend-item">
                     <span className="caregiver-calendar__swatch caregiver-calendar__swatch--unavailable" />
-                    <span>No disponible</span>
+                    <span>Sin disponibilidad</span>
                   </div>
                 </div>
 
@@ -677,21 +656,37 @@ export function CaregiverCalendarScreen({
                 </div>
 
                 <div className="caregiver-calendar__time">
-                  <label className="caregiver-calendar__time-label" id="calendar-time-label">
+                  <p className="caregiver-calendar__time-label" id="calendar-time-label">
                     Disponibilidad
-                  </label>
-                  <button
-                    type="button"
-                    className={`caregiver-calendar__time-trigger${timeOpen ? ' is-open' : ''}`}
-                    aria-haspopup="dialog"
-                    aria-expanded={timeOpen}
-                    aria-labelledby="calendar-time-label"
-                    disabled={!selectedKey}
-                    onClick={openTimePicker}
-                  >
-                    <span>{selectedKey && time ? time : 'Selecciona una hora'}</span>
-                    <ChevronDown size={16} strokeWidth={2.2} aria-hidden="true" />
-                  </button>
+                  </p>
+                  {selectedKey && availableTimeSlots.length > 0 ? (
+                    <div
+                      className="caregiver-calendar__slots"
+                      role="listbox"
+                      aria-labelledby="calendar-time-label"
+                      aria-label="Horas disponibles"
+                    >
+                      {availableTimeSlots.map((slot) => {
+                        const selected = slot === time
+                        return (
+                          <button
+                            key={slot}
+                            type="button"
+                            role="option"
+                            aria-selected={selected}
+                            className={`caregiver-calendar__slot${selected ? ' is-selected' : ''}`}
+                            onClick={() => setTime(slot)}
+                          >
+                            {slot}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <p className="caregiver-calendar__slots-empty">
+                      {selectedKey ? 'Sin horas disponibles' : 'Selecciona un día'}
+                    </p>
+                  )}
                 </div>
 
                 <section className="caregiver-calendar__meet" aria-label="Punto de encuentro">
@@ -812,78 +807,6 @@ export function CaregiverCalendarScreen({
                 onClick={closePolicyModal}
               >
                 Entendido
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {timeOpen ? (
-        <div
-          className="caregiver-time-modal"
-          role="presentation"
-          onPointerDown={(event) => {
-            if (event.target === event.currentTarget) setTimeOpen(false)
-          }}
-        >
-          <div
-            className="caregiver-time-modal__dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="caregiver-time-modal-title"
-          >
-            <div className="caregiver-time-modal__header">
-              <h2 id="caregiver-time-modal-title" className="caregiver-time-modal__title">
-                Selecciona una hora
-              </h2>
-            </div>
-
-            <div className="caregiver-time-modal__wheel-wrap">
-              <div className="caregiver-time-modal__selection" aria-hidden="true" />
-              <div
-                ref={wheelRef}
-                className="caregiver-time-modal__wheel"
-                role="listbox"
-                aria-label="Horas disponibles"
-                onScroll={onWheelScroll}
-              >
-                <ul className="caregiver-time-modal__list">
-                  {TIME_SLOTS.map((slot) => (
-                    <li key={slot}>
-                      <button
-                        type="button"
-                        role="option"
-                        aria-selected={slot === pendingTime}
-                        className={`caregiver-time-modal__option${
-                          slot === pendingTime ? ' is-selected' : ''
-                        }`}
-                        onClick={() => selectWheelTime(slot)}
-                      >
-                        {slot}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            <div className="caregiver-time-modal__actions">
-              <button
-                type="button"
-                className="caregiver-time-modal__action"
-                onClick={() => setTimeOpen(false)}
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                className="caregiver-time-modal__action caregiver-time-modal__action--confirm"
-                onClick={() => {
-                  setTime(pendingTime)
-                  setTimeOpen(false)
-                }}
-              >
-                OK
               </button>
             </div>
           </div>

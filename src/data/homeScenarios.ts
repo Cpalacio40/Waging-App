@@ -22,7 +22,7 @@ export type HomeScenario = {
 export const ACTIVITY_ALERT_THRESHOLD = 30
 
 /** Demo presets for the side panel / navigator. */
-export const DEMO_ACTIVITY_OK = 62
+export const DEMO_ACTIVITY_OK = 80
 export const DEMO_ACTIVITY_LOW = 30
 
 export const DEFAULT_ACTIVITY = DEMO_ACTIVITY_OK

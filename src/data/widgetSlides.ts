@@ -19,7 +19,7 @@ export const WIDGET_SLIDES: WidgetSlide[] = [
   {
     id: 'activity',
     title: 'Actividad',
-    value: '62/100',
+    value: '80/100',
     gradient: 'linear-gradient(169deg, #d3a333 20%, #ffdd55 92%)',
     chevron: '#F5E139',
     decor: 'paw',

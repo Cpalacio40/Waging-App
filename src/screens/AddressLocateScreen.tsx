@@ -38,21 +38,31 @@ type AddressLocateScreenProps = {
   onModeChange?: (mode: AddressLocateMode) => void
   onBuildingSelected?: (place: LocatedPlace, buildingType: BuildingType) => void
   /**
-   * When set (add-from-dropdown flow), the map sheet shows the current address +
-   * “Añadir una nueva dirección” CTA instead of the first-visit search field — Figma 264:6869.
+   * Glovo-style address book on the map (Figma / “¿Dónde pasamos por Luca?”).
+   * When set, the map sheet lists saved addresses instead of the first-visit search field.
    */
-  manageAddress?: SavedAddress | null
-  onEditManageAddress?: () => void
+  manageAddresses?: SavedAddress[] | null
+  activeManageId?: string
+  onSelectManageAddress?: (id: string) => void
+  onEditManageAddress?: (address: SavedAddress) => void
+  /** When adjusting a pin, center the map on this place (street zoom). */
+  focusPlace?: LocatedPlace | null
+  /** Building type for the pin glyph (edit / adjust flows). */
+  pinBuildingType?: BuildingType
 }
 
-/** Screen Y ratio where the fixed pin tip sits (map = screen center). */
-function pinScreenYRatio(mode: AddressLocateMode) {
-  return mode === 'building' ? 0.32 : 0.5
+/** Screen Y ratio where the fixed pin tip sits. */
+type PinLayout = AddressLocateMode | 'manage'
+
+function pinScreenYRatio(layout: PinLayout) {
+  if (layout === 'manage') return 0.24
+  if (layout === 'building') return 0.32
+  return 0.5
 }
 
-function pinScreenPoint(map: L.Map, mode: AddressLocateMode) {
+function pinScreenPoint(map: L.Map, layout: PinLayout) {
   const size = map.getSize()
-  return L.point(size.x / 2, size.y * pinScreenYRatio(mode))
+  return L.point(size.x / 2, size.y * pinScreenYRatio(layout))
 }
 
 /** Pan so `latlng` sits under the fixed center pin. */
@@ -60,14 +70,14 @@ function panLatLngUnderPin(
   map: L.Map,
   lat: number,
   lng: number,
-  mode: AddressLocateMode,
+  layout: PinLayout,
   opts?: { animate?: boolean; zoom?: number },
 ) {
   const animate = opts?.animate !== false
   const zoom = opts?.zoom ?? map.getZoom()
   const latlng = L.latLng(lat, lng)
   map.setView(latlng, zoom, { animate: false })
-  const desired = pinScreenPoint(map, mode)
+  const desired = pinScreenPoint(map, layout)
   const current = map.latLngToContainerPoint(latlng)
   map.panBy([current.x - desired.x, current.y - desired.y], {
     animate,
@@ -75,8 +85,8 @@ function panLatLngUnderPin(
   })
 }
 
-function latLngAtPin(map: L.Map, mode: AddressLocateMode) {
-  return map.containerPointToLatLng(pinScreenPoint(map, mode === 'building' ? 'building' : 'map'))
+function latLngAtPin(map: L.Map, layout: PinLayout) {
+  return map.containerPointToLatLng(pinScreenPoint(map, layout === 'building' ? 'building' : 'map'))
 }
 
 export function AddressLocateScreen({
@@ -84,8 +94,12 @@ export function AddressLocateScreen({
   onBack,
   onModeChange,
   onBuildingSelected,
-  manageAddress = null,
+  manageAddresses = null,
+  activeManageId = '',
+  onSelectManageAddress,
   onEditManageAddress,
+  focusPlace = null,
+  pinBuildingType = 'casa',
 }: AddressLocateScreenProps) {
   const [internalMode, setInternalMode] = useState<AddressLocateMode>('map')
   const [query, setQuery] = useState('')
@@ -103,41 +117,46 @@ export function AddressLocateScreen({
   const [previewBuilding, setPreviewBuilding] = useState<BuildingType | null>(null)
   /** After “Añadir una nueva dirección”, keep the pick flow (search/building) until manage ends. */
   const [startedAddFromManage, setStartedAddFromManage] = useState(false)
+  const [listOverflow, setListOverflow] = useState({ top: false, bottom: false })
 
   const mapHostRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<L.Map | null>(null)
   const abortRef = useRef<AbortController | null>(null)
   const reverseAbortRef = useRef<AbortController | null>(null)
   const searchInputRef = useRef<HTMLInputElement | null>(null)
+  const manageListRef = useRef<HTMLDivElement | null>(null)
   const geoTriedRef = useRef(false)
-  const skipNextReverseRef = useRef(false)
+  /** Programmatic pans may fire several moveends — skip that many reverse lookups. */
+  const skipReverseCountRef = useRef(0)
   const modeRef = useRef<AddressLocateMode>('map')
-  const manageAddressRef = useRef(manageAddress)
-  manageAddressRef.current = manageAddress
+  const manageActiveRef = useRef<SavedAddress | null>(null)
+  const focusPlaceRef = useRef(focusPlace)
+  focusPlaceRef.current = focusPlace
+
+  const armSkipReverse = (count = 1) => {
+    skipReverseCountRef.current += count
+  }
 
   const mode = modeProp ?? internalMode
   modeRef.current = mode
   const showSearchSheet = mode === 'search' || searchLeaving
   const showMapChrome = mode === 'map' || mode === 'building'
-  const showManageSheet = Boolean(manageAddress) && mode === 'map' && !startedAddFromManage
+  const managing = Boolean(manageAddresses)
+  const activeManaged =
+    manageAddresses?.find((item) => item.id === activeManageId) ?? manageAddresses?.[0] ?? null
+  manageActiveRef.current = activeManaged
+  const showManageSheet = managing && mode === 'map' && !startedAddFromManage
   const inCoverage = isInCoverage(coords.lat, coords.lng)
-  const pinKind = !inCoverage
-    ? 'out'
-    : showManageSheet
-      ? 'building'
-      : mode === 'building'
-        ? 'building'
-        : 'ok'
+  /** In-coverage map uses the building pin + pickup tag (Figma map / building frames). */
+  const pinKind = !inCoverage ? 'out' : 'building'
   const pinSrc =
     pinKind === 'out'
       ? 'pin-marker.svg'
-      : pinKind === 'building'
-        ? buildingOption(
-            showManageSheet
-              ? manageAddress!.buildingType
-              : (previewBuilding ?? 'casa'),
-          ).pin
-        : 'pin-ok.svg'
+      : buildingOption(
+          showManageSheet
+            ? (activeManaged?.buildingType ?? 'casa')
+            : (previewBuilding ?? pinBuildingType),
+        ).pin
 
   const place: LocatedPlace = {
     label: selected?.label || query.trim() || 'Ubicación seleccionada',
@@ -145,6 +164,9 @@ export function AddressLocateScreen({
     lat: coords.lat,
     lng: coords.lng,
   }
+  /** Dog pickup tag whenever the map pin is used to place / review an address. */
+  const showPickupTooltip = inCoverage && showMapChrome
+  const showOutTooltip = !inCoverage && showMapChrome
 
   const setMode = (next: AddressLocateMode) => {
     onModeChange?.(next)
@@ -170,8 +192,8 @@ export function AddressLocateScreen({
     if (e.target !== e.currentTarget) return
     if (!searchLeaving) return
     setSearchLeaving(false)
-    // Cancelled search while adding another address → return to manage sheet.
-    if (manageAddress) setStartedAddFromManage(false)
+    // Cancelled search while managing addresses → return to manage sheet.
+    if (managing) setStartedAddFromManage(false)
     setMode('map')
   }
 
@@ -226,7 +248,7 @@ export function AddressLocateScreen({
       })
     }
     const covered = isInCoverage(lat, lng)
-    skipNextReverseRef.current = true
+    armSkipReverse()
     setMode(covered ? 'building' : 'map')
     const map = mapRef.current
     if (map) {
@@ -281,29 +303,29 @@ export function AddressLocateScreen({
   )
 
   useEffect(() => {
-    if (!manageAddress) setStartedAddFromManage(false)
-  }, [manageAddress])
+    if (!managing) setStartedAddFromManage(false)
+  }, [managing])
 
-  // Center map on the saved address while the manage sheet is visible.
+  // Center map on the active saved address while the manage sheet is visible.
   useEffect(() => {
-    if (!showManageSheet || !manageAddress) return
-    setCoords({ lat: manageAddress.lat, lng: manageAddress.lng })
+    if (!showManageSheet || !activeManaged) return
+    setCoords({ lat: activeManaged.lat, lng: activeManaged.lng })
     setSelected({
-      id: `saved-${manageAddress.tag}`,
-      label: manageAddress.label,
-      secondary: manageAddress.secondary,
-      lat: manageAddress.lat,
-      lng: manageAddress.lng,
+      id: `saved-${activeManaged.id}`,
+      label: activeManaged.label,
+      secondary: activeManaged.secondary,
+      lat: activeManaged.lat,
+      lng: activeManaged.lng,
     })
-    setQuery(manageAddress.label)
+    setQuery(activeManaged.label)
 
     let cancelled = false
     const tryPan = () => {
       const map = mapRef.current
       if (!map) return false
-      skipNextReverseRef.current = true
+      skipReverseCountRef.current += 1
       map.invalidateSize()
-      panLatLngUnderPin(map, manageAddress.lat, manageAddress.lng, 'map', {
+      panLatLngUnderPin(map, activeManaged.lat, activeManaged.lng, 'manage', {
         zoom: STREET_ZOOM,
         animate: true,
       })
@@ -318,7 +340,7 @@ export function AddressLocateScreen({
       cancelled = true
       window.clearInterval(id)
     }
-  }, [showManageSheet, manageAddress?.tag, manageAddress?.lat, manageAddress?.lng])
+  }, [showManageSheet, activeManaged?.id, activeManaged?.lat, activeManaged?.lng])
 
   // Lock panning while reviewing the current address on the manage sheet.
   useEffect(() => {
@@ -380,8 +402,8 @@ export function AddressLocateScreen({
     const onMoveStart = () => setMapMoving(true)
     const onMoveEnd = () => {
       setMapMoving(false)
-      if (skipNextReverseRef.current) {
-        skipNextReverseRef.current = false
+      if (skipReverseCountRef.current > 0) {
+        skipReverseCountRef.current -= 1
         return
       }
       const currentMode = modeRef.current
@@ -401,10 +423,11 @@ export function AddressLocateScreen({
     // Align default overview under the pin + first reverse geocode
     requestAnimationFrame(() => {
       map.invalidateSize()
-      const saved = manageAddressRef.current
+      const saved = manageActiveRef.current
+      const focused = focusPlaceRef.current
       if (saved) {
-        skipNextReverseRef.current = true
-        panLatLngUnderPin(map, saved.lat, saved.lng, 'map', {
+        skipReverseCountRef.current += 1
+        panLatLngUnderPin(map, saved.lat, saved.lng, 'manage', {
           animate: false,
           zoom: STREET_ZOOM,
         })
@@ -412,6 +435,14 @@ export function AddressLocateScreen({
         map.touchZoom.disable()
         map.scrollWheelZoom.disable()
         map.doubleClickZoom.disable()
+        return
+      }
+      if (focused) {
+        skipReverseCountRef.current += 1
+        panLatLngUnderPin(map, focused.lat, focused.lng, 'map', {
+          animate: false,
+          zoom: STREET_ZOOM,
+        })
         return
       }
       panLatLngUnderPin(map, DEFAULT_LAT, DEFAULT_LNG, 'map', {
@@ -432,22 +463,24 @@ export function AddressLocateScreen({
     }
   }, [])
 
-  // Geolocation: pan under pin + reverse (skip when opening on a saved address).
+  // Geolocation: pan under pin + reverse (skip when opening on a saved / focused address).
   useEffect(() => {
     if (geoTriedRef.current || !navigator.geolocation) return
-    if (manageAddress) {
+    if (managing || focusPlace) {
       geoTriedRef.current = true
       return
     }
     geoTriedRef.current = true
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        // Adjust-pin / saved focus arrived while the GPS request was in flight.
+        if (focusPlaceRef.current || manageActiveRef.current) return
         const lat = pos.coords.latitude
         const lng = pos.coords.longitude
         setCoords({ lat, lng })
         const map = mapRef.current
         if (map) {
-          skipNextReverseRef.current = true
+          skipReverseCountRef.current += 1
           // Still first visit — keep city overview until the user picks an address
           panLatLngUnderPin(map, lat, lng, modeRef.current === 'building' ? 'building' : 'map', {
             zoom: OVERVIEW_ZOOM,
@@ -458,22 +491,180 @@ export function AddressLocateScreen({
       () => undefined,
       { enableHighAccuracy: false, timeout: 5000 },
     )
-  }, [manageAddress])
+  }, [managing, focusPlace])
 
-  // When switching map ↔ building, re-align pin target and invalidate size
+  // When switching map ↔ building (or manage), re-align pin target and invalidate size
   useEffect(() => {
     if (mode !== 'building') setPreviewBuilding(null)
     const map = mapRef.current
     if (!map || !showMapChrome) return
+    const layout: PinLayout = showManageSheet
+      ? 'manage'
+      : mode === 'building'
+        ? 'building'
+        : 'map'
+    const targetLat = focusPlace?.lat ?? coords.lat
+    const targetLng = focusPlace?.lng ?? coords.lng
     requestAnimationFrame(() => {
       map.invalidateSize()
-      skipNextReverseRef.current = true
-      panLatLngUnderPin(map, coords.lat, coords.lng, mode === 'building' ? 'building' : 'map', {
-        // Building step = address already chosen → street level
-        zoom: mode === 'building' ? STREET_ZOOM : map.getZoom(),
+      skipReverseCountRef.current += 1
+      panLatLngUnderPin(map, targetLat, targetLng, layout, {
+        // Building / manage / adjust = address already chosen → street level
+        zoom:
+          mode === 'building' || showManageSheet || focusPlace ? STREET_ZOOM : map.getZoom(),
       })
     })
-  }, [showMapChrome, mode])
+  }, [showMapChrome, mode, showManageSheet, focusPlace?.lat, focusPlace?.lng])
+
+  // Center map when adjusting an existing pin (not in the manage address book sheet).
+  useEffect(() => {
+    if (!focusPlace || showManageSheet || mode === 'search') return
+
+    // Cancel any in-flight reverse that would overwrite the preloaded address.
+    reverseAbortRef.current?.abort()
+    setResolvingAddress(false)
+    setCoords({ lat: focusPlace.lat, lng: focusPlace.lng })
+    setSelected({
+      id: `focus-${focusPlace.lat},${focusPlace.lng}`,
+      label: focusPlace.label,
+      secondary: focusPlace.secondary,
+      lat: focusPlace.lat,
+      lng: focusPlace.lng,
+    })
+    setQuery(focusPlace.label)
+
+    let cancelled = false
+    const tryPan = () => {
+      const map = mapRef.current
+      if (!map) return false
+      skipReverseCountRef.current += 2
+      map.invalidateSize()
+      panLatLngUnderPin(map, focusPlace.lat, focusPlace.lng, mode === 'building' ? 'building' : 'map', {
+        zoom: STREET_ZOOM,
+        animate: false,
+      })
+      return true
+    }
+    if (tryPan()) return
+    const id = window.setInterval(() => {
+      if (cancelled) return
+      if (tryPan()) window.clearInterval(id)
+    }, 40)
+    return () => {
+      cancelled = true
+      window.clearInterval(id)
+    }
+  }, [focusPlace?.lat, focusPlace?.lng, focusPlace?.label, focusPlace?.secondary, showManageSheet, mode])
+
+  // Soft edge lines when the address list can scroll further.
+  useEffect(() => {
+    if (!showManageSheet) {
+      setListOverflow({ top: false, bottom: false })
+      return
+    }
+    const el = manageListRef.current
+    if (!el) return
+
+    const update = () => {
+      const { scrollTop, scrollHeight, clientHeight } = el
+      setListOverflow({
+        top: scrollTop > 2,
+        bottom: scrollTop + clientHeight < scrollHeight - 2,
+      })
+    }
+    const id = requestAnimationFrame(update)
+    el.addEventListener('scroll', update, { passive: true })
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(update) : null
+    ro?.observe(el)
+    return () => {
+      cancelAnimationFrame(id)
+      el.removeEventListener('scroll', update)
+      ro?.disconnect()
+    }
+  }, [showManageSheet, manageAddresses?.length, activeManageId])
+
+  // Pointer-drag scroll for the address list (scrollbar stays hidden).
+  useEffect(() => {
+    if (!showManageSheet) return
+    const el = manageListRef.current
+    if (!el) return
+
+    let dragging = false
+    let captured = false
+    let pointerId: number | null = null
+    let startY = 0
+    let startScroll = 0
+    let moved = false
+
+    const onPointerDown = (e: PointerEvent) => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return
+      // Let edit / pick buttons receive a normal click unless the user actually drags.
+      if ((e.target as Element | null)?.closest?.('button')) {
+        const isPick = (e.target as Element).closest('.address-locate__manage-pick')
+        const isEdit = (e.target as Element).closest('.address-locate__manage-edit')
+        if (isEdit) return
+        // Allow drag to start from the pick row, but don't capture until we move.
+        if (!isPick) return
+      }
+      dragging = true
+      captured = false
+      moved = false
+      pointerId = e.pointerId
+      startY = e.clientY
+      startScroll = el.scrollTop
+    }
+
+    const onPointerMove = (e: PointerEvent) => {
+      if (!dragging || e.pointerId !== pointerId) return
+      const dy = e.clientY - startY
+      if (Math.abs(dy) <= 8) return
+      if (!moved) {
+        moved = true
+        try {
+          el.setPointerCapture(e.pointerId)
+          captured = true
+        } catch {
+          /* ignore */
+        }
+      }
+      el.scrollTop = startScroll - dy
+      e.preventDefault()
+    }
+
+    const onPointerUp = (e: PointerEvent) => {
+      if (e.pointerId !== pointerId) return
+      dragging = false
+      pointerId = null
+      if (captured) {
+        try {
+          el.releasePointerCapture(e.pointerId)
+        } catch {
+          /* ignore */
+        }
+        captured = false
+      }
+      if (moved) {
+        // Suppress the click that would select an address after a drag.
+        const suppress = (ev: Event) => {
+          ev.preventDefault()
+          ev.stopPropagation()
+          el.removeEventListener('click', suppress, true)
+        }
+        el.addEventListener('click', suppress, true)
+      }
+    }
+
+    el.addEventListener('pointerdown', onPointerDown)
+    el.addEventListener('pointermove', onPointerMove)
+    el.addEventListener('pointerup', onPointerUp)
+    el.addEventListener('pointercancel', onPointerUp)
+    return () => {
+      el.removeEventListener('pointerdown', onPointerDown)
+      el.removeEventListener('pointermove', onPointerMove)
+      el.removeEventListener('pointerup', onPointerUp)
+      el.removeEventListener('pointercancel', onPointerUp)
+    }
+  }, [showManageSheet, manageAddresses?.length])
 
   const pickResult = (item: GeoResult) => {
     applyLocation(item.lat, item.lng, item)
@@ -495,8 +686,13 @@ export function AddressLocateScreen({
   }
 
   const showSuggestions = mode === 'search' && query.trim().length >= 2
-  const manageTag = manageAddress?.tag ?? ''
-  const manageLabel = manageAddress?.label ?? ''
+  const manageList = (() => {
+    const items = manageAddresses ?? []
+    if (!items.length) return items
+    const current = items.find((item) => item.id === activeManageId) ?? items[0]!
+    const rest = items.filter((item) => item.id !== current.id)
+    return [current, ...rest]
+  })()
 
   return (
     <div
@@ -513,12 +709,54 @@ export function AddressLocateScreen({
         <>
           <div
             className={`address-locate__pin${mapMoving ? ' is-lifting' : ''}`}
-            aria-hidden="true"
           >
-            {showManageSheet && manageTag ? (
-              <span className="address-locate__pin-tag">{manageTag}</span>
+            {showOutTooltip ? (
+              <div className="address-locate__tooltip" role="status">
+                <img
+                  src={addressAsset('pin-x.svg')}
+                  alt=""
+                  width={32}
+                  height={32}
+                  draggable={false}
+                />
+                <div className="address-locate__tooltip-copy">
+                  <p className="address-locate__tooltip-title">¡Fuera de cobertura!</p>
+                  <p className="address-locate__tooltip-sub">
+                    No realizamos salida en esta zona por ahora
+                  </p>
+                </div>
+              </div>
             ) : null}
-            <img src={addressAsset(pinSrc)} alt="" width={44} height={51} draggable={false} />
+            {showPickupTooltip ? (
+              <div className="address-locate__tooltip address-locate__tooltip--pickup" role="status">
+                <span className="address-locate__tooltip-icon">
+                  <img
+                    src={addressAsset('dog.svg')}
+                    alt=""
+                    width={18}
+                    height={18}
+                    draggable={false}
+                  />
+                </span>
+                <div className="address-locate__tooltip-copy">
+                  {resolvingAddress ? (
+                    <span className="address-locate__tooltip-skeleton" aria-hidden="true" />
+                  ) : (
+                    <p className="address-locate__tooltip-addr">{place.label}</p>
+                  )}
+                  <p className="address-locate__tooltip-sub">Recogeremos a tu perro aquí</p>
+                </div>
+              </div>
+            ) : null}
+            <img
+              className="address-locate__pin-glyph"
+              src={addressAsset(pinSrc)}
+              alt=""
+              width={44}
+              height={51}
+              draggable={false}
+              aria-hidden="true"
+            />
           </div>
 
           <header className="address-locate__map-nav">
@@ -537,30 +775,6 @@ export function AddressLocateScreen({
               />
             </button>
           </header>
-
-          {!inCoverage && !showManageSheet ? (
-            <div className="address-locate__tooltip" role="status">
-              <img src={addressAsset('pin-x.svg')} alt="" width={32} height={32} draggable={false} />
-              <div className="address-locate__tooltip-copy">
-                <p className="address-locate__tooltip-title">¡Fuera de cobertura!</p>
-                <p className="address-locate__tooltip-sub">No realizamos salida en esta zona por ahora</p>
-              </div>
-            </div>
-          ) : null}
-
-          {mode === 'building' && inCoverage ? (
-            <div className="address-locate__tooltip address-locate__tooltip--pickup" role="status">
-              <span className="address-locate__tooltip-icon">
-                <img src={addressAsset('dog.svg')} alt="" width={18} height={18} draggable={false} />
-              </span>
-              <div className="address-locate__tooltip-copy">
-                <p className="address-locate__tooltip-addr">
-                  {resolvingAddress ? 'Buscando dirección…' : place.label}
-                </p>
-                <p className="address-locate__tooltip-sub">Recogeremos a tu perro aquí</p>
-              </div>
-            </div>
-          ) : null}
 
           {mode === 'building' && inCoverage ? (
             <div className="address-locate__sheet address-locate__sheet--building">
@@ -589,41 +803,72 @@ export function AddressLocateScreen({
                 ))}
               </div>
             </div>
-          ) : showManageSheet && manageAddress ? (
+          ) : showManageSheet ? (
             <div className="address-locate__sheet address-locate__sheet--manage">
               <div className="address-locate__sheet-handle" aria-hidden="true" />
               <div className="address-locate__manage-body">
                 <h2 className="address-locate__manage-title display-title">
                   ¿Dónde pasamos por Luca?
                 </h2>
-                <div className="address-locate__manage-row">
-                  <img
-                    src={addressAsset('map-pin.svg')}
-                    alt=""
-                    width={24}
-                    height={24}
-                    draggable={false}
-                  />
-                  <div className="address-locate__manage-copy">
-                    <p className="address-locate__manage-tag">
-                      {manageTag} (Ubicación actual)
-                    </p>
-                    <p className="address-locate__manage-addr">{manageLabel}</p>
+                <div
+                  className={`address-locate__manage-scroll${listOverflow.top ? ' has-top' : ''}${listOverflow.bottom ? ' has-bottom' : ''}`}
+                >
+                  <div ref={manageListRef} className="address-locate__manage-scroller">
+                    <ul className="address-locate__manage-list" aria-label="Direcciones guardadas">
+                      {manageList.map((item) => {
+                        const isCurrent = item.id === activeManaged?.id
+                        const detailParts = [item.floor.trim(), item.door.trim()].filter(Boolean)
+                        const detail =
+                          detailParts.length > 0
+                            ? detailParts.join(', ')
+                            : item.secondary.trim() || null
+                        return (
+                          <li key={item.id}>
+                            <div
+                              className={`address-locate__manage-row${isCurrent ? ' is-current' : ''}`}
+                            >
+                              <button
+                                type="button"
+                                className="address-locate__manage-pick"
+                                onClick={() => onSelectManageAddress?.(item.id)}
+                              >
+                                <img
+                                  src={addressAsset(buildingOption(item.buildingType).icon)}
+                                  alt=""
+                                  width={24}
+                                  height={24}
+                                  draggable={false}
+                                />
+                                <span className="address-locate__manage-copy">
+                                  <span className="address-locate__manage-tag">
+                                    {isCurrent ? `${item.tag} (Ubicación actual)` : item.tag}
+                                  </span>
+                                  <span className="address-locate__manage-addr">
+                                    {item.label}
+                                    {detail ? ` · ${detail}` : ''}
+                                  </span>
+                                </span>
+                              </button>
+                              <button
+                                type="button"
+                                className="address-locate__manage-edit"
+                                aria-label={`Editar ${item.tag}`}
+                                onClick={() => onEditManageAddress?.(item)}
+                              >
+                                <img
+                                  src={addressAsset('square-pen.svg')}
+                                  alt=""
+                                  width={40}
+                                  height={40}
+                                  draggable={false}
+                                />
+                              </button>
+                            </div>
+                          </li>
+                        )
+                      })}
+                    </ul>
                   </div>
-                  <button
-                    type="button"
-                    className="address-locate__manage-edit"
-                    aria-label="Editar dirección"
-                    onClick={onEditManageAddress}
-                  >
-                    <img
-                      src={addressAsset('square-pen.svg')}
-                      alt=""
-                      width={40}
-                      height={40}
-                      draggable={false}
-                    />
-                  </button>
                 </div>
               </div>
               <button

@@ -8,8 +8,9 @@ import {
   buildingOption,
   loadSavedAddress,
   loadSavedAddresses,
+  removeAddress,
   saveAddress,
-  setActiveAddressTag,
+  setActiveAddressId,
   subscribeAddressChange,
   type BuildingType,
   type SavedAddress,
@@ -78,11 +79,8 @@ function isLocatePhase(phase: SearchPhase) {
   return phase === 'locate' || phase === 'map' || phase === 'building' || phase === 'idle'
 }
 
-function formatSavedAddressLine(address: SavedAddress) {
-  const parts = [address.label]
-  if (address.floor.trim()) parts.push(`Piso ${address.floor.trim()}`)
-  if (address.door.trim()) parts.push(`Puerta ${address.door.trim()}`)
-  return parts.join(' · ')
+function shortAddressLabel(address: SavedAddress) {
+  return address.label.trim() || address.tag
 }
 
 /** First-run address gate + caregiver cards — Figma 3.1 address workflow. */
@@ -114,11 +112,16 @@ export function CaregiverSearchScreen({
   const [leavingDetailsTo, setLeavingDetailsTo] = useState<'building' | 'map'>('building')
   /** Origin of the details panel (manage edit → map, building pick → building). */
   const [detailsOrigin, setDetailsOrigin] = useState<'building' | 'map'>('building')
-  /** Add-another-address flow from the caregiver dropdown (Figma 264:6869 manage sheet). */
-  const [addingAddress, setAddingAddress] = useState(false)
+  /** Glovo-style address book on the map (“¿Dónde pasamos por Luca?”). */
+  const [managingAddresses, setManagingAddresses] = useState(false)
+  /** True while leaving details to reposition the pin on the interactive map. */
+  const [adjustingPin, setAdjustingPin] = useState(false)
+  /** Id of the address being edited in details (null = creating a new one). */
+  const [editingId, setEditingId] = useState<string | null>(null)
+  /** Snapshot used to prefill the details form when editing. */
+  const [editingDraft, setEditingDraft] = useState<SavedAddress | null>(null)
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>(() => loadSavedAddresses())
   const [activeAddress, setActiveAddress] = useState<SavedAddress | null>(() => loadSavedAddress())
-  const [addressMenuOpen, setAddressMenuOpen] = useState(false)
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const phase = phaseProp ?? internalPhase
   const overlay = overlayProp ?? (profileOpen ? 'profile' : 'none')
@@ -130,7 +133,7 @@ export function CaregiverSearchScreen({
   const dragScroll = useDragScroll({
     enabled: (phase === 'loading' || phase === 'results') && leavingPanel !== 'list',
     ignoreSelector:
-      'a, input, textarea, .caregiver-back, .caregiver-cta, .caregiver-address-select, .caregiver-address-menu',
+      'a, input, textarea, .caregiver-back, .caregiver-cta, .caregiver-address-select',
   })
 
   const setPhase = (next: SearchPhase) => {
@@ -144,10 +147,6 @@ export function CaregiverSearchScreen({
       setActiveAddress(loadSavedAddress())
     })
   }, [])
-
-  useEffect(() => {
-    if (!showList) setAddressMenuOpen(false)
-  }, [showList])
 
   useEffect(() => {
     return () => {
@@ -203,63 +202,110 @@ export function CaregiverSearchScreen({
   const onBuildingSelected = (place: LocatedPlace, type: BuildingType) => {
     setDraftPlace(place)
     setBuildingType(type)
-    setDetailsOrigin('building')
+    setAdjustingPin(false)
+    if (editingDraft) {
+      setEditingDraft({
+        ...editingDraft,
+        label: place.label,
+        secondary: place.secondary,
+        lat: place.lat,
+        lng: place.lng,
+        buildingType: type,
+      })
+      setDetailsOrigin('map')
+    } else {
+      setEditingId(null)
+      setEditingDraft(null)
+      setDetailsOrigin('building')
+    }
     setLeavingPanel(null)
     setPhase('details')
   }
 
   const onSaveAddress = (address: SavedAddress) => {
-    saveAddress(address)
+    saveAddress({
+      ...address,
+      id: editingId ?? (address.id.trim() ? address.id : undefined),
+    })
     setDraftPlace(null)
-    setAddressMenuOpen(false)
-    setAddingAddress(false)
+    setEditingId(null)
+    setEditingDraft(null)
+    setAdjustingPin(false)
+    setManagingAddresses(false)
     startCaregiverSearch()
   }
 
-  const selectAddressTag = (tag: string) => {
-    const changed = tag !== activeAddress?.tag
-    setActiveAddressTag(tag)
-    setAddressMenuOpen(false)
-    if (changed) startCaregiverSearch()
+  const onDeleteAddress = () => {
+    if (!editingId) return
+    removeAddress(editingId)
+    setDraftPlace(null)
+    setEditingId(null)
+    setEditingDraft(null)
+    setAdjustingPin(false)
+    const remaining = loadSavedAddresses()
+    if (!remaining.length) {
+      setManagingAddresses(false)
+      setPhase('map')
+      return
+    }
+    setManagingAddresses(true)
+    setPhase('map')
   }
 
-  const addAnotherAddress = () => {
-    setAddressMenuOpen(false)
+  const selectManageAddress = (id: string) => {
+    const changed = id !== activeAddress?.id
+    setActiveAddressId(id)
     setDraftPlace(null)
+    setEditingId(null)
+    setEditingDraft(null)
+    setAdjustingPin(false)
     setLeavingPanel(null)
-    setAddingAddress(true)
+    setManagingAddresses(false)
+    if (changed) {
+      startCaregiverSearch()
+      return
+    }
+    setPhase('results')
+  }
+
+  const openAddressManager = () => {
+    setDraftPlace(null)
+    setEditingId(null)
+    setEditingDraft(null)
+    setAdjustingPin(false)
+    setLeavingPanel(null)
+    setManagingAddresses(true)
     setPhase('map')
   }
 
   /** Leave the locate/details flow and return to the caregiver list. */
   const returnToCaregiverResults = () => {
     setDraftPlace(null)
+    setEditingId(null)
+    setEditingDraft(null)
+    setAdjustingPin(false)
     setLeavingPanel(null)
-    setAddressMenuOpen(false)
-    setAddingAddress(false)
+    setManagingAddresses(false)
     setPhase('results')
   }
 
-  const editManageAddress = () => {
-    if (!activeAddress) return
+  const editManageAddress = (address: SavedAddress) => {
     setDraftPlace({
-      label: activeAddress.label,
-      secondary: activeAddress.secondary,
-      lat: activeAddress.lat,
-      lng: activeAddress.lng,
+      label: address.label,
+      secondary: address.secondary,
+      lat: address.lat,
+      lng: address.lng,
     })
-    setBuildingType(activeAddress.buildingType)
+    setBuildingType(address.buildingType)
+    setEditingId(address.id)
+    setEditingDraft(address)
+    setAdjustingPin(false)
     setDetailsOrigin('map')
     setLeavingPanel(null)
     setPhase('details')
   }
 
   const visibleCaregivers = caregiversForAddress(activeAddress, savedAddresses)
-  const menuAddresses = (() => {
-    if (!activeAddress) return savedAddresses
-    const rest = savedAddresses.filter((item) => item.tag !== activeAddress.tag)
-    return [activeAddress, ...rest]
-  })()
 
   const openProfile = (caregiver: Caregiver) => {
     if (dragScroll.consumeClickSuppression()) return
@@ -298,12 +344,19 @@ export function CaregiverSearchScreen({
 
   const requestDetailsBack = () => {
     if (leavingPanel) return
+    if (detailsOrigin === 'map' && editingId) {
+      setManagingAddresses(true)
+    }
+    setAdjustingPin(false)
     setLeavingDetailsTo(detailsOrigin)
     setLeavingPanel('details')
   }
 
   const requestAdjustPin = () => {
     if (leavingPanel) return
+    // Leave the address-book sheet so the interactive map/search UI is available.
+    setManagingAddresses(false)
+    setAdjustingPin(true)
     setLeavingDetailsTo('map')
     setLeavingPanel('details')
   }
@@ -338,8 +391,16 @@ export function CaregiverSearchScreen({
           inert={showDetails ? true : undefined}
         >
           <AddressLocateScreen
-            mode={locateModeFromPhase(isLocatePhase(phase) ? phase : 'building')}
-            manageAddress={addingAddress ? activeAddress : null}
+            mode={
+              adjustingPin
+                ? 'map'
+                : locateModeFromPhase(isLocatePhase(phase) ? phase : 'building')
+            }
+            manageAddresses={managingAddresses ? savedAddresses : null}
+            activeManageId={activeAddress?.id ?? ''}
+            focusPlace={adjustingPin ? draftPlace : null}
+            pinBuildingType={buildingType}
+            onSelectManageAddress={selectManageAddress}
             onEditManageAddress={editManageAddress}
             onBack={() => {
               if (phase === 'building') {
@@ -350,8 +411,14 @@ export function CaregiverSearchScreen({
                 setPhase('map')
                 return
               }
+              // Cancelled pin adjust while editing → return to details.
+              if (adjustingPin && editingDraft) {
+                setAdjustingPin(false)
+                setPhase('details')
+                return
+              }
               // Map (or idle): if addresses already exist we came from the caregiver
-              // list via "Añadir dirección" — go back there instead of leaving the flow.
+              // list via the address pill — go back there instead of leaving the flow.
               if (savedAddresses.length > 0) {
                 returnToCaregiverResults()
                 return
@@ -373,11 +440,24 @@ export function CaregiverSearchScreen({
           onAnimationEnd={(e) => onPushPanelAnimationEnd('details', e)}
         >
           <AddressDetailsScreen
+            key={editingDraft ? `edit-${editingDraft.id}` : 'new-address'}
             place={place}
             buildingType={buildingType}
+            initial={
+              editingDraft
+                ? {
+                    id: editingDraft.id,
+                    floor: editingDraft.floor,
+                    door: editingDraft.door,
+                    notes: editingDraft.notes,
+                    tag: editingDraft.tag,
+                  }
+                : undefined
+            }
             onBack={requestDetailsBack}
             onAdjustPin={requestAdjustPin}
             onSave={onSaveAddress}
+            onDelete={editingId ? onDeleteAddress : undefined}
           />
         </div>
       ) : null}
@@ -393,10 +473,9 @@ export function CaregiverSearchScreen({
                 <div className="caregiver-address-select">
                   <button
                     type="button"
-                    className={`caregiver-address-select__trigger${addressMenuOpen ? ' is-open' : ''}`}
-                    aria-haspopup="listbox"
-                    aria-expanded={addressMenuOpen}
-                    onClick={() => setAddressMenuOpen((open) => !open)}
+                    className="caregiver-address-select__trigger"
+                    aria-label="Cambiar dirección"
+                    onClick={openAddressManager}
                   >
                     <img
                       className="caregiver-address-select__icon"
@@ -406,7 +485,9 @@ export function CaregiverSearchScreen({
                       height={20}
                       draggable={false}
                     />
-                    <span className="caregiver-address-select__label">{activeAddress.tag}</span>
+                    <span className="caregiver-address-select__label">
+                      {shortAddressLabel(activeAddress)}
+                    </span>
                     <img
                       className="caregiver-address-select__chevron"
                       src={assetUrl('app-inicio/icon-chevron-down.svg')}
@@ -416,51 +497,6 @@ export function CaregiverSearchScreen({
                       draggable={false}
                     />
                   </button>
-                  {addressMenuOpen ? (
-                    <ul
-                      className="caregiver-address-menu"
-                      role="listbox"
-                      aria-label="Direcciones guardadas"
-                    >
-                      {menuAddresses.map((item) => (
-                        <li key={`${item.tag}-${item.savedAt}`}>
-                          <button
-                            type="button"
-                            className={`caregiver-address-menu__item${
-                              item.tag === activeAddress.tag ? ' is-active' : ''
-                            }`}
-                            role="option"
-                            aria-selected={item.tag === activeAddress.tag}
-                            onClick={() => selectAddressTag(item.tag)}
-                          >
-                            <img
-                              className="caregiver-address-menu__icon"
-                              src={addressAsset(buildingOption(item.buildingType).icon)}
-                              alt=""
-                              width={20}
-                              height={20}
-                              draggable={false}
-                            />
-                            <span className="caregiver-address-menu__copy">
-                              <span className="caregiver-address-menu__tag">{item.tag}</span>
-                              <span className="caregiver-address-menu__addr">
-                                {formatSavedAddressLine(item)}
-                              </span>
-                            </span>
-                          </button>
-                        </li>
-                      ))}
-                      <li>
-                        <button
-                          type="button"
-                          className="caregiver-address-menu__item caregiver-address-menu__item--add"
-                          onClick={addAnotherAddress}
-                        >
-                          Añadir dirección
-                        </button>
-                      </li>
-                    </ul>
-                  ) : null}
                 </div>
               ) : (
                 <button
@@ -479,15 +515,6 @@ export function CaregiverSearchScreen({
                 </button>
               )}
             </header>
-
-            {addressMenuOpen ? (
-              <button
-                type="button"
-                className="caregiver-address-select__backdrop"
-                aria-label="Cerrar"
-                onClick={() => setAddressMenuOpen(false)}
-              />
-            ) : null}
 
             <div
               ref={dragScroll.ref}

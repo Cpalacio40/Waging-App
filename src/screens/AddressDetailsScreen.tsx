@@ -14,9 +14,19 @@ const addressAsset = (name: string) => assetUrl(`address/${name}`)
 type AddressDetailsScreenProps = {
   place: { label: string; secondary: string; lat: number; lng: number }
   buildingType: BuildingType
+  /** Prefill when editing an existing saved address. */
+  initial?: {
+    id?: string
+    floor?: string
+    door?: string
+    notes?: string
+    tag?: string
+  }
   onBack?: () => void
   onAdjustPin?: () => void
   onSave?: (address: SavedAddress) => void
+  /** When set (editing an existing address), show the trash control beside the summary. */
+  onDelete?: () => void
 }
 
 function miniPinIcon(buildingType: BuildingType) {
@@ -30,15 +40,24 @@ function miniPinIcon(buildingType: BuildingType) {
 export function AddressDetailsScreen({
   place,
   buildingType,
+  initial,
   onBack,
   onAdjustPin,
   onSave,
+  onDelete,
 }: AddressDetailsScreenProps) {
-  const initialTag = buildingOption(buildingType).label
-  const [floor, setFloor] = useState('')
-  const [door, setDoor] = useState('')
-  const [notes, setNotes] = useState('')
-  const [tags, setTags] = useState<string[]>([initialTag])
+  const defaultTag = buildingOption(buildingType).label
+  const initialTag = initial?.tag?.trim() || defaultTag
+  const [floor, setFloor] = useState(initial?.floor ?? '')
+  const [door, setDoor] = useState(initial?.door ?? '')
+  const [notes, setNotes] = useState(initial?.notes ?? '')
+  const [tags, setTags] = useState<string[]>(() => {
+    const base = [defaultTag]
+    if (initialTag && !base.some((t) => t.toLowerCase() === initialTag.toLowerCase())) {
+      return [...base, initialTag]
+    }
+    return base
+  })
   const [tag, setTag] = useState(initialTag)
   const [tagModalOpen, setTagModalOpen] = useState(false)
   const [newTagDraft, setNewTagDraft] = useState('')
@@ -119,6 +138,7 @@ export function AddressDetailsScreen({
 
   const submit = () => {
     onSave?.({
+      id: initial?.id ?? '',
       label: place.label,
       secondary: place.secondary,
       lat: place.lat,
@@ -156,6 +176,22 @@ export function AddressDetailsScreen({
               <p className="address-details__summary-secondary">{place.secondary}</p>
             ) : null}
           </div>
+          {onDelete ? (
+            <button
+              type="button"
+              className="address-details__delete"
+              aria-label="Eliminar dirección"
+              onClick={onDelete}
+            >
+              <img
+                src={addressAsset('trash.svg')}
+                alt=""
+                width={22}
+                height={22}
+                draggable={false}
+              />
+            </button>
+          ) : null}
         </div>
 
         <div className="address-details__fields">
@@ -198,12 +234,15 @@ export function AddressDetailsScreen({
           <p className="address-details__section-sub">
             Ayuda al cuidador a encontrarte más rápido
           </p>
-          <div className="address-details__mini-wrap">
+          <button
+            type="button"
+            className="address-details__mini-wrap"
+            onClick={onAdjustPin}
+            aria-label="Ajustar marcador en el mapa"
+          >
             <div ref={miniMapRef} className="address-details__mini-map" role="presentation" />
-            <button type="button" className="address-details__adjust" onClick={onAdjustPin}>
-              Ajustar marcador
-            </button>
-          </div>
+            <span className="address-details__adjust">Ajustar marcador</span>
+          </button>
         </div>
 
         <div className="address-details__labels">

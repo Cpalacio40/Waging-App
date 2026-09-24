@@ -4,6 +4,8 @@ export type BuildingType = 'casa' | 'apartamento' | 'oficina' | 'otro'
 export type AddressLabel = string
 
 export type SavedAddress = {
+  /** Stable identity — tag alone is not unique (multiple “Casa”, etc.). */
+  id: string
   label: string
   secondary: string
   lat: number
@@ -17,7 +19,7 @@ export type SavedAddress = {
 }
 
 type AddressBook = {
-  activeTag: string
+  activeId: string
   items: SavedAddress[]
 }
 
@@ -26,6 +28,24 @@ const ADDRESS_EVENT = 'waging:address'
 
 function notifyAddressChange() {
   window.dispatchEvent(new Event(ADDRESS_EVENT))
+}
+
+export function createAddressId() {
+  return `addr-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`
+}
+
+function legacyAddressId(address: { savedAt?: string; lat: number; lng: number; tag: string }) {
+  return `legacy-${address.savedAt ?? 'na'}-${address.lat.toFixed(5)}-${address.lng.toFixed(5)}-${address.tag.toLowerCase()}`
+}
+
+function ensureAddressId(address: Omit<SavedAddress, 'id'> & { id?: string }): SavedAddress {
+  return {
+    ...address,
+    id:
+      typeof address.id === 'string' && address.id.trim()
+        ? address.id
+        : legacyAddressId(address),
+  }
 }
 
 function isSavedAddress(value: unknown): value is SavedAddress {
@@ -39,7 +59,7 @@ function isSavedAddress(value: unknown): value is SavedAddress {
 }
 
 function emptyBook(): AddressBook {
-  return { activeTag: '', items: [] }
+  return { activeId: '', items: [] }
 }
 
 function readBook(): AddressBook {
@@ -50,22 +70,30 @@ function readBook(): AddressBook {
 
     // Legacy single-address payload.
     if (isSavedAddress(parsed)) {
-      return { activeTag: parsed.tag, items: [parsed] }
+      const item = ensureAddressId(parsed)
+      return { activeId: item.id, items: [item] }
     }
 
     if (
       parsed &&
       typeof parsed === 'object' &&
-      Array.isArray((parsed as AddressBook).items)
+      Array.isArray((parsed as { items?: unknown }).items)
     ) {
-      const items = (parsed as AddressBook).items.filter(isSavedAddress)
+      const items = (parsed as { items: unknown[] }).items
+        .filter(isSavedAddress)
+        .map((item) => ensureAddressId(item))
       if (!items.length) return emptyBook()
-      const activeTag =
-        typeof (parsed as AddressBook).activeTag === 'string' &&
-        items.some((item) => item.tag === (parsed as AddressBook).activeTag)
-          ? (parsed as AddressBook).activeTag
-          : items[0].tag
-      return { activeTag, items }
+
+      const legacy = parsed as { activeId?: unknown; activeTag?: unknown }
+      const activeId =
+        typeof legacy.activeId === 'string' && items.some((item) => item.id === legacy.activeId)
+          ? legacy.activeId
+          : typeof legacy.activeTag === 'string' &&
+              items.some((item) => item.tag === legacy.activeTag)
+            ? (items.find((item) => item.tag === legacy.activeTag)?.id ?? items[0]!.id)
+            : items[0]!.id
+
+      return { activeId, items }
     }
 
     return emptyBook()
@@ -90,25 +118,57 @@ export function loadSavedAddresses(): SavedAddress[] {
 export function loadSavedAddress(): SavedAddress | null {
   const book = readBook()
   if (!book.items.length) return null
-  return book.items.find((item) => item.tag === book.activeTag) ?? book.items[0]
+  return book.items.find((item) => item.id === book.activeId) ?? book.items[0] ?? null
 }
 
-export function saveAddress(address: SavedAddress) {
+/** Insert or update by `id`. Same tag can appear on many addresses. */
+export function saveAddress(address: Omit<SavedAddress, 'id'> & { id?: string }) {
   const book = readBook()
-  const idx = book.items.findIndex(
-    (item) => item.tag.toLowerCase() === address.tag.toLowerCase(),
-  )
-  if (idx >= 0) book.items[idx] = address
-  else book.items.push(address)
-  book.activeTag = address.tag
+  const next: SavedAddress = {
+    ...address,
+    id:
+      typeof address.id === 'string' && address.id.trim()
+        ? address.id
+        : createAddressId(),
+  }
+  const idx = book.items.findIndex((item) => item.id === next.id)
+  if (idx >= 0) book.items[idx] = next
+  else book.items.push(next)
+  book.activeId = next.id
+  writeBook(book)
+  return next
+}
+
+export function setActiveAddressId(id: string) {
+  const book = readBook()
+  if (!book.items.some((item) => item.id === id)) return
+  book.activeId = id
   writeBook(book)
 }
 
+/** @deprecated Use setActiveAddressId */
 export function setActiveAddressTag(tag: string) {
   const book = readBook()
-  if (!book.items.some((item) => item.tag === tag)) return
-  book.activeTag = tag
+  const match = book.items.find((item) => item.tag === tag)
+  if (!match) return
+  book.activeId = match.id
   writeBook(book)
+}
+
+/** Remove one saved address by id. */
+export function removeAddress(id: string) {
+  const book = readBook()
+  const nextItems = book.items.filter((item) => item.id !== id)
+  if (nextItems.length === book.items.length) return
+  writeBook({
+    items: nextItems,
+    activeId:
+      book.activeId === id
+        ? (nextItems[0]?.id ?? '')
+        : nextItems.some((item) => item.id === book.activeId)
+          ? book.activeId
+          : (nextItems[0]?.id ?? ''),
+  })
 }
 
 export function clearSavedAddress() {

@@ -364,6 +364,7 @@ export function findCaregiver(id: string | undefined): Caregiver {
 
 /** Minimal address shape used to seed demo “zone” results. */
 export type CaregiverAddressSeed = {
+  id?: string
   lat: number
   lng: number
   tag: string
@@ -410,11 +411,20 @@ export function caregiversForAddress(
 ): Caregiver[] {
   if (!address || !savedAddresses.length) return [...CAREGIVERS]
 
-  const isPrimary = savedAddresses[0]?.tag === address.tag
+  const primary = savedAddresses[0]
+  const isPrimary = primary
+    ? primary.id && address.id
+      ? primary.id === address.id
+      : primary.lat === address.lat &&
+        primary.lng === address.lng &&
+        primary.tag === address.tag
+    : false
   if (isPrimary) return [...CAREGIVERS]
 
   const seed = hashSeed(
-    `${address.lat.toFixed(5)},${address.lng.toFixed(5)}|${address.tag.toLowerCase()}`,
+    address.id
+      ? `id:${address.id}`
+      : `${address.lat.toFixed(5)},${address.lng.toFixed(5)}|${address.tag.toLowerCase()}`,
   )
   const rand = mulberry32(seed)
   const shuffled = seededShuffle(CAREGIVERS, rand)

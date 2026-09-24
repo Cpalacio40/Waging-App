@@ -60,11 +60,18 @@ export function AddressDetailsScreen({
   })
   const [tag, setTag] = useState(initialTag)
   const [tagModalOpen, setTagModalOpen] = useState(false)
+  const [tagModalMode, setTagModalMode] = useState<'add' | 'edit'>('add')
+  const [editingTag, setEditingTag] = useState<string | null>(null)
   const [newTagDraft, setNewTagDraft] = useState('')
   const miniMapRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<L.Map | null>(null)
   const markerRef = useRef<L.Marker | null>(null)
   const tagInputRef = useRef<HTMLInputElement | null>(null)
+
+  const isDefaultTag = (value: string) =>
+    value.trim().toLowerCase() === defaultTag.toLowerCase()
+
+  const isCustomTag = (value: string) => !isDefaultTag(value)
 
   useEffect(() => {
     if (!miniMapRef.current || mapRef.current) return
@@ -114,13 +121,32 @@ export function AddressDetailsScreen({
     !requiresUnitFields || (floor.trim().length > 0 && door.trim().length > 0)
 
   const openTagModal = () => {
+    setTagModalMode('add')
+    setEditingTag(null)
     setNewTagDraft('')
+    setTagModalOpen(true)
+  }
+
+  const openEditTagModal = (item: string) => {
+    setTagModalMode('edit')
+    setEditingTag(item)
+    setNewTagDraft(item)
     setTagModalOpen(true)
   }
 
   const closeTagModal = () => {
     setTagModalOpen(false)
+    setTagModalMode('add')
+    setEditingTag(null)
     setNewTagDraft('')
+  }
+
+  const onChipClick = (item: string) => {
+    if (tag === item) {
+      if (isCustomTag(item)) openEditTagModal(item)
+      return
+    }
+    setTag(item)
   }
 
   const addTag = () => {
@@ -137,6 +163,40 @@ export function AddressDetailsScreen({
     setTags((prev) => [...prev, value])
     setTag(value)
     closeTagModal()
+  }
+
+  const saveEditedTag = () => {
+    const value = newTagDraft.trim()
+    if (!value || !editingTag) return
+
+    const existing = tags.find(
+      (t) => t !== editingTag && t.toLowerCase() === value.toLowerCase(),
+    )
+    if (existing) {
+      setTags((prev) => prev.filter((t) => t !== editingTag))
+      setTag(existing)
+      closeTagModal()
+      return
+    }
+
+    setTags((prev) => prev.map((t) => (t === editingTag ? value : t)))
+    setTag(value)
+    closeTagModal()
+  }
+
+  const deleteTag = () => {
+    if (!editingTag || isDefaultTag(editingTag)) return
+    setTags((prev) => {
+      const next = prev.filter((t) => t !== editingTag)
+      return next.some(isDefaultTag) ? next : [defaultTag, ...next]
+    })
+    setTag((current) => (current === editingTag ? defaultTag : current))
+    closeTagModal()
+  }
+
+  const confirmTagModal = () => {
+    if (tagModalMode === 'edit') saveEditedTag()
+    else addTag()
   }
 
   const submit = () => {
@@ -250,7 +310,12 @@ export function AddressDetailsScreen({
             />
           </label>
           {requiresUnitFields ? (
-            <p className="address-details__required-hint">* Campos requeridos</p>
+            <p className="address-details__required-hint">
+              <span className="address-details__required" aria-hidden="true">
+                *
+              </span>{' '}
+              Campos requeridos
+            </p>
           ) : null}
         </div>
 
@@ -281,7 +346,13 @@ export function AddressDetailsScreen({
                 key={item}
                 type="button"
                 className={`address-details__chip${tag === item ? ' is-active' : ''}`}
-                onClick={() => setTag(item)}
+                onClick={() => onChipClick(item)}
+                aria-pressed={tag === item}
+                title={
+                  tag === item && isCustomTag(item)
+                    ? 'Editar o eliminar etiqueta'
+                    : undefined
+                }
               >
                 {item}
               </button>
@@ -324,7 +395,7 @@ export function AddressDetailsScreen({
             aria-labelledby="address-tag-modal-title"
           >
             <h2 id="address-tag-modal-title" className="address-details__modal-title">
-              Nueva etiqueta
+              {tagModalMode === 'edit' ? 'Editar etiqueta' : 'Nueva etiqueta'}
             </h2>
             <div className="address-details__modal-field">
               <input
@@ -336,7 +407,7 @@ export function AddressDetailsScreen({
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault()
-                    addTag()
+                    confirmTagModal()
                   }
                   if (e.key === 'Escape') {
                     e.preventDefault()
@@ -350,21 +421,43 @@ export function AddressDetailsScreen({
               />
             </div>
             <div className="address-details__modal-actions">
-              <button
-                type="button"
-                className="address-details__modal-action"
-                onClick={closeTagModal}
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                className="address-details__modal-action address-details__modal-action--confirm"
-                onClick={addTag}
-                disabled={!newTagDraft.trim()}
-              >
-                Añadir
-              </button>
+              {tagModalMode === 'edit' ? (
+                <>
+                  <button
+                    type="button"
+                    className="address-details__modal-action address-details__modal-action--confirm"
+                    onClick={confirmTagModal}
+                    disabled={!newTagDraft.trim()}
+                  >
+                    Guardar
+                  </button>
+                  <button
+                    type="button"
+                    className="address-details__modal-action address-details__modal-action--danger"
+                    onClick={deleteTag}
+                  >
+                    Eliminar
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="address-details__modal-action"
+                    onClick={closeTagModal}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    className="address-details__modal-action address-details__modal-action--confirm"
+                    onClick={confirmTagModal}
+                    disabled={!newTagDraft.trim()}
+                  >
+                    Añadir
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

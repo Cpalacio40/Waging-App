@@ -4589,26 +4589,6 @@ button.caregiver-review__play:active:not(:disabled):not([aria-disabled='true']) 
   padding: 16px;
 }
 
-.address-details__modal-delete {
-  display: block;
-  width: 100%;
-  margin: 0;
-  padding: 0 16px 14px;
-  border: 0;
-  background: transparent;
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 20px;
-  color: #b42318;
-  text-align: center;
-  cursor: pointer;
-}
-
-.address-details__modal-delete:active {
-  opacity: 0.75;
-}
-
 .address-details__modal-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -4631,12 +4611,20 @@ button.caregiver-review__play:active:not(:disabled):not([aria-disabled='true']) 
   cursor: pointer;
 }
 
+.address-details__modal-action + .address-details__modal-action {
+  border-left: 0.5px solid rgba(60, 60, 67, 0.22);
+}
+
 .address-details__modal-action:disabled {
   opacity: 0.4;
   cursor: default;
 }
 
 .address-details__modal-action--confirm {
-  border-left: 0.5px solid rgba(60, 60, 67, 0.22);
   font-weight: 700;
+}
+
+.address-details__modal-action--danger {
+  font-weight: 700;
+  color: #b42318;
 }

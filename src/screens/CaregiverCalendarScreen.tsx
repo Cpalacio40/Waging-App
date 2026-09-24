@@ -8,7 +8,7 @@ import type { BookingPhase } from '../data/screens'
 import { buildingOption, loadSavedAddress, subscribeAddressChange } from '../data/savedAddress'
 import { useDragScroll } from '../hooks/useDragScroll'
 import { assetUrl } from '../utils/assetUrl'
-import { BookingSuccessScreen } from './BookingSuccessScreen'
+import { BookingSuccessScreen, type BookingSuccessDetails } from './BookingSuccessScreen'
 import './screens.css'
 
 const caregiverAsset = (name: string) => assetUrl(`caregiver/${name}`)
@@ -54,7 +54,7 @@ function endTimeSlot(slot: string) {
 function formatSessionLine(date: Date, start: string) {
   const weekday = WEEKDAY_LONG[date.getDay()]
   const month = MONTH_SHORT[date.getMonth()]
-  return `${start} - ${endTimeSlot(start)}, ${weekday}, ${month}  ${date.getDate()}, ${date.getFullYear()}`
+  return `${start} - ${endTimeSlot(start)}, ${weekday}, ${month} ${date.getDate()}, ${date.getFullYear()}`
 }
 
 function formatAddressLine(place: {
@@ -222,7 +222,9 @@ export function CaregiverCalendarScreen({
     () => new Date(today.getFullYear(), today.getMonth(), 1),
   )
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [time, setTime] = useState<string | null>(null)
+  const [confirmedDetails, setConfirmedDetails] = useState<BookingSuccessDetails | null>(null)
   const [policyOpen, setPolicyOpen] = useState(false)
   const [policyClosing, setPolicyClosing] = useState(false)
   const [payPhase, setPayPhase] = useState<PayPhase>('idle')
@@ -291,7 +293,9 @@ export function CaregiverCalendarScreen({
 
   useEffect(() => {
     setSelectedKey(null)
+    setSelectedDate(null)
     setTime(null)
+    setConfirmedDetails(null)
   }, [caregiver.id])
 
   useEffect(() => subscribeAddressChange(() => setMeetPlace(loadSavedAddress() ?? FALLBACK_MEET)), [])
@@ -338,6 +342,7 @@ export function CaregiverCalendarScreen({
       setSuccessVisible(false)
       setPayAutoAdvance(true)
       setEntered(false)
+      setConfirmedDetails(null)
       setPolicyOpen(false)
       setPolicyClosing(false)
       return
@@ -377,11 +382,20 @@ export function CaregiverCalendarScreen({
     }
     if (seed > lastVisibleDay) seed = today
     const seedSlots = getDayAvailability(caregiver.id, seed, today).availableSlots
+    const seedTime = seedSlots[0] ?? null
     setSelectedKey(dateKey(seed))
+    setSelectedDate(startOfDay(seed))
     setCursor(new Date(seed.getFullYear(), seed.getMonth(), 1))
-    setTime(seedSlots[0] ?? null)
+    setTime(seedTime)
     setPolicyOpen(false)
     setPolicyClosing(false)
+
+    const seededDetails: BookingSuccessDetails = {
+      caregiverName: caregiver.name,
+      sessionLine: formatSessionLine(seed, seedTime ?? '08:30'),
+      addressLine: formatAddressLine(meetPlace),
+    }
+    setConfirmedDetails(seededDetails)
 
     if (bookingPhase === 'apple-pay') {
       setPayAutoAdvance(false)
@@ -399,27 +413,14 @@ export function CaregiverCalendarScreen({
       window.requestAnimationFrame(() => setSuccessVisible(true))
     })
     return () => window.cancelAnimationFrame(frame)
-  }, [open, entered, bookingPhase, today, lastVisibleDay, caregiver.id])
+  }, [open, entered, bookingPhase, today, lastVisibleDay, caregiver.id, caregiver.name, meetPlace])
 
-  const selectedDate = useMemo(() => {
-    if (!selectedKey) return today
-    const match = days.find((d) => d.key === selectedKey)
-    if (match) return match.date
-    const [yearPart, monthPart, dayPart] = selectedKey.split('-').map(Number)
-    if (
-      Number.isFinite(yearPart) &&
-      Number.isFinite(monthPart) &&
-      Number.isFinite(dayPart)
-    ) {
-      return new Date(yearPart, monthPart, dayPart)
-    }
-    return today
-  }, [selectedKey, days, today])
+  const resolvedDate = selectedDate ?? today
 
   const availableTimeSlots = useMemo(() => {
     if (!selectedKey) return [] as string[]
-    return getDayAvailability(caregiver.id, selectedDate, today).availableSlots
-  }, [selectedKey, selectedDate, caregiver.id, today])
+    return getDayAvailability(caregiver.id, resolvedDate, today).availableSlots
+  }, [selectedKey, resolvedDate, caregiver.id, today])
 
   useEffect(() => {
     if (!selectedKey) return
@@ -465,27 +466,21 @@ export function CaregiverCalendarScreen({
 
   const onSelectDay = (cell: CalendarDay) => {
     if (!canSelect(cell)) return
-    const daySlots = getDayAvailability(caregiver.id, cell.date, today).availableSlots
     setSelectedKey(cell.key)
-    setTime((prev) => (prev && daySlots.includes(prev) ? prev : null))
+    setSelectedDate(startOfDay(cell.date))
+    setTime(null)
     if (cell.outside && monthIndex(cell.date) <= secondMonthIndex) {
       setCursor(new Date(cell.date.getFullYear(), cell.date.getMonth(), 1))
     }
   }
 
-  const successDetails = useMemo(
-    () => ({
-      caregiverName: caregiver.name,
-      sessionLine: formatSessionLine(
-        selectedDate,
-        time ?? availableTimeSlots[0] ?? '08:30',
-      ),
-      addressLine: formatAddressLine(meetPlace),
-    }),
-    [caregiver.name, selectedDate, time, availableTimeSlots, meetPlace],
-  )
+  const buildBookingDetails = (date: Date, slot: string): BookingSuccessDetails => ({
+    caregiverName: caregiver.name,
+    sessionLine: formatSessionLine(date, slot),
+    addressLine: formatAddressLine(meetPlace),
+  })
 
-  const canPay = Boolean(selectedKey && time) && !payBusy
+  const canPay = Boolean(selectedKey && selectedDate && time) && !payBusy
 
   useEffect(() => {
     if (payPhase !== 'apple-pay') return
@@ -519,7 +514,8 @@ export function CaregiverCalendarScreen({
   }, [payPhase, onApplePayChange])
 
   const startPayment = () => {
-    if (!canPay) return
+    if (!canPay || !selectedDate || !time) return
+    setConfirmedDetails(buildBookingDetails(selectedDate, time))
     setPolicyOpen(false)
     setPolicyClosing(false)
     setPaySheetOpen(false)
@@ -529,7 +525,8 @@ export function CaregiverCalendarScreen({
   }
 
   const finishBooking = () => {
-    onBookingComplete?.(successDetails)
+    if (!confirmedDetails) return
+    onBookingComplete?.(confirmedDetails)
   }
 
   return (
@@ -844,9 +841,9 @@ export function CaregiverCalendarScreen({
         </div>
       ) : null}
 
-      {payPhase === 'success' ? (
+      {payPhase === 'success' && confirmedDetails ? (
         <BookingSuccessScreen
-          details={successDetails}
+          details={confirmedDetails}
           visible={successVisible}
           onAccept={finishBooking}
         />

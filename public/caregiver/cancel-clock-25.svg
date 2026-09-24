@@ -1,0 +1,13 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="20.0175" height="20.0175" viewBox="0 0 20.0175 20.0175" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Avatar">
+<circle id="Avatar_2" cx="10.0087" cy="10.0087" r="10.0087" fill="#FFDB43" fill-opacity="0.1"/>
+<g id="lucide/clock" clip-path="url(#clip0_0_191)">
+<path id="Vector" d="M10.0091 7.194V10.009L11.8857 10.9473M14.7007 10.009C14.7007 12.6001 12.6002 14.7006 10.0091 14.7006C7.41796 14.7006 5.31746 12.6001 5.31746 10.009C5.31746 7.41786 7.41796 5.31737 10.0091 5.31737C12.6002 5.31737 14.7007 7.41786 14.7007 10.009Z" stroke="#DFB400" stroke-width="1.25109" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_0_191">
+<rect width="11.2598" height="11.2598" fill="white" transform="translate(4.37903 4.37898)"/>
+</clipPath>
+</defs>
+</svg>

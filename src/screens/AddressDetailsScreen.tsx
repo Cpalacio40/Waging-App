@@ -109,6 +109,9 @@ export function AddressDetailsScreen({
   }, [tagModalOpen])
 
   const buildingIcon = buildingOption(buildingType).icon
+  const requiresUnitFields = buildingType === 'apartamento' || buildingType === 'oficina'
+  const canSave =
+    !requiresUnitFields || (floor.trim().length > 0 && door.trim().length > 0)
 
   const openTagModal = () => {
     setNewTagDraft('')
@@ -137,6 +140,7 @@ export function AddressDetailsScreen({
   }
 
   const submit = () => {
+    if (!canSave) return
     onSave?.({
       id: initial?.id ?? '',
       label: place.label,
@@ -196,7 +200,14 @@ export function AddressDetailsScreen({
 
         <div className="address-details__fields">
           <label className="address-details__field">
-            <span className="address-details__field-label">Número de piso</span>
+            <span className="address-details__field-label">
+              Número de piso
+              {requiresUnitFields ? (
+                <span className="address-details__required" aria-hidden="true">
+                  *
+                </span>
+              ) : null}
+            </span>
             <input
               className="address-details__input"
               type="text"
@@ -204,16 +215,27 @@ export function AddressDetailsScreen({
               onChange={(e) => setFloor(e.target.value)}
               inputMode="numeric"
               autoComplete="off"
+              required={requiresUnitFields}
+              aria-required={requiresUnitFields || undefined}
             />
           </label>
           <label className="address-details__field">
-            <span className="address-details__field-label">Número de puerta</span>
+            <span className="address-details__field-label">
+              Número de puerta
+              {requiresUnitFields ? (
+                <span className="address-details__required" aria-hidden="true">
+                  *
+                </span>
+              ) : null}
+            </span>
             <input
               className="address-details__input"
               type="text"
               value={door}
               onChange={(e) => setDoor(e.target.value)}
               autoComplete="off"
+              required={requiresUnitFields}
+              aria-required={requiresUnitFields || undefined}
             />
           </label>
           <label className="address-details__field address-details__field--full">
@@ -227,6 +249,9 @@ export function AddressDetailsScreen({
               autoComplete="off"
             />
           </label>
+          {requiresUnitFields ? (
+            <p className="address-details__required-hint">* Campos requeridos</p>
+          ) : null}
         </div>
 
         <div className="address-details__entrance">
@@ -274,7 +299,12 @@ export function AddressDetailsScreen({
       </div>
 
       <div className="address-details__footer">
-        <button type="button" className="caregiver-cta" onClick={submit}>
+        <button
+          type="button"
+          className="caregiver-cta"
+          onClick={submit}
+          disabled={!canSave}
+        >
           Guardar dirección
         </button>
       </div>

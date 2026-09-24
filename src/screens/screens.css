@@ -2076,7 +2076,8 @@
 }
 
 .caregiver-profile__name.is-sticky.is-pinned::before {
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
+  /* Hairline comes from .caregiver-nav--profile.has-title.is-title-pinned::after */
+  box-shadow: none;
 }
 
 .caregiver-profile__tagline {
@@ -2504,7 +2505,7 @@ button.caregiver-review__play:active:not(:disabled):not([aria-disabled='true']) 
   margin: 0;
   font-family: var(--font-body);
   font-size: 18px;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 28px;
   font-variant-numeric: lining-nums proportional-nums;
   color: var(--ink);
@@ -2578,7 +2579,7 @@ button.caregiver-review__play:active:not(:disabled):not([aria-disabled='true']) 
   margin: 0;
   font-family: var(--font-body);
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 18px;
   font-variant-numeric: lining-nums proportional-nums;
   color: var(--ink);
@@ -2610,8 +2611,9 @@ button.caregiver-review__play:active:not(:disabled):not([aria-disabled='true']) 
 .caregiver-calendar__weekdays,
 .caregiver-calendar__grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  column-gap: 4.242px;
+  grid-template-columns: repeat(7, 36px);
+  column-gap: 6px;
+  justify-content: center;
   width: 100%;
 }
 
@@ -2641,8 +2643,8 @@ button.caregiver-review__play:active:not(:disabled):not([aria-disabled='true']) 
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 31.11px;
-  height: 31.11px;
+  width: 36px;
+  height: 36px;
   margin: 0 auto;
   padding: 0;
   border: 0;
@@ -2679,8 +2681,8 @@ button.caregiver-review__play:active:not(:disabled):not([aria-disabled='true']) 
   position: absolute;
   inset: 0;
   display: block;
-  width: 31.11px;
-  height: 31.11px;
+  width: 36px;
+  height: 36px;
   pointer-events: none;
 }
 
@@ -2691,7 +2693,7 @@ button.caregiver-review__play:active:not(:disabled):not([aria-disabled='true']) 
 
 .caregiver-calendar__day.is-selected,
 .caregiver-calendar__day--available.is-selected {
-  background: #da6938;
+  background: var(--orange);
   background-image: none;
   color: #fcfcfc;
   cursor: pointer;
@@ -2762,6 +2764,87 @@ button.caregiver-review__play:active:not(:disabled):not([aria-disabled='true']) 
   color: rgba(52, 6, 22, 0.2);
 }
 
+.caregiver-calendar__meet {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.caregiver-calendar__meet-title {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 28px;
+  color: var(--ink);
+}
+
+.caregiver-calendar__meet-map {
+  position: relative;
+  width: 100%;
+  height: 88px;
+  overflow: hidden;
+  border-radius: 24px;
+  background: #e8e4df;
+}
+
+.caregiver-calendar__meet-map > div {
+  width: 100%;
+  height: 100%;
+}
+
+.caregiver-calendar__meet-map .leaflet-container {
+  width: 100%;
+  height: 100%;
+  background: #e8e4df;
+  pointer-events: none;
+}
+
+.caregiver-calendar__meet-map .leaflet-tile-pane {
+  filter: saturate(0.85) hue-rotate(195deg) brightness(1.06) contrast(0.95);
+}
+
+.caregiver-calendar__meet-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+}
+
+.caregiver-calendar__meet-pin {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+}
+
+.caregiver-calendar__meet-copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.caregiver-calendar__meet-label,
+.caregiver-calendar__meet-address {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.caregiver-calendar__meet-label {
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.caregiver-calendar__meet-address {
+  font-weight: 500;
+  color: rgba(52, 6, 22, 0.75);
+}
 
 .caregiver-time-modal {
   position: absolute;
@@ -2996,6 +3079,210 @@ button.caregiver-review__play:active:not(:disabled):not([aria-disabled='true']) 
   font-variant-numeric: lining-nums proportional-nums;
   color: rgba(52, 6, 22, 0.75);
   text-decoration: underline;
+  cursor: pointer;
+}
+
+.caregiver-policy-modal {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 22px;
+}
+
+.caregiver-policy-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.71);
+  cursor: pointer;
+}
+
+.caregiver-policy-modal__dialog {
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  max-width: 330px;
+  padding: 34px;
+  border-radius: 34px;
+  background: #fcfcfc;
+  box-shadow: 0 18px 48px rgba(30, 15, 20, 0.24);
+}
+
+.caregiver-policy-modal__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+  height: 30px;
+}
+
+.caregiver-policy-modal__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.caregiver-policy-modal__close img {
+  display: block;
+  width: 32px;
+  height: 32px;
+}
+
+.caregiver-policy-modal__body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  width: 100%;
+}
+
+.caregiver-policy-modal__title {
+  margin: 0;
+  width: 100%;
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 400;
+  line-height: 38px;
+  color: var(--ink);
+  text-align: center;
+}
+
+.caregiver-policy-modal__tiers {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.caregiver-policy-modal__tier {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: 38px;
+  padding: 12px 14px;
+  border: 1px solid rgba(52, 6, 22, 0.25);
+  border-radius: 8px;
+}
+
+.caregiver-policy-modal__tier.is-wrap {
+  align-items: flex-start;
+}
+
+.caregiver-policy-modal__icon {
+  flex-shrink: 0;
+  display: block;
+  width: 20px;
+  height: 20px;
+}
+
+.caregiver-policy-modal__label {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+  color: rgba(52, 6, 22, 0.75);
+}
+
+.caregiver-policy-modal__tier.is-wrap .caregiver-policy-modal__label {
+  max-width: 100px;
+}
+
+.caregiver-policy-modal__fee {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.caregiver-policy-modal__tier.is-wrap .caregiver-policy-modal__fee {
+  align-items: flex-start;
+  padding-top: 2px;
+}
+
+.caregiver-policy-modal__percent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 16px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: #ffc8af;
+  font-family: var(--font-ui);
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1;
+  color: #9b3000;
+  white-space: nowrap;
+}
+
+.caregiver-policy-modal__amount {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 16px;
+  color: var(--ink);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.caregiver-policy-modal__note {
+  margin: 0;
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: rgba(52, 6, 22, 0.75);
+}
+
+.caregiver-policy-modal__note span {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.caregiver-policy-modal__rule {
+  width: 100%;
+  margin: 0;
+  border: 0;
+  border-top: 1px solid #d2d2d2;
+}
+
+.caregiver-policy-modal__confirm {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 194px;
+  height: 48px;
+  padding: 14px 20px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--orange);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 20px;
+  color: #fcfcfc;
   cursor: pointer;
 }
 
@@ -3987,6 +4274,20 @@ button.caregiver-review__play:active:not(:disabled):not([aria-disabled='true']) 
   font-weight: 600;
   line-height: 20px;
   color: var(--ink);
+}
+
+.address-details__required {
+  margin-left: 2px;
+  color: var(--orange);
+}
+
+.address-details__required-hint {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  color: rgba(52, 6, 22, 0.65);
 }
 
 .address-details__input {

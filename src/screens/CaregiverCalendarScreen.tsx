@@ -1,12 +1,37 @@
 import { useEffect, useMemo, useRef, useState, type TransitionEvent } from 'react'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { Caregiver } from '../data/caregivers'
+import { buildingOption, loadSavedAddress, subscribeAddressChange } from '../data/savedAddress'
 import { useDragScroll } from '../hooks/useDragScroll'
 import { assetUrl } from '../utils/assetUrl'
 import './screens.css'
 
 const caregiverAsset = (name: string) => assetUrl(`caregiver/${name}`)
+const addressAsset = (name: string) => assetUrl(`address/${name}`)
 const calendarUnavailableAsset = assetUrl('caregiver/calendar-unavailable.svg')
+
+const FALLBACK_MEET = {
+  tag: 'Casa',
+  label: 'Carrer de Petraca, 42',
+  lat: 41.3924,
+  lng: 2.1468,
+  buildingType: 'casa' as const,
+}
+
+const CANCEL_TIERS = [
+  { icon: 'cancel-clock-12.svg', label: '+12 horas', fee: 'Sin cargo' },
+  { icon: 'cancel-clock-25.svg', label: '12 - 2 horas', fee: '7.50€', percent: '25%' },
+  { icon: 'cancel-clock-50.svg', label: '-2 horas', fee: '14.95€', percent: '50%' },
+  {
+    icon: 'cancel-clock-100.svg',
+    label: 'Cuidador ha llegado',
+    fee: '29,90 €',
+    percent: '100%',
+    wrap: true,
+  },
+] as const
 
 const WEEKDAYS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'] as const
 const MONTHS = [
@@ -136,10 +161,14 @@ export function CaregiverCalendarScreen({
   const [time, setTime] = useState<string>(TIME_SLOTS[0])
   const [pendingTime, setPendingTime] = useState<string>(TIME_SLOTS[0])
   const [timeOpen, setTimeOpen] = useState(false)
+  const [policyOpen, setPolicyOpen] = useState(false)
   const wheelRef = useRef<HTMLDivElement>(null)
+  const meetMapRef = useRef<HTMLDivElement>(null)
+  const meetMapInstance = useRef<L.Map | null>(null)
+  const [meetPlace, setMeetPlace] = useState(() => loadSavedAddress() ?? FALLBACK_MEET)
 
   const dragScroll = useDragScroll({
-    enabled: open && entered,
+    enabled: open && entered && !timeOpen && !policyOpen,
     ignoreSelector: 'button, a, select, .caregiver-calendar__time',
   })
 
@@ -179,10 +208,48 @@ export function CaregiverCalendarScreen({
   const isFirstMonth = cursorMonthIndex === firstMonthIndex
   const isSecondMonth = cursorMonthIndex === secondMonthIndex
 
+  useEffect(() => subscribeAddressChange(() => setMeetPlace(loadSavedAddress() ?? FALLBACK_MEET)), [])
+
+  useEffect(() => {
+    if (!open || !entered || !meetMapRef.current || meetMapInstance.current) return
+    const map = L.map(meetMapRef.current, {
+      zoomControl: false,
+      attributionControl: false,
+      dragging: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      boxZoom: false,
+      keyboard: false,
+      touchZoom: false,
+    }).setView([meetPlace.lat, meetPlace.lng], 16)
+    L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+      { maxZoom: 19 },
+    ).addTo(map)
+    L.marker([meetPlace.lat, meetPlace.lng], {
+      icon: L.icon({
+        iconUrl: addressAsset(buildingOption(meetPlace.buildingType).pin),
+        iconSize: [44, 52],
+        iconAnchor: [22, 52],
+      }),
+    }).addTo(map)
+    meetMapInstance.current = map
+    // Pin tip sits at the map center; shift view so the head isn't clipped by overflow.
+    requestAnimationFrame(() => {
+      map.invalidateSize()
+      map.panBy([0, -18], { animate: false })
+    })
+    return () => {
+      map.remove()
+      meetMapInstance.current = null
+    }
+  }, [open, entered, meetPlace.lat, meetPlace.lng, meetPlace.buildingType])
+
   useEffect(() => {
     if (!open) {
       setEntered(false)
       setTimeOpen(false)
+      setPolicyOpen(false)
       return
     }
     let inner = 0
@@ -386,8 +453,8 @@ export function CaregiverCalendarScreen({
                             className="caregiver-calendar__day-pattern"
                             src={calendarUnavailableAsset}
                             alt=""
-                            width={31.11}
-                            height={31.11}
+                            width={36}
+                            height={36}
                             draggable={false}
                           />
                         ) : null}
@@ -411,10 +478,24 @@ export function CaregiverCalendarScreen({
                     disabled={!selectedKey}
                     onClick={openTimePicker}
                   >
-                    <span>{selectedKey ? time : 'Selecciona un día'}</span>
+                    <span>{selectedKey ? time : 'Selecciona una hora'}</span>
                     <ChevronDown size={16} strokeWidth={2.2} aria-hidden="true" />
                   </button>
                 </div>
+
+                <section className="caregiver-calendar__meet" aria-label="Punto de encuentro">
+                  <h2 className="caregiver-calendar__meet-title">Punto de encuentro</h2>
+                  <div className="caregiver-calendar__meet-map">
+                    <div ref={meetMapRef} />
+                  </div>
+                  <div className="caregiver-calendar__meet-row">
+                    <img className="caregiver-calendar__meet-pin" src={addressAsset('map-pin.svg')} alt="" width={24} height={24} />
+                    <div className="caregiver-calendar__meet-copy">
+                      <p className="caregiver-calendar__meet-label">{meetPlace.tag}</p>
+                      <p className="caregiver-calendar__meet-address">{meetPlace.label}</p>
+                    </div>
+                  </div>
+                </section>
               </div>
 
               <hr className="caregiver-calendar__rule" />
@@ -426,16 +507,21 @@ export function CaregiverCalendarScreen({
                     type="button"
                     className="caregiver-calendar__policy-help"
                     aria-label="Más información sobre la política de cancelación"
+                    onClick={() => setPolicyOpen(true)}
                   >
                     ?
                   </button>
                 </div>
                 <p className="caregiver-calendar__policy-copy">
-                  Puedes cancelar <span>gratis hasta 12 horas antes.</span>
+                  Puedes cancelar <span>sin cargo hasta 12 horas antes.</span>
                   <br />
                   Si cancelas después, puede aplicarse un{' '}
                   <span>cargo según el tiempo restante y si el cuidador ya ha iniciado el desplazamiento. </span>
-                  <button type="button" className="caregiver-calendar__policy-more">
+                  <button
+                    type="button"
+                    className="caregiver-calendar__policy-more"
+                    onClick={() => setPolicyOpen(true)}
+                  >
                     Leer más
                   </button>
                 </p>
@@ -444,6 +530,81 @@ export function CaregiverCalendarScreen({
           </div>
         </div>
       </div>
+
+      {policyOpen ? (
+        <div className="caregiver-policy-modal">
+          <button
+            type="button"
+            className="caregiver-policy-modal__backdrop"
+            aria-label="Cerrar"
+            onClick={() => setPolicyOpen(false)}
+          />
+          <div
+            className="caregiver-policy-modal__dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="caregiver-policy-modal-title"
+          >
+            <div className="caregiver-policy-modal__toolbar">
+              <button
+                type="button"
+                className="caregiver-policy-modal__close"
+                aria-label="Cerrar"
+                onClick={() => setPolicyOpen(false)}
+              >
+                <img
+                  src={caregiverAsset('cancel-close.svg')}
+                  alt=""
+                  width={32}
+                  height={32}
+                  draggable={false}
+                />
+              </button>
+            </div>
+            <div className="caregiver-policy-modal__body">
+              <h2 id="caregiver-policy-modal-title" className="caregiver-policy-modal__title display-title">
+                Margen de cancelación
+              </h2>
+              <ul className="caregiver-policy-modal__tiers">
+                {CANCEL_TIERS.map((tier) => (
+                  <li
+                    key={tier.label}
+                    className={`caregiver-policy-modal__tier${'wrap' in tier && tier.wrap ? ' is-wrap' : ''}`}
+                  >
+                    <img
+                      className="caregiver-policy-modal__icon"
+                      src={caregiverAsset(tier.icon)}
+                      alt=""
+                      width={20}
+                      height={20}
+                      draggable={false}
+                    />
+                    <p className="caregiver-policy-modal__label">{tier.label}</p>
+                    <div className="caregiver-policy-modal__fee">
+                      {'percent' in tier && tier.percent ? (
+                        <span className="caregiver-policy-modal__percent">{tier.percent}</span>
+                      ) : null}
+                      <span className="caregiver-policy-modal__amount">{tier.fee}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <p className="caregiver-policy-modal__note">
+                <span>Excepción:</span> enfermedad o emergencia veterinaria → sin penalización, previa
+                justificación.
+              </p>
+              <hr className="caregiver-policy-modal__rule" />
+              <button
+                type="button"
+                className="caregiver-policy-modal__confirm"
+                onClick={() => setPolicyOpen(false)}
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {timeOpen ? (
         <div

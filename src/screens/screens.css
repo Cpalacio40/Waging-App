@@ -2221,6 +2221,7 @@
   padding: 10px 20px 36px;
   list-style: none;
   display: flex;
+  align-items: flex-start;
   gap: 20px;
   overflow-x: auto;
   overflow-y: hidden;
@@ -2295,11 +2296,29 @@
 .caregiver-review__text {
   margin: 0;
   min-height: 53px;
+  overflow: hidden;
   font-family: var(--font-body);
   font-size: 10px;
   font-weight: 500;
   line-height: 14px;
   color: rgba(52, 6, 22, 0.75);
+  transition: max-height 0.35s ease;
+}
+
+.caregiver-review__text.is-clamped {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  max-height: 56px;
+}
+
+.caregiver-review__text.is-expanded {
+  max-height: 200px;
+}
+
+.caregiver-review__text.is-toggleable {
+  cursor: pointer;
+  touch-action: manipulation;
 }
 
 .caregiver-review__photo {

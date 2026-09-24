@@ -185,7 +185,7 @@ export const CAREGIVERS: Caregiver[] = [
       },
       {
         owner: 'Dueño de Nano',
-        text: 'Nano mordió a alguien antes de empezar con Andrés. Hoy todavía tiene sus límites, pero me alivia contar con alguien que sabe con....',
+        text: 'Nano mordió a alguien antes de empezar con Andrés. Hoy todavía tiene sus límites, pero me alivia contar con alguien que sabe contenerlo a tiempo y sin castigarlo.',
         date: 'Julio 15, 2026',
         avatar: '2',
         photo: 'reviews/reactivos-nano.png',
@@ -309,7 +309,7 @@ export const CAREGIVERS: Caregiver[] = [
     reviews: [
       {
         owner: 'Dueño de Tana',
-        text: 'Tana es ciega de nacimiento. Sin embargo eso no lo detiene para jugar con la pelota. Reforzando con comandos de voz mientras se...',
+        text: 'Tana es ciega de nacimiento. Sin embargo eso no lo detiene para jugar con la pelota. Reforzando con comandos de voz mientras se mueve, Sofía la guía con mucha paciencia.',
         date: 'Agosto 10, 2026',
         avatar: '1',
         photo: 'reviews/especiales-tana.png',
@@ -318,7 +318,7 @@ export const CAREGIVERS: Caregiver[] = [
       },
       {
         owner: 'Dueña de Cris',
-        text: 'Es muy reconfortante para mí saber que mi perrita está en buenas manos, que sabe de ella y manejar su carrito de ruedas con...',
+        text: 'Es muy reconfortante para su dueña saber que su perrita está en buenas manos, con alguien que sabe cuidar de ella y manejar su carrito de ruedas con cariño y paciencia. 🐾❤️',
         date: 'Mayo 20, 2026',
         avatar: '2',
         photo: 'reviews/especiales-cris.png',
@@ -327,7 +327,7 @@ export const CAREGIVERS: Caregiver[] = [
       },
       {
         owner: 'Dueño de Pancho',
-        text: 'Vivir sola con mi perrito a veces puede ser difícil, pero contar con una red de cuidadores que entienden sus necesidades y me...',
+        text: 'Vivir sola con mi perrito a veces puede ser difícil, pero contar con una red de cuidadores que entienden sus necesidades y me ayudan con sus cuidados, incluso para hacer pipí y popó, me hace sentir más acompañada y tranquila.',
         date: 'Junio 7, 2026',
         avatar: '3',
         photo: 'reviews/especiales-pancho.png',
@@ -345,7 +345,7 @@ export const CAREGIVERS: Caregiver[] = [
       },
       {
         owner: 'Dueño de Wilson',
-        text: 'Aunque mi perrito sigue recuperándose de su operación de cadera, me sorprende cada día con su energía, determinación y capac...',
+        text: 'Aunque mi perrito sigue recuperándose de su operación de cadera, me sorprende cada día con su energía, determinación y capacidad de adaptación. ¡Sigue siendo el mismo de siempre, con muchas ganas de disfrutar la vida!',
         date: 'Julio 15, 2026',
         avatar: '2',
         photo: 'reviews/especiales-wilson.png',

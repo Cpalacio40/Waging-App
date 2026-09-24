@@ -40,6 +40,72 @@ function reviewKey(review: CaregiverReview) {
   return `${review.owner}-${review.date}`
 }
 
+/** Matches .caregiver-review__text line-height × 4 lines. */
+const REVIEW_TEXT_COLLAPSED_PX = 56
+
+type ReviewTextProps = {
+  text: string
+}
+
+function ReviewText({ text }: ReviewTextProps) {
+  const ref = useRef<HTMLParagraphElement>(null)
+  const [expanded, setExpanded] = useState(false)
+  const [overflows, setOverflows] = useState(false)
+
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+
+    const { maxHeight, webkitLineClamp, display } = el.style
+    el.style.maxHeight = 'none'
+    el.style.webkitLineClamp = 'unset'
+    el.style.display = 'block'
+    const full = el.scrollHeight
+    el.style.maxHeight = maxHeight
+    el.style.webkitLineClamp = webkitLineClamp
+    el.style.display = display
+
+    const canClamp = full > REVIEW_TEXT_COLLAPSED_PX + 1
+    setOverflows(canClamp)
+    if (!canClamp) setExpanded(false)
+  }, [text])
+
+  const toggle = () => {
+    if (!overflows) return
+    setExpanded((value) => !value)
+  }
+
+  return (
+    <p
+      ref={ref}
+      className={[
+        'caregiver-review__text',
+        overflows ? 'is-toggleable' : '',
+        overflows && !expanded ? 'is-clamped' : '',
+        expanded ? 'is-expanded' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      onClick={toggle}
+      onKeyDown={
+        overflows
+          ? (event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                toggle()
+              }
+            }
+          : undefined
+      }
+      role={overflows ? 'button' : undefined}
+      tabIndex={overflows ? 0 : undefined}
+      aria-expanded={overflows ? expanded : undefined}
+    >
+      {text}
+    </p>
+  )
+}
+
 type ReviewMediaProps = {
   review: CaregiverReview
   playing: boolean
@@ -536,7 +602,7 @@ export function CaregiverProfileScreen({
                             </div>
                           </div>
                         </div>
-                        <p className="caregiver-review__text">{review.text}</p>
+                        <ReviewText text={review.text} />
                       </div>
                       <ReviewMedia
                         review={review}

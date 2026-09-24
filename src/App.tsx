@@ -10,11 +10,16 @@ import { clearSavedAddress, loadSavedAddress, subscribeAddressChange } from './d
 import {
   DEFAULT_SCREEN,
   activeNavId,
+  type BookingPhase,
   type NavItem,
   type ScreenId,
   type SearchPhase,
 } from './data/screens'
 import { AppHomeScreen } from './screens/AppHomeScreen'
+import {
+  BookingSuccessScreen,
+  type BookingSuccessDetails,
+} from './screens/BookingSuccessScreen'
 import { CaregiverIntroScreen } from './screens/CaregiverIntroScreen'
 import { CaregiverSearchScreen } from './screens/CaregiverSearchScreen'
 import { IosHomeScreen } from './screens/IosHomeScreen'
@@ -40,22 +45,38 @@ function isInApp(id: ScreenId) {
     id === 'caregiver-intro' ||
     id === 'caregiver-search' ||
     id === 'caregiver-profile' ||
-    id === 'caregiver-calendar'
+    id === 'caregiver-calendar' ||
+    id === 'caregiver-pay' ||
+    id === 'caregiver-success'
   )
 }
 
 function appViewFromScreen(id: ScreenId): AppViewId {
   if (id === 'caregiver-intro') return 'caregiver-intro'
-  if (id === 'caregiver-search' || id === 'caregiver-profile' || id === 'caregiver-calendar') {
+  if (
+    id === 'caregiver-search' ||
+    id === 'caregiver-profile' ||
+    id === 'caregiver-calendar' ||
+    id === 'caregiver-pay' ||
+    id === 'caregiver-success'
+  ) {
     return 'caregiver-search'
   }
   return 'app-home'
 }
 
 function searchOverlay(id: ScreenId) {
+  if (id === 'caregiver-success') return 'success' as const
+  if (id === 'caregiver-pay') return 'pay' as const
   if (id === 'caregiver-calendar') return 'calendar' as const
   if (id === 'caregiver-profile') return 'profile' as const
   return 'none' as const
+}
+
+function bookingPhaseFromScreen(id: ScreenId): BookingPhase {
+  if (id === 'caregiver-pay') return 'apple-pay'
+  if (id === 'caregiver-success') return 'success'
+  return 'idle'
 }
 
 /** Canonical path from home so a back destination can sit under the leaving top. */
@@ -106,6 +127,9 @@ function App() {
   )
   const [leavingView, setLeavingView] = useState<AppViewId | null>(null)
   const [snapViews, setSnapViews] = useState<AppViewId[]>([])
+  const [bookingExit, setBookingExit] = useState<BookingSuccessDetails | null>(null)
+  const [bookingExitVisible, setBookingExitVisible] = useState(false)
+  const [bookingExitSnap, setBookingExitSnap] = useState(false)
   const layerAnimRef = useRef<LayerAnim>(null)
   const bannerTimerRef = useRef<number | null>(null)
   const pendingStackRef = useRef<AppViewId[] | null>(null)
@@ -195,6 +219,32 @@ function App() {
   const finishSplash = useCallback(() => {
     if (layerAnimRef.current === 'leave') return
     setScreen((current) => (current === 'splash' ? 'app-home' : current))
+  }, [])
+
+  const finishBookingToHome = useCallback((details: BookingSuccessDetails) => {
+    // Cover stays on top while we snap the stack to home, then fades out (fuaaa).
+    setBookingExit(details)
+    setBookingExitSnap(true)
+    setBookingExitVisible(true)
+    pendingStackRef.current = null
+    setLeavingView(null)
+    setSnapViews([])
+    setViewStack(['app-home'])
+    setSearchPhase('results')
+    setScreen('app-home')
+    // Booking resolved the inactivity alert — don't show it again on home.
+    setScenario('ok')
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setBookingExitSnap(false)
+        setBookingExitVisible(false)
+      })
+    })
+  }, [])
+
+  const onBookingExitFadeEnd = useCallback(() => {
+    setBookingExit(null)
+    setBookingExitSnap(false)
   }, [])
 
   const selectScreen = useCallback(
@@ -381,6 +431,7 @@ function App() {
                         }
                         phase={searchPhase}
                         overlay={searchOverlay(screen)}
+                        bookingPhase={bookingPhaseFromScreen(screen)}
                         caregiverId={caregiverId}
                         onPhaseChange={setSearchPhase}
                         onOpenProfile={(id) => {
@@ -391,6 +442,7 @@ function App() {
                         onCloseProfile={() => setScreen('caregiver-search')}
                         onOpenCalendar={() => setScreen('caregiver-calendar')}
                         onCloseCalendar={() => setScreen('caregiver-profile')}
+                        onBookingComplete={finishBookingToHome}
                       />
                     </div>
                   </div>
@@ -416,6 +468,20 @@ function App() {
                 >
                   <SplashScreen onDone={screen === 'splash' ? finishSplash : undefined} />
                 </div>
+                {bookingExit ? (
+                  <div
+                    className="app-pane app-pane--booking-exit"
+                    aria-hidden={!bookingExitVisible}
+                  >
+                    <BookingSuccessScreen
+                      details={bookingExit}
+                      visible={bookingExitVisible}
+                      snap={bookingExitSnap}
+                      onAccept={() => {}}
+                      onFadeOutEnd={onBookingExitFadeEnd}
+                    />
+                  </div>
+                ) : null}
               </div>
             ) : null}
 

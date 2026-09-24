@@ -9,6 +9,11 @@ export type ScreenId =
   | 'caregiver-search'
   | 'caregiver-profile'
   | 'caregiver-calendar'
+  | 'caregiver-pay'
+  | 'caregiver-success'
+
+/** Booking overlay on top of the calendar sheet. */
+export type BookingPhase = 'idle' | 'apple-pay' | 'success'
 
 export type SearchPhase =
   | 'locate'
@@ -34,6 +39,7 @@ export type NavItem = {
   searchPhase?: SearchPhase
   caregiverId?: string
   scenario?: HomeScenarioId
+  bookingPhase?: BookingPhase
 }
 
 export type NavGroup = {
@@ -85,6 +91,18 @@ export const SCREENS: ScreenMeta[] = [
     label: 'App · Calendario',
     shortLabel: 'Calendario',
     description: 'Disponibilidad y reserva de sesión',
+  },
+  {
+    id: 'caregiver-pay',
+    label: 'App · Apple Pay',
+    shortLabel: 'Pago',
+    description: 'Confirmación Apple Pay antes del éxito',
+  },
+  {
+    id: 'caregiver-success',
+    label: 'App · Reserva OK',
+    shortLabel: 'Éxito',
+    description: 'Confirmación de reserva — ¡Todo listo!',
   },
 ]
 
@@ -143,8 +161,30 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     id: 'caregiver-calendar',
-    label: 'App · Calendario',
-    items: [{ id: 'calendar', label: 'Disponibilidad', screen: 'caregiver-calendar', searchPhase: 'results' }],
+    label: 'App · Reserva',
+    items: [
+      {
+        id: 'calendar',
+        label: 'Disponibilidad',
+        screen: 'caregiver-calendar',
+        searchPhase: 'results',
+        bookingPhase: 'idle',
+      },
+      {
+        id: 'calendar-pay',
+        label: 'Apple Pay',
+        screen: 'caregiver-pay',
+        searchPhase: 'results',
+        bookingPhase: 'apple-pay',
+      },
+      {
+        id: 'calendar-success',
+        label: '¡Todo listo!',
+        screen: 'caregiver-success',
+        searchPhase: 'results',
+        bookingPhase: 'success',
+      },
+    ],
   },
 ]
 
@@ -183,6 +223,8 @@ export function activeNavId({
   }
   if (screen === 'caregiver-profile') return `profile-${caregiverId}`
   if (screen === 'caregiver-calendar') return 'calendar'
+  if (screen === 'caregiver-pay') return 'calendar-pay'
+  if (screen === 'caregiver-success') return 'calendar-success'
   return screen
 }
 

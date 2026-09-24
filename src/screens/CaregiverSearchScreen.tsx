@@ -15,7 +15,7 @@ import {
   type BuildingType,
   type SavedAddress,
 } from '../data/savedAddress'
-import type { SearchPhase } from '../data/screens'
+import type { BookingPhase, SearchPhase } from '../data/screens'
 import { useDragScroll } from '../hooks/useDragScroll'
 import { assetUrl } from '../utils/assetUrl'
 import { AddressDetailsScreen } from './AddressDetailsScreen'
@@ -37,18 +37,20 @@ const DEMO_PLACE: LocatedPlace = {
   lng: 2.1744,
 }
 
-type CaregiverSearchOverlay = 'none' | 'profile' | 'calendar'
+type CaregiverSearchOverlay = 'none' | 'profile' | 'calendar' | 'pay' | 'success'
 
 type CaregiverSearchScreenProps = {
   onBack?: () => void
   phase?: SearchPhase
   overlay?: CaregiverSearchOverlay
+  bookingPhase?: BookingPhase
   caregiverId?: string
   onPhaseChange?: (phase: SearchPhase) => void
   onOpenProfile?: (caregiverId: string) => void
   onCloseProfile?: () => void
   onOpenCalendar?: () => void
   onCloseCalendar?: () => void
+  onBookingComplete?: (details: import('./BookingSuccessScreen').BookingSuccessDetails) => void
 }
 
 function CaregiverCardSkeleton() {
@@ -88,12 +90,14 @@ export function CaregiverSearchScreen({
   onBack,
   phase: phaseProp,
   overlay: overlayProp,
+  bookingPhase = 'idle',
   caregiverId,
   onPhaseChange,
   onOpenProfile,
   onCloseProfile,
   onOpenCalendar,
   onCloseCalendar,
+  onBookingComplete,
 }: CaregiverSearchScreenProps) {
   const [internalPhase, setInternalPhase] = useState<SearchPhase>(() =>
     loadSavedAddress() ? 'results' : 'map',
@@ -101,10 +105,19 @@ export function CaregiverSearchScreen({
   const [draftPlace, setDraftPlace] = useState<LocatedPlace | null>(null)
   const [buildingType, setBuildingType] = useState<BuildingType>('casa')
   const [selected, setSelected] = useState<Caregiver | null>(() =>
-    overlayProp === 'profile' || overlayProp === 'calendar' ? findCaregiver(caregiverId) : null,
+    overlayProp === 'profile' ||
+    overlayProp === 'calendar' ||
+    overlayProp === 'pay' ||
+    overlayProp === 'success'
+      ? findCaregiver(caregiverId)
+      : null,
   )
   const [profileOpen, setProfileOpen] = useState(
-    () => overlayProp === 'profile' || overlayProp === 'calendar',
+    () =>
+      overlayProp === 'profile' ||
+      overlayProp === 'calendar' ||
+      overlayProp === 'pay' ||
+      overlayProp === 'success',
   )
   /** Panel sliding out to the right before the phase actually changes. */
   const [leavingPanel, setLeavingPanel] = useState<'details' | 'list' | null>(null)
@@ -169,7 +182,11 @@ export function CaregiverSearchScreen({
   }, [phase, draftPlace])
 
   useEffect(() => {
-    const wantsProfile = overlay === 'profile' || overlay === 'calendar'
+    const wantsProfile =
+      overlay === 'profile' ||
+      overlay === 'calendar' ||
+      overlay === 'pay' ||
+      overlay === 'success'
     if (wantsProfile) {
       setSelected(findCaregiver(caregiverId))
       setProfileOpen(true)
@@ -584,12 +601,20 @@ export function CaregiverSearchScreen({
               <CaregiverProfileScreen
                 caregiver={selected}
                 open={profileOpen}
-                showCalendar={overlay === 'calendar'}
+                showCalendar={
+                  overlay === 'calendar' || overlay === 'pay' || overlay === 'success'
+                }
+                bookingPhase={bookingPhase}
                 onBack={closeProfile}
                 onOpened={onProfileOpened}
                 onClosed={onProfileClosed}
                 onShowCalendar={onOpenCalendar}
                 onHideCalendar={onCloseCalendar}
+                onBookingComplete={(details) => {
+                  onBookingComplete?.(details)
+                  setProfileOpen(false)
+                  setSelected(null)
+                }}
               />
             ) : null}
           </div>

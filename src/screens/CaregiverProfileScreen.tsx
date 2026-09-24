@@ -8,6 +8,7 @@ import {
 } from 'react'
 import { Play } from 'lucide-react'
 import type { Caregiver, CaregiverReview } from '../data/caregivers'
+import type { BookingPhase } from '../data/screens'
 import { useDragScroll } from '../hooks/useDragScroll'
 import { useHorizontalDragScroll } from '../hooks/useHorizontalDragScroll'
 import { assetUrl } from '../utils/assetUrl'
@@ -239,11 +240,13 @@ type CaregiverProfileScreenProps = {
   caregiver: Caregiver
   open: boolean
   showCalendar?: boolean
+  bookingPhase?: BookingPhase
   onBack: () => void
   onOpened?: () => void
   onClosed: () => void
   onShowCalendar?: () => void
   onHideCalendar?: () => void
+  onBookingComplete?: (details: import('./BookingSuccessScreen').BookingSuccessDetails) => void
 }
 
 /** Profile sheet — Figma 160:4038 / 180:5520 / 180:5599 / 180:5678. */
@@ -251,11 +254,13 @@ export function CaregiverProfileScreen({
   caregiver,
   open,
   showCalendar = false,
+  bookingPhase = 'idle',
   onBack,
   onOpened,
   onClosed,
   onShowCalendar,
   onHideCalendar,
+  onBookingComplete,
 }: CaregiverProfileScreenProps) {
   const [entered, setEntered] = useState(false)
   const [reviews, setReviews] = useState(() => shuffleReviews(caregiver.reviews))
@@ -479,6 +484,13 @@ export function CaregiverProfileScreen({
     setCalendarOpen(false)
   }
 
+  const completeBooking = (details: import('./BookingSuccessScreen').BookingSuccessDetails) => {
+    // Lift success to App first (fade cover), then snap-close local sheets.
+    onBookingComplete?.(details)
+    setCalendarOpen(false)
+    setCalendarMounted(false)
+  }
+
   const onCalendarClosed = () => {
     setCalendarMounted(false)
   }
@@ -683,9 +695,11 @@ export function CaregiverProfileScreen({
         <CaregiverCalendarScreen
           caregiver={caregiver}
           open={calendarOpen}
+          bookingPhase={bookingPhase}
           onBack={closeCalendar}
           onOpened={onCalendarOpened}
           onClosed={onCalendarClosed}
+          onBookingComplete={completeBooking}
         />
       ) : null}
     </div>

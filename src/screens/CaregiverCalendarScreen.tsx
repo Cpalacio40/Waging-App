@@ -3,14 +3,71 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { Caregiver } from '../data/caregivers'
+import type { BookingPhase } from '../data/screens'
 import { buildingOption, loadSavedAddress, subscribeAddressChange } from '../data/savedAddress'
 import { useDragScroll } from '../hooks/useDragScroll'
 import { assetUrl } from '../utils/assetUrl'
+import { BookingSuccessScreen } from './BookingSuccessScreen'
 import './screens.css'
 
 const caregiverAsset = (name: string) => assetUrl(`caregiver/${name}`)
 const addressAsset = (name: string) => assetUrl(`address/${name}`)
 const calendarUnavailableAsset = assetUrl('caregiver/calendar-unavailable.svg')
+const applePayScreenAsset = assetUrl('caregiver/booking/apple-pay-screen.png')
+
+/** Hold Apple Pay image before fading to success. */
+const APPLE_PAY_HOLD_MS = 1800
+
+const WEEKDAY_LONG = [
+  'Domingo',
+  'Lunes',
+  'Martes',
+  'Miércoles',
+  'Jueves',
+  'Viernes',
+  'Sábado',
+] as const
+const MONTH_SHORT = [
+  'Ene',
+  'Feb',
+  'Mar',
+  'Abr',
+  'May',
+  'Jun',
+  'Jul',
+  'Ago',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dic',
+] as const
+
+function parseHour(slot: string) {
+  const [h] = slot.split(':')
+  return Number(h) || 0
+}
+
+function endTimeSlot(slot: string) {
+  const end = (parseHour(slot) + 1) % 24
+  return `${end}:00`
+}
+
+function formatSessionLine(date: Date, start: string) {
+  const weekday = WEEKDAY_LONG[date.getDay()]
+  const month = MONTH_SHORT[date.getMonth()]
+  return `${start} - ${endTimeSlot(start)}, ${weekday}, ${month}  ${date.getDate()}, ${date.getFullYear()}`
+}
+
+function formatAddressLine(place: {
+  label: string
+  floor?: string
+  door?: string
+}) {
+  const parts = [place.label]
+  if (place.floor?.trim()) parts.push(place.floor.trim())
+  if (place.door?.trim()) parts.push(place.door.trim())
+  return parts.join(', ')
+}
 
 const FALLBACK_MEET = {
   tag: 'Casa',
@@ -139,18 +196,26 @@ function buildMonthGrid(
 type CaregiverCalendarScreenProps = {
   caregiver: Caregiver
   open: boolean
+  /** Jump target from the side navigator (Apple Pay / success). */
+  bookingPhase?: BookingPhase
   onBack: () => void
   onOpened?: () => void
   onClosed: () => void
+  /** After booking success “Aceptar” — typically return to app home. */
+  onBookingComplete?: (details: import('./BookingSuccessScreen').BookingSuccessDetails) => void
 }
+
+type PayPhase = BookingPhase
 
 /** Session calendar booking — Figma 180:6825. */
 export function CaregiverCalendarScreen({
   caregiver,
   open,
+  bookingPhase = 'idle',
   onBack,
   onOpened,
   onClosed,
+  onBookingComplete,
 }: CaregiverCalendarScreenProps) {
   const [today] = useState(() => startOfDay(new Date()))
   const [entered, setEntered] = useState(false)
@@ -158,18 +223,24 @@ export function CaregiverCalendarScreen({
     () => new Date(today.getFullYear(), today.getMonth(), 1),
   )
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
-  const [time, setTime] = useState<string>(TIME_SLOTS[0])
+  const [time, setTime] = useState<string | null>(null)
   const [pendingTime, setPendingTime] = useState<string>(TIME_SLOTS[0])
   const [timeOpen, setTimeOpen] = useState(false)
   const [policyOpen, setPolicyOpen] = useState(false)
   const [policyClosing, setPolicyClosing] = useState(false)
+  const [payPhase, setPayPhase] = useState<PayPhase>('idle')
+  const [paySheetOpen, setPaySheetOpen] = useState(false)
+  const [successVisible, setSuccessVisible] = useState(false)
+  /** false when jumped here from the side navigator (hold Apple Pay). */
+  const [payAutoAdvance, setPayAutoAdvance] = useState(true)
   const wheelRef = useRef<HTMLDivElement>(null)
   const meetMapRef = useRef<HTMLDivElement>(null)
   const meetMapInstance = useRef<L.Map | null>(null)
   const [meetPlace, setMeetPlace] = useState(() => loadSavedAddress() ?? FALLBACK_MEET)
 
+  const payBusy = payPhase !== 'idle'
   const dragScroll = useDragScroll({
-    enabled: open && entered && !timeOpen && !policyOpen && !policyClosing,
+    enabled: open && entered && !timeOpen && !policyOpen && !policyClosing && !payBusy,
     ignoreSelector: 'button, a, select, .caregiver-calendar__time',
   })
   const showPolicyModal = policyOpen || policyClosing
@@ -266,6 +337,10 @@ export function CaregiverCalendarScreen({
 
   useEffect(() => {
     if (!open) {
+      setPayPhase('idle')
+      setPaySheetOpen(false)
+      setSuccessVisible(false)
+      setPayAutoAdvance(true)
       setEntered(false)
       setTimeOpen(false)
       setPolicyOpen(false)
@@ -282,10 +357,60 @@ export function CaregiverCalendarScreen({
     }
   }, [open])
 
+  /** Side-nav shortcuts: Apple Pay / ¡Todo listo! */
+  const prevBookingPhaseRef = useRef(bookingPhase)
+  useEffect(() => {
+    if (!open || !entered) return
+
+    const prev = prevBookingPhaseRef.current
+    prevBookingPhaseRef.current = bookingPhase
+
+    if (bookingPhase === 'idle') {
+      // Clear pay overlays only when leaving a nav jump (pay/success → calendar).
+      if (prev !== 'idle') {
+        setPayPhase('idle')
+        setPaySheetOpen(false)
+        setSuccessVisible(false)
+        setPayAutoAdvance(true)
+      }
+      return
+    }
+
+    let seed = addDays(today, 1)
+    while (seed <= lastVisibleDay && occupiedKeys.has(dateKey(seed))) {
+      seed = addDays(seed, 1)
+    }
+    if (seed > lastVisibleDay) seed = today
+    setSelectedKey(dateKey(seed))
+    setCursor(new Date(seed.getFullYear(), seed.getMonth(), 1))
+    setTime('16:00')
+    setTimeOpen(false)
+    setPolicyOpen(false)
+    setPolicyClosing(false)
+
+    if (bookingPhase === 'apple-pay') {
+      setPayAutoAdvance(false)
+      setSuccessVisible(false)
+      setPaySheetOpen(false)
+      setPayPhase('apple-pay')
+      return
+    }
+
+    setPayAutoAdvance(false)
+    setPaySheetOpen(false)
+    setPayPhase('success')
+    setSuccessVisible(false)
+    const frame = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => setSuccessVisible(true))
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [open, entered, bookingPhase, today, lastVisibleDay, occupiedKeys])
+
   useEffect(() => {
     if (!timeOpen) return
     const frame = window.requestAnimationFrame(() => {
-      const index = TIME_SLOTS.indexOf(time as (typeof TIME_SLOTS)[number])
+      const current = time ?? TIME_SLOTS[0]
+      const index = TIME_SLOTS.indexOf(current as (typeof TIME_SLOTS)[number])
       wheelRef.current?.scrollTo({ top: Math.max(0, index) * WHEEL_ITEM_HEIGHT })
     })
     return () => window.cancelAnimationFrame(frame)
@@ -337,7 +462,7 @@ export function CaregiverCalendarScreen({
 
   const openTimePicker = () => {
     if (!selectedKey) return
-    setPendingTime(time)
+    setPendingTime(time ?? TIME_SLOTS[0])
     setTimeOpen(true)
   }
 
@@ -360,6 +485,64 @@ export function CaregiverCalendarScreen({
       top: index * WHEEL_ITEM_HEIGHT,
       behavior: 'smooth',
     })
+  }
+
+  const selectedDate = useMemo(() => {
+    if (!selectedKey) return addDays(today, 1)
+    const match = days.find((d) => d.key === selectedKey)
+    return match?.date ?? addDays(today, 1)
+  }, [selectedKey, days, today])
+
+  const successDetails = useMemo(
+    () => ({
+      caregiverName: caregiver.name,
+      sessionLine: formatSessionLine(selectedDate, time ?? TIME_SLOTS[0]),
+      addressLine: formatAddressLine(meetPlace),
+    }),
+    [caregiver.name, selectedDate, time, meetPlace],
+  )
+
+  const canPay = Boolean(selectedKey && time) && !payBusy
+
+  useEffect(() => {
+    if (payPhase !== 'apple-pay') return
+    let inner = 0
+    const outer = window.requestAnimationFrame(() => {
+      inner = window.requestAnimationFrame(() => setPaySheetOpen(true))
+    })
+    if (!payAutoAdvance) {
+      return () => {
+        window.cancelAnimationFrame(outer)
+        window.cancelAnimationFrame(inner)
+      }
+    }
+    const hold = window.setTimeout(() => {
+      setPayPhase('success')
+      setSuccessVisible(false)
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => setSuccessVisible(true))
+      })
+    }, APPLE_PAY_HOLD_MS)
+    return () => {
+      window.cancelAnimationFrame(outer)
+      window.cancelAnimationFrame(inner)
+      window.clearTimeout(hold)
+    }
+  }, [payPhase, payAutoAdvance])
+
+  const startPayment = () => {
+    if (!canPay) return
+    setTimeOpen(false)
+    setPolicyOpen(false)
+    setPolicyClosing(false)
+    setPaySheetOpen(false)
+    setSuccessVisible(false)
+    setPayAutoAdvance(true)
+    setPayPhase('apple-pay')
+  }
+
+  const finishBooking = () => {
+    onBookingComplete?.(successDetails)
   }
 
   return (
@@ -498,7 +681,7 @@ export function CaregiverCalendarScreen({
                     disabled={!selectedKey}
                     onClick={openTimePicker}
                   >
-                    <span>{selectedKey ? time : 'Selecciona una hora'}</span>
+                    <span>{selectedKey && time ? time : 'Selecciona una hora'}</span>
                     <ChevronDown size={16} strokeWidth={2.2} aria-hidden="true" />
                   </button>
                 </div>
@@ -702,11 +885,41 @@ export function CaregiverCalendarScreen({
       <div className="caregiver-calendar__footer">
         <div className="caregiver-calendar__checkout">
           <p className="caregiver-calendar__price">Valor {SESSION_PRICE}</p>
-          <button type="button" className="caregiver-calendar__pay">
+          <button
+            type="button"
+            className="caregiver-calendar__pay"
+            onClick={startPayment}
+            disabled={!canPay}
+          >
             Pagar y confirmar
           </button>
         </div>
       </div>
+
+      {payPhase === 'apple-pay' || payPhase === 'success' ? (
+        <div
+          className={`booking-pay${paySheetOpen ? ' is-open' : ''}`}
+          aria-hidden={payPhase !== 'apple-pay'}
+        >
+          <div className="booking-pay__backdrop" aria-hidden="true" />
+          <img
+            className="booking-pay__image"
+            src={applePayScreenAsset}
+            alt=""
+            width={390}
+            height={847}
+            draggable={false}
+          />
+        </div>
+      ) : null}
+
+      {payPhase === 'success' ? (
+        <BookingSuccessScreen
+          details={successDetails}
+          visible={successVisible}
+          onAccept={finishBooking}
+        />
+      ) : null}
     </div>
   )
 }

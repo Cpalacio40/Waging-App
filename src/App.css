@@ -41,6 +41,12 @@
   pointer-events: auto;
 }
 
+/* Booking success → home: same “fuaaa” dissolve as splash */
+.app-pane--booking-exit {
+  z-index: 2;
+  pointer-events: none;
+}
+
 @keyframes ios-app-open {
   from {
     opacity: 0;

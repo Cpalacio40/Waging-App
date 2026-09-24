@@ -2312,10 +2312,6 @@
   max-height: 56px;
 }
 
-.caregiver-review__text.is-expanded {
-  max-height: 200px;
-}
-
 .caregiver-review__text.is-toggleable {
   cursor: pointer;
   touch-action: manipulation;

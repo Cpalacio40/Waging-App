@@ -45,34 +45,78 @@ const REVIEW_TEXT_COLLAPSED_PX = 56
 
 type ReviewTextProps = {
   text: string
+  /** Bump to snap every card back to the clamped state. */
+  resetKey: number
 }
 
-function ReviewText({ text }: ReviewTextProps) {
+function ReviewText({ text, resetKey }: ReviewTextProps) {
   const ref = useRef<HTMLParagraphElement>(null)
   const [expanded, setExpanded] = useState(false)
   const [overflows, setOverflows] = useState(false)
+  /** Inline height while animating; null lets CSS classes own max-height. */
+  const [maxHeight, setMaxHeight] = useState<number | null>(null)
+  /** Line-clamp/ellipsis only when fully collapsed (not mid-animation). */
+  const [ellipsis, setEllipsis] = useState(true)
 
-  useLayoutEffect(() => {
+  const measureFullHeight = useCallback(() => {
     const el = ref.current
-    if (!el) return
-
-    const { maxHeight, webkitLineClamp, display } = el.style
+    if (!el) return REVIEW_TEXT_COLLAPSED_PX
+    const prevMax = el.style.maxHeight
+    const prevClamp = el.style.webkitLineClamp
+    const prevDisplay = el.style.display
     el.style.maxHeight = 'none'
     el.style.webkitLineClamp = 'unset'
     el.style.display = 'block'
     const full = el.scrollHeight
-    el.style.maxHeight = maxHeight
-    el.style.webkitLineClamp = webkitLineClamp
-    el.style.display = display
+    el.style.maxHeight = prevMax
+    el.style.webkitLineClamp = prevClamp
+    el.style.display = prevDisplay
+    return full
+  }, [])
 
-    const canClamp = full > REVIEW_TEXT_COLLAPSED_PX + 1
-    setOverflows(canClamp)
-    if (!canClamp) setExpanded(false)
-  }, [text])
+  useLayoutEffect(() => {
+    setExpanded(false)
+    setEllipsis(true)
+    setMaxHeight(null)
+    const full = measureFullHeight()
+    setOverflows(full > REVIEW_TEXT_COLLAPSED_PX + 1)
+  }, [text, resetKey, measureFullHeight])
 
   const toggle = () => {
     if (!overflows) return
-    setExpanded((value) => !value)
+    const el = ref.current
+    if (!el) return
+
+    if (expanded) {
+      // Collapse: lock current height, then ease down to 4 lines.
+      const full = el.scrollHeight
+      setEllipsis(false)
+      setMaxHeight(full)
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setExpanded(false)
+          setMaxHeight(REVIEW_TEXT_COLLAPSED_PX)
+        })
+      })
+      return
+    }
+
+    // Expand: drop ellipsis at collapsed height, then ease up to full.
+    setEllipsis(false)
+    setMaxHeight(REVIEW_TEXT_COLLAPSED_PX)
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setExpanded(true)
+        setMaxHeight(measureFullHeight())
+      })
+    })
+  }
+
+  const onTransitionEnd = (event: TransitionEvent<HTMLParagraphElement>) => {
+    if (event.propertyName !== 'max-height') return
+    if (expanded) return
+    setEllipsis(true)
+    setMaxHeight(null)
   }
 
   return (
@@ -81,12 +125,14 @@ function ReviewText({ text }: ReviewTextProps) {
       className={[
         'caregiver-review__text',
         overflows ? 'is-toggleable' : '',
-        overflows && !expanded ? 'is-clamped' : '',
+        overflows && ellipsis && !expanded ? 'is-clamped' : '',
         expanded ? 'is-expanded' : '',
       ]
         .filter(Boolean)
         .join(' ')}
+      style={maxHeight != null ? { maxHeight } : undefined}
       onClick={toggle}
+      onTransitionEnd={onTransitionEnd}
       onKeyDown={
         overflows
           ? (event) => {
@@ -213,6 +259,7 @@ export function CaregiverProfileScreen({
 }: CaregiverProfileScreenProps) {
   const [entered, setEntered] = useState(false)
   const [reviews, setReviews] = useState(() => shuffleReviews(caregiver.reviews))
+  const [reviewResetKey, setReviewResetKey] = useState(0)
   const [calendarMounted, setCalendarMounted] = useState(false)
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [playingKey, setPlayingKey] = useState<string | null>(null)
@@ -366,6 +413,7 @@ export function CaregiverProfileScreen({
     }
     dragScroll.resetScroll()
     setReviews(shuffleReviews(caregiver.reviews))
+    setReviewResetKey((key) => key + 1)
     videoEls.current.forEach((el) => el.pause())
     setPlayingKey(null)
     // Double rAF so the sheet paints off-screen before sliding in.
@@ -392,6 +440,7 @@ export function CaregiverProfileScreen({
 
   useEffect(() => {
     if (!calendarOpen) return
+    setReviewResetKey((key) => key + 1)
     videoEls.current.forEach((el) => el.pause())
     setPlayingKey(null)
   }, [calendarOpen])
@@ -602,7 +651,7 @@ export function CaregiverProfileScreen({
                             </div>
                           </div>
                         </div>
-                        <ReviewText text={review.text} />
+                        <ReviewText text={review.text} resetKey={reviewResetKey} />
                       </div>
                       <ReviewMedia
                         review={review}

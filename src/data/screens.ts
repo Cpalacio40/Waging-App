@@ -158,7 +158,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       {
         id: 'app-home-walk-done',
-        label: `Actividad ${DEMO_ACTIVITY_WALK_DONE}`,
+        label: 'Tras salida',
         screen: 'app-home',
         scenario: 'ok',
         activity: DEMO_ACTIVITY_WALK_DONE,

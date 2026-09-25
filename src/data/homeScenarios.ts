@@ -1,7 +1,8 @@
 /** Shared mock content for iOS widget + in-app home.
 
  * Activity is the source of truth: ≤30 → low-activity copy + alert;
- * above that → normal-day copy. Booking a walk does not change points.
+ * above that → normal-day copy. Finishing a scheduled outing adds
+ * ACTIVITY_WALK_BONUS points and shows the “Sesión terminada” card.
  */
 
 export type HomeScenarioId = 'ok' | 'attention'
@@ -21,13 +22,20 @@ export type HomeScenario = {
 /** Collar demo: alert + low-activity copy when activity is at or below this. */
 export const ACTIVITY_ALERT_THRESHOLD = 30
 
+/** Points added when a scheduled outing finishes (demo “Salida terminada”). */
+export const ACTIVITY_WALK_BONUS = 40
+
 /** Demo presets for the side panel / navigator. */
 export const DEMO_ACTIVITY_OK = 80
 export const DEMO_ACTIVITY_LOW = 30
-/** After a finished walk — normal home + sesión terminada card. */
-export const DEMO_ACTIVITY_WALK_DONE = 52
+/** After a finished walk from low activity — Figma 286:3231 (30 + 40). */
+export const DEMO_ACTIVITY_WALK_DONE = DEMO_ACTIVITY_LOW + ACTIVITY_WALK_BONUS
 
 export const DEFAULT_ACTIVITY = DEMO_ACTIVITY_OK
+
+export function clampActivity(value: number) {
+  return Math.min(100, Math.max(0, Math.round(value)))
+}
 
 export const HOME_SCENARIOS: Record<HomeScenarioId, HomeScenario> = {
   ok: {

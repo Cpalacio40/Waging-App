@@ -1,18 +1,27 @@
 import { useEffect, useState, type CSSProperties, type TransitionEvent } from 'react'
+import { ChevronDown, X } from 'lucide-react'
 import { CAREGIVERS, DEFAULT_CAREGIVER_ID } from '../data/caregivers'
 import { HOME_SCENARIOS, type HomeScenarioId } from '../data/homeScenarios'
 import { useDragScroll } from '../hooks/useDragScroll'
 import { useHeldScenario } from '../hooks/useHeldScenario'
 import { assetUrl } from '../utils/assetUrl'
+import type { BookingSuccessDetails } from './BookingSuccessScreen'
 import './screens.css'
 
 const inicioAsset = (name: string) => assetUrl(`app-inicio/${name}`)
+const bookingAsset = (name: string) => assetUrl(`caregiver/booking/${name}`)
 
 const SESSION_CAREGIVER_NAME =
   (CAREGIVERS.find((c) => c.id === DEFAULT_CAREGIVER_ID)?.name ?? 'María Camila Rodríguez')
     .split(' ')
     .slice(0, 2)
     .join(' ')
+
+function shortCaregiverName(fullName: string) {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean)
+  if (parts.length <= 2) return fullName
+  return `${parts[0]} ${parts[parts.length - 1]}`
+}
 
 /** Same cubic as Figma Ellipse 39 (track), left → right. */
 const GAUGE = { width: 303.5, height: 63 } as const
@@ -91,6 +100,10 @@ type AppHomeScreenProps = {
   activity?: number
   /** Show the post-walk “Sesión terminada” card. */
   sessionDone?: boolean
+  /** Caregiver shown on the sesión terminada card (from the completed booking). */
+  sessionCaregiverName?: string
+  onOpenSessionRecap?: () => void
+  onDismissSessionDone?: () => void
   onAgendar?: () => void
   /** Alert minimized to the bell (persists across leaving the app). */
   alertDismissed?: boolean
@@ -99,22 +112,38 @@ type AppHomeScreenProps = {
   onMinimizeAlert?: () => void
   onResolveAlert?: () => void
   onRestoreAlert?: () => void
+  /** Scheduled booking after Accept — home banner + calendar badge. */
+  booking?: BookingSuccessDetails | null
+  /** Compact strip (true) vs full details (false). Figma 349:7465 / 349:7708. */
+  bookingCollapsed?: boolean
+  onToggleBooking?: () => void
+  onExpandBooking?: () => void
 }
 
 function AppHomeView({
   scenario,
   activity: activityProp,
   sessionDone = false,
+  sessionCaregiverName,
+  onOpenSessionRecap,
+  onDismissSessionDone,
   onAgendar,
   alertOpen,
   alertResolved = false,
   onCloseAlert,
   onOwnerHandles,
   onBellClick,
+  booking = null,
+  bookingCollapsed = false,
+  onToggleBooking,
+  onExpandBooking,
 }: {
   scenario: HomeScenarioId
   activity?: number
   sessionDone?: boolean
+  sessionCaregiverName?: string
+  onOpenSessionRecap?: () => void
+  onDismissSessionDone?: () => void
   onAgendar?: () => void
   alertOpen: boolean
   /** Owner chose “Yo me ocupo” — no card, no bell until activity rises again. */
@@ -122,23 +151,34 @@ function AppHomeView({
   onCloseAlert?: () => void
   onOwnerHandles?: () => void
   onBellClick?: () => void
+  booking?: BookingSuccessDetails | null
+  bookingCollapsed?: boolean
+  onToggleBooking?: () => void
+  onExpandBooking?: () => void
 }) {
   const data = HOME_SCENARIOS[scenario]
   const activity = activityProp ?? data.activity
   const needsAttention = scenario === 'attention'
   const showBellBadge = needsAttention && !alertOpen && !alertResolved
-  const cardOpen = alertOpen && !alertResolved
-  const [alertMounted, setAlertMounted] = useState(cardOpen)
-  const [alertShown, setAlertShown] = useState(cardOpen)
+  const attentionCardOpen = alertOpen && !alertResolved
+  const bookingCardOpen = Boolean(booking)
+  const showCalendarBadge = Boolean(booking)
+  const [alertMounted, setAlertMounted] = useState(attentionCardOpen)
+  const [alertShown, setAlertShown] = useState(attentionCardOpen)
+  const [bookingMounted, setBookingMounted] = useState(bookingCardOpen)
+  const [bookingShown, setBookingShown] = useState(bookingCardOpen)
+  const layoutOpen = alertShown || bookingShown
+  const doneCaregiver = shortCaregiverName(sessionCaregiverName ?? SESSION_CAREGIVER_NAME)
+  const bookingName = booking ? shortCaregiverName(booking.caregiverName) : ''
   const dragScroll = useDragScroll({
-    enabled: (needsAttention && cardOpen) || sessionDone,
+    enabled: layoutOpen || sessionDone,
     ignoreSelector: 'button, a, input, textarea, [role="button"]',
   })
   const { resetScroll } = dragScroll
   const gauge = gaugePoint(activity)
 
   useEffect(() => {
-    if (cardOpen) {
+    if (attentionCardOpen) {
       setAlertMounted(true)
       const frame = window.requestAnimationFrame(() => {
         window.requestAnimationFrame(() => setAlertShown(true))
@@ -146,13 +186,33 @@ function AppHomeView({
       return () => window.cancelAnimationFrame(frame)
     }
     setAlertShown(false)
-    resetScroll()
-  }, [cardOpen, resetScroll])
+  }, [attentionCardOpen])
+
+  useEffect(() => {
+    if (bookingCardOpen) {
+      setBookingMounted(true)
+      const frame = window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => setBookingShown(true))
+      })
+      return () => window.cancelAnimationFrame(frame)
+    }
+    setBookingShown(false)
+  }, [bookingCardOpen])
+
+  useEffect(() => {
+    if (!layoutOpen) resetScroll()
+  }, [layoutOpen, resetScroll])
 
   const onAlertTransitionEnd = (event: TransitionEvent<HTMLElement>) => {
     if (event.target !== event.currentTarget) return
     if (event.propertyName !== 'opacity') return
-    if (!cardOpen) setAlertMounted(false)
+    if (!attentionCardOpen) setAlertMounted(false)
+  }
+
+  const onBookingTransitionEnd = (event: TransitionEvent<HTMLElement>) => {
+    if (event.target !== event.currentTarget) return
+    if (event.propertyName !== 'opacity') return
+    if (!bookingCardOpen) setBookingMounted(false)
   }
 
   return (
@@ -160,7 +220,12 @@ function AppHomeView({
       className={[
         'screen app-home',
         needsAttention ? 'is-attention' : '',
-        alertShown ? 'is-alert-open' : '',
+        layoutOpen ? 'is-alert-open' : '',
+        bookingShown && !alertShown
+          ? bookingCollapsed
+            ? 'is-booking-collapsed'
+            : 'is-booking-open'
+          : '',
         sessionDone ? 'is-session-done' : '',
       ]
         .filter(Boolean)
@@ -200,7 +265,12 @@ function AppHomeView({
               <p className="app-home__breed">Raza: Mixto</p>
             </div>
             <div className="app-home__actions">
-              <button type="button" className="app-home__icon-btn" aria-label="Calendario">
+              <button
+                type="button"
+                className="app-home__icon-btn"
+                aria-label={showCalendarBadge ? 'Calendario (1 cita)' : 'Calendario'}
+                onClick={onExpandBooking}
+              >
                 <img
                   src={inicioAsset('icon-calendar.svg')}
                   alt=""
@@ -208,6 +278,7 @@ function AppHomeView({
                   height={24}
                   draggable={false}
                 />
+                {showCalendarBadge ? <span className="app-home__notif-dot" aria-hidden="true" /> : null}
               </button>
               <button
                 type="button"
@@ -328,30 +399,108 @@ function AppHomeView({
             </aside>
           ) : null}
 
-          {sessionDone ? (
-            <button
-              type="button"
-              className="app-home__session-done"
-              aria-label="Sesión terminada — ver fotos y resumen"
+          {bookingMounted && booking ? (
+            <aside
+              className={[
+                'app-home__booking',
+                bookingShown ? 'is-open' : '',
+                bookingCollapsed ? 'is-collapsed' : 'is-expanded',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              aria-label={`Sesión con ${bookingName}`}
+              aria-hidden={!bookingShown}
+              onTransitionEnd={onBookingTransitionEnd}
             >
-              <p className="app-home__session-done-eyebrow">Sesión terminada</p>
-              <div className="app-home__session-done-body">
-                <p className="app-home__session-done-title">Luca ya está de vuelta</p>
-                <span className="app-home__session-done-row">
-                  <span className="app-home__session-done-meta">
-                    Fotos y resumen de cómo le fue con {SESSION_CAREGIVER_NAME}
-                  </span>
+              <div className="app-home__booking-header">
+                <img
+                  className="app-home__booking-icon"
+                  src={bookingAsset('icon-id-card.svg')}
+                  alt=""
+                  width={20}
+                  height={20}
+                  draggable={false}
+                />
+                <p className="app-home__booking-title">Sesión con {bookingName}</p>
+                <button
+                  type="button"
+                  className="app-home__booking-toggle"
+                  aria-expanded={!bookingCollapsed}
+                  aria-label={bookingCollapsed ? 'Expandir sesión' : 'Contraer sesión'}
+                  onClick={onToggleBooking}
+                >
+                  <ChevronDown size={28} strokeWidth={1.75} aria-hidden="true" />
+                </button>
+              </div>
+              <div className="app-home__booking-details" aria-hidden={bookingCollapsed}>
+                <div className="app-home__booking-details-inner">
+                  <div className="app-home__booking-row">
+                    <img
+                      src={inicioAsset('icon-calendar-check.svg')}
+                      alt=""
+                      width={20}
+                      height={20}
+                      draggable={false}
+                    />
+                    <span className="app-home__booking-when">{booking.sessionLine}</span>
+                  </div>
+                  <div className="app-home__booking-row">
+                    <img
+                      src={inicioAsset('icon-map-pin.svg')}
+                      alt=""
+                      width={20}
+                      height={20}
+                      draggable={false}
+                    />
+                    <span>{booking.addressLine}</span>
+                  </div>
+                </div>
+              </div>
+            </aside>
+          ) : null}
+
+          {sessionDone ? (
+            <div className="app-home__session-done">
+              <img
+                className="app-home__session-done-swirl"
+                src={inicioAsset('session-done-swirl.svg')}
+                alt=""
+                draggable={false}
+                aria-hidden="true"
+              />
+              <div className="app-home__session-done-top">
+                <span className="app-home__session-done-pill">
                   <img
-                    className="app-home__session-done-chevron"
-                    src={inicioAsset('icon-chevron-right-white.svg')}
+                    src={inicioAsset('icon-circle-check.svg')}
                     alt=""
-                    width={19}
-                    height={19}
+                    width={14}
+                    height={14}
                     draggable={false}
                   />
+                  Sesión terminada
                 </span>
+                <button
+                  type="button"
+                  className="app-home__session-done-close"
+                  aria-label="Cerrar"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    onDismissSessionDone?.()
+                  }}
+                >
+                  <X size={14} strokeWidth={2} aria-hidden="true" />
+                </button>
               </div>
-            </button>
+              <button
+                type="button"
+                className="app-home__session-done-body"
+                aria-label={`Sesión terminada con ${doneCaregiver} — ver fotos y resumen`}
+                onClick={onOpenSessionRecap}
+              >
+                <p className="app-home__session-done-title">Luca ya está de vuelta</p>
+                <span className="app-home__session-done-meta">Fotos y resumen de cómo le fue</span>
+              </button>
+            </div>
           ) : null}
 
           <div className="app-home__stage">
@@ -434,12 +583,19 @@ export function AppHomeScreen({
   scenario = 'ok',
   activity,
   sessionDone = false,
+  sessionCaregiverName,
+  onOpenSessionRecap,
+  onDismissSessionDone,
   onAgendar,
   alertDismissed = false,
   alertResolved = false,
   onMinimizeAlert,
   onResolveAlert,
   onRestoreAlert,
+  booking = null,
+  bookingCollapsed = false,
+  onToggleBooking,
+  onExpandBooking,
 }: AppHomeScreenProps) {
   const shown = useHeldScenario(scenario)
   const alertOpen = scenario === 'attention' && !alertDismissed && !alertResolved
@@ -455,8 +611,15 @@ export function AppHomeScreen({
           scenario="ok"
           activity={activity}
           sessionDone={sessionDone}
+          sessionCaregiverName={sessionCaregiverName}
+          onOpenSessionRecap={onOpenSessionRecap}
+          onDismissSessionDone={onDismissSessionDone}
           alertOpen={false}
           onAgendar={onAgendar}
+          booking={booking}
+          bookingCollapsed={bookingCollapsed}
+          onToggleBooking={onToggleBooking}
+          onExpandBooking={onExpandBooking}
         />
       </div>
       <div
@@ -467,12 +630,20 @@ export function AppHomeScreen({
         <AppHomeView
           scenario="attention"
           activity={activity}
+          sessionDone={sessionDone}
+          sessionCaregiverName={sessionCaregiverName}
+          onOpenSessionRecap={onOpenSessionRecap}
+          onDismissSessionDone={onDismissSessionDone}
           alertOpen={alertOpen}
           alertResolved={alertResolved}
           onAgendar={onAgendar}
           onCloseAlert={onMinimizeAlert}
           onOwnerHandles={onResolveAlert}
           onBellClick={onRestoreAlert}
+          booking={booking}
+          bookingCollapsed={bookingCollapsed}
+          onToggleBooking={onToggleBooking}
+          onExpandBooking={onExpandBooking}
         />
       </div>
     </div>

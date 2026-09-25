@@ -517,17 +517,29 @@
   --alert-shift: 206px;
 }
 
+.app-home.is-booking-open {
+  --alert-shift: 168px;
+}
+
+.app-home.is-booking-collapsed {
+  --alert-shift: 92px;
+}
+
 .app-home.is-session-done {
   --alert-shift: 168px;
 }
 
 .app-home.is-alert-open .app-home__scroller,
+.app-home.is-booking-open .app-home__scroller,
+.app-home.is-booking-collapsed .app-home__scroller,
 .app-home.is-session-done .app-home__scroller {
   cursor: grab;
   touch-action: none;
 }
 
 .app-home.is-alert-open .app-home__scroller.is-dragging,
+.app-home.is-booking-open .app-home__scroller.is-dragging,
+.app-home.is-booking-collapsed .app-home__scroller.is-dragging,
 .app-home.is-session-done .app-home__scroller.is-dragging {
   cursor: grabbing;
   user-select: none;
@@ -551,6 +563,8 @@
 }
 
 .app-home.is-alert-open .app-home__scroll-extent,
+.app-home.is-booking-open .app-home__scroll-extent,
+.app-home.is-booking-collapsed .app-home__scroll-extent,
 .app-home.is-session-done .app-home__scroll-extent {
   /* Match stage bottom (top: alert-shift + height phone-h) so max scroll = alert-shift */
   height: calc(var(--phone-h) + var(--alert-shift));
@@ -678,45 +692,243 @@
   pointer-events: auto;
 }
 
-/* Post-walk card — Figma 286:3494 */
-.app-home__session-done {
+/* Scheduled session card — Figma 349:7708 (expanded) / 349:7465 (collapsed) */
+.app-home__booking {
   position: absolute;
-  left: 22px;
-  top: 243px;
+  left: 24px;
+  top: 242px;
   z-index: 3;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  gap: 14px;
+  width: 341px;
+  padding: 18px;
+  border-radius: 26px;
+  background: rgba(13, 10, 9, 0.56);
+  backdrop-filter: blur(2.4px);
+  -webkit-backdrop-filter: blur(2.4px);
+  color: #fcfcfc;
+  pointer-events: none;
+  transform-origin: top center;
+  opacity: 0;
+  transform: scale(0.88) translate3d(0, -8px, 0);
+  transition:
+    opacity 0.32s ease,
+    transform 0.45s cubic-bezier(0.32, 0.72, 0, 1),
+    gap 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.app-home__booking.is-open {
+  opacity: 1;
+  transform: scale(1) translate3d(0, 0, 0);
+  pointer-events: auto;
+}
+
+.app-home__booking.is-collapsed {
+  gap: 0;
+}
+
+.app-home__booking-header {
+  display: flex;
+  align-items: center;
   gap: 12px;
-  width: 346px;
-  min-height: 154px;
+  width: 100%;
+}
+
+.app-home__booking-icon {
+  display: block;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}
+
+.app-home__booking-title {
+  flex: 1 1 auto;
+  min-width: 0;
   margin: 0;
-  padding: 14px;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 28px;
+  color: #fcfcfc;
+}
+
+.app-home__booking-toggle {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
   border: 0;
+  background: transparent;
+  color: #fcfcfc;
+  cursor: pointer;
+}
+
+.app-home__booking-toggle svg {
+  transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.app-home__booking.is-expanded .app-home__booking-toggle svg {
+  transform: rotate(180deg);
+}
+
+.app-home__booking-details {
+  display: grid;
+  grid-template-rows: 1fr;
+  width: 100%;
+  transition: grid-template-rows 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.app-home__booking.is-collapsed .app-home__booking-details {
+  grid-template-rows: 0fr;
+}
+
+.app-home__booking-details-inner {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  opacity: 1;
+  transition: opacity 0.28s ease;
+}
+
+.app-home__booking.is-collapsed .app-home__booking-details-inner {
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+
+.app-home__booking-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 0;
+}
+
+.app-home__booking-row img {
+  display: block;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin-top: 0;
+}
+
+.app-home__booking-row span {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: #fcfcfc;
+}
+
+.app-home__booking-when {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+}
+
+/* Post-walk card — Figma 286:3231 / 349:7374 */
+.app-home__session-done {
+  position: absolute;
+  left: 22px;
+  top: 242px;
+  z-index: 3;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  width: 346px;
+  padding: 16px 14px;
   border-radius: 20px;
   background: linear-gradient(180deg, #f1743c 0%, #fd8d5d 100%);
   color: #fcfcfc;
+  overflow: hidden;
+  pointer-events: auto;
+}
+
+.app-home__session-done-swirl {
+  position: absolute;
+  right: -40px;
+  top: -48px;
+  width: 232px;
+  height: 208px;
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+.app-home__session-done-top {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.app-home__session-done-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 10px;
+  background: rgba(255, 144, 95, 0.92);
+  backdrop-filter: blur(2.4px);
+  -webkit-backdrop-filter: blur(2.4px);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 22px;
+  color: #fcfcfc;
+  white-space: nowrap;
+}
+
+.app-home__session-done-pill img {
+  display: block;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.app-home__session-done-close {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 46px;
+  background: #fcfcfc;
+  color: #0d0a09;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.app-home__session-done-body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: min(239px, 100%);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
   text-align: left;
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
-}
-
-.app-home__session-done-eyebrow {
-  margin: 0;
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 22px;
-  color: #fcfcfc;
-}
-
-.app-home__session-done-body {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 100%;
 }
 
 .app-home__session-done-title {
@@ -728,34 +940,262 @@
   color: #fcfcfc;
 }
 
-.app-home__session-done-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-}
-
 .app-home__session-done-meta {
-  flex: 1 1 auto;
-  min-width: 0;
   font-family: var(--font-body);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   line-height: 16px;
   color: #fcfcfc;
 }
 
-.app-home__session-done-chevron {
+/* Session recap overlay — slides in from the right */
+.session-recap {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  background: #f4efe6;
+  transform: translate3d(100%, 0, 0);
+  transition: transform 0.45s cubic-bezier(0.32, 0.72, 0, 1);
+  touch-action: pan-y;
+  pointer-events: auto;
+}
+
+.session-recap.is-open {
+  transform: translate3d(0, 0, 0);
+}
+
+.session-recap__viewport {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: pan-y;
+}
+
+.session-recap__viewport:active {
+  cursor: grabbing;
+}
+
+.session-recap__track {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  will-change: transform;
+}
+
+.session-recap__slide {
+  position: relative;
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #f4efe6;
+}
+
+.session-recap__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Intro eyebrow — Figma 289:4841 inside 314:3771 (x:41 y:317 w:309 h:28) */
+.session-recap__intro-eyebrow {
+  position: absolute;
+  left: 50%;
+  top: 317px;
+  z-index: 1;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 309px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  transform: translateX(-50%);
+  background: #ff905f;
+  font-family: var(--font-body);
+  font-size: 18px;
+  font-weight: 500;
+  font-style: normal;
+  line-height: 28px;
+  letter-spacing: 0;
+  color: #f8eb7a;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  user-select: none;
+}
+
+.session-recap__video-slide {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0d0a09;
+}
+
+.session-recap__video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.session-recap__close {
+  position: absolute;
+  /* White disc — measured from Figma photo exports (top:51 right:18 size:44) */
+  top: 51px;
+  right: 18px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: #fcfcfc;
+  color: #340616;
+  cursor: pointer;
+}
+
+.session-recap__close img,
+.session-recap__close svg {
+  display: block;
+  width: 32px;
+  height: 32px;
+}
+
+/* Figma Page Control (Horizontal) 286:4775 — x:123 y:676 w:144 h:24 */
+.session-recap__dots {
+  position: absolute;
+  left: 123px;
+  top: 676px;
+  z-index: 2;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 144px;
+  height: 24px;
+  padding: 0 12px;
+  border-radius: 12px;
+  background: #f9fafb;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  transform: none;
+}
+
+.session-recap__dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: #ffc8af;
+  cursor: pointer;
+  transition:
+    width 0.22s cubic-bezier(0.32, 0.72, 0, 1),
+    height 0.22s cubic-bezier(0.32, 0.72, 0, 1),
+    background-color 0.22s ease;
+}
+
+.session-recap__dot.is-active {
+  width: 8px;
+  height: 8px;
+  background: #ff905f;
+}
+
+/* Share CTA — Figma 338:8371 inside footer 338:8296 (y:727+10) */
+.session-recap__share {
+  position: absolute;
+  left: 80px;
+  top: 737px;
+  z-index: 1;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  width: 230px;
+  height: 56px;
+  margin: 0;
+  padding: 16px 24px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--orange);
+  color: #fcfcfc;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transform: none;
+  transition: none;
+}
+
+.session-recap__share:hover,
+.session-recap__share:focus,
+.session-recap__share:focus-visible,
+.session-recap__share:active {
+  outline: none;
+  transform: none;
+  filter: none;
+  opacity: 1;
+  background: var(--orange);
+  color: #fcfcfc;
+}
+
+.session-recap__share img {
   display: block;
   flex-shrink: 0;
-  width: 19px;
-  height: 19px;
+  width: 24px;
+  height: 24px;
+}
+
+.session-recap__share span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  font-family: var(--font-ui);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 24px;
+  letter-spacing: 0;
+  color: #fcfcfc;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .session-recap,
+  .session-recap__track {
+    transition-duration: 0.01ms;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .app-home__stage,
   .app-home__scroll-extent,
-  .app-home__alert {
+  .app-home__alert,
+  .app-home__booking {
     transition-duration: 0.01ms;
   }
 }

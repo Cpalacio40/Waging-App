@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type AnimationEvent, type TransitionEvent } from 'react'
-import { Trash2 } from 'lucide-react'
+import { CheckCircle2, Trash2 } from 'lucide-react'
 import { AppTabBar } from './components/AppTabBar'
 import { IosNotification, type IosNotificationPhase } from './components/IosNotification'
 import { IosStatusBar, type StatusBarTone } from './components/IosStatusBar'
@@ -7,13 +7,20 @@ import { PhoneFrame } from './components/PhoneFrame'
 import { ScreenNavigator } from './components/ScreenNavigator'
 import { DEFAULT_CAREGIVER_ID } from './data/caregivers'
 import {
+  ACTIVITY_WALK_BONUS,
   DEFAULT_ACTIVITY,
   DEMO_ACTIVITY_LOW,
   DEMO_ACTIVITY_OK,
   DEMO_ACTIVITY_WALK_DONE,
+  clampActivity,
   isLowActivity,
   scenarioFromActivity,
 } from './data/homeScenarios'
+import {
+  loadScheduledOuting,
+  saveScheduledOuting,
+  type ScheduledOutingState,
+} from './data/scheduledOuting'
 import { SCENARIO_HOLD_MS } from './hooks/useHeldScenario'
 import { clearSavedAddress, loadSavedAddress, subscribeAddressChange } from './data/savedAddress'
 import {
@@ -32,6 +39,7 @@ import {
 import { CaregiverIntroScreen } from './screens/CaregiverIntroScreen'
 import { CaregiverSearchScreen } from './screens/CaregiverSearchScreen'
 import { IosHomeScreen } from './screens/IosHomeScreen'
+import { SessionRecapScreen } from './screens/SessionRecapScreen'
 import { SplashScreen } from './screens/SplashScreen'
 import './App.css'
 import './screens/screens.css'
@@ -156,12 +164,41 @@ function App() {
   const [homeAlertDismissed, setHomeAlertDismissed] = useState(false)
   /** “Yo me ocupo” — alert gone for this low-activity episode (no bell). */
   const [homeAlertResolved, setHomeAlertResolved] = useState(false)
+  /** Scheduled booking banner on home (after Accept). */
+  const [homeBooking, setHomeBooking] = useState<BookingSuccessDetails | null>(
+    () => loadScheduledOuting().booking,
+  )
+  /** Collapsed = compact strip (Figma 349:7465); expanded = full card (349:7708). Calendar badge stays while booking is active. */
+  const [homeBookingCollapsed, setHomeBookingCollapsed] = useState(false)
+  /** Caregiver name for the post-walk “Sesión terminada” card. */
+  const [walkDoneCaregiver, setWalkDoneCaregiver] = useState<string | null>(
+    () => loadScheduledOuting().sessionCaregiverName,
+  )
+  /** Home shows the orange “Sesión terminada” card (Figma 286:3231). */
+  const [sessionDone, setSessionDone] = useState(() => {
+    const saved = loadScheduledOuting()
+    return saved.sessionDone && !saved.sessionCardDismissed
+  })
+  const [sessionCardDismissed, setSessionCardDismissed] = useState(
+    () => loadScheduledOuting().sessionCardDismissed,
+  )
+  const [sessionRecapOpen, setSessionRecapOpen] = useState(false)
   const layerAnimRef = useRef<LayerAnim>(null)
   const bannerTimerRef = useRef<number | null>(null)
   const pendingStackRef = useRef<AppViewId[] | null>(null)
   layerAnimRef.current = layerAnim
 
   useEffect(() => subscribeAddressChange(() => setHasSavedAddress(Boolean(loadSavedAddress()))), [])
+
+  useEffect(() => {
+    const next: ScheduledOutingState = {
+      booking: homeBooking,
+      sessionDone: sessionDone || sessionCardDismissed,
+      sessionCaregiverName: walkDoneCaregiver,
+      sessionCardDismissed,
+    }
+    saveScheduledOuting(next)
+  }, [homeBooking, sessionDone, sessionCardDismissed, walkDoneCaregiver])
 
   const scenario = scenarioFromActivity(activity)
   const appOpen = isInApp(screen)
@@ -251,6 +288,15 @@ function App() {
   const finishBookingToHome = useCallback((details: BookingSuccessDetails) => {
     // Cover stays on top while we snap the stack to home, then fades out (fuaaa).
     // Activity points stay as they were — booking does not reset the collar.
+    // Scheduling a caregiver resolves the inactivity alert and shows a booking banner.
+    setHomeAlertResolved(true)
+    setHomeAlertDismissed(false)
+    setHomeBooking(details)
+    setHomeBookingCollapsed(false)
+    setSessionDone(false)
+    setSessionCardDismissed(false)
+    setWalkDoneCaregiver(null)
+    setSessionRecapOpen(false)
     setBookingExit(details)
     setBookingExitSnap(true)
     setBookingExitVisible(true)
@@ -271,6 +317,45 @@ function App() {
   const onBookingExitFadeEnd = useCallback(() => {
     setBookingExit(null)
     setBookingExitSnap(false)
+  }, [])
+
+  const toggleHomeBooking = useCallback(() => {
+    if (!homeBooking) return
+    setHomeBookingCollapsed((collapsed) => !collapsed)
+  }, [homeBooking])
+
+  const expandHomeBooking = useCallback(() => {
+    if (!homeBooking) return
+    setHomeBookingCollapsed(false)
+  }, [homeBooking])
+
+  /** Demo control: finish outing → “Sesión terminada” home card + recap (Figma 3:16). */
+  const completeActiveOuting = useCallback(() => {
+    if (!homeBooking) return
+    setWalkDoneCaregiver(homeBooking.caregiverName)
+    setHomeBooking(null)
+    setHomeBookingCollapsed(false)
+    setHomeAlertResolved(true)
+    setHomeAlertDismissed(false)
+    setSessionCardDismissed(false)
+    setSessionDone(true)
+    setSessionRecapOpen(false)
+    setActivity((current) => clampActivity(current + ACTIVITY_WALK_BONUS))
+    setScreen('app-home')
+  }, [homeBooking])
+
+  const dismissSessionDoneCard = useCallback(() => {
+    setSessionDone(false)
+    setSessionCardDismissed(true)
+    setSessionRecapOpen(false)
+  }, [])
+
+  const openSessionRecap = useCallback(() => {
+    setSessionRecapOpen(true)
+  }, [])
+
+  const closeSessionRecap = useCallback(() => {
+    setSessionRecapOpen(false)
   }, [])
 
   const selectScreen = useCallback(
@@ -298,10 +383,19 @@ function App() {
     (item: NavItem) => {
       if (item.activity != null) {
         setActivity(item.activity)
+        const walkDone = item.activity === DEMO_ACTIVITY_WALK_DONE
+        setSessionDone(walkDone)
+        setSessionCardDismissed(false)
         setHomeAlertDismissed(false)
-        setHomeAlertResolved(false)
+        setHomeAlertResolved(walkDone)
+        if (walkDone) {
+          setHomeBooking(null)
+          setWalkDoneCaregiver((current) => current ?? 'María Camila Rodríguez')
+        }
       } else if (item.scenario) {
         setActivity(item.scenario === 'attention' ? DEMO_ACTIVITY_LOW : DEMO_ACTIVITY_OK)
+        setSessionDone(false)
+        setSessionCardDismissed(false)
         // Demo jump to ≤30 shows a fresh alert; jump to normal clears notification state.
         setHomeAlertDismissed(false)
         setHomeAlertResolved(false)
@@ -321,6 +415,7 @@ function App() {
   const toggleActivityLevel = useCallback(() => {
     setActivity((current) => {
       const next = isLowActivity(current) ? DEMO_ACTIVITY_OK : DEMO_ACTIVITY_LOW
+      setSessionDone(false)
       setHomeAlertDismissed(false)
       setHomeAlertResolved(false)
       return next
@@ -448,12 +543,19 @@ function App() {
                       <AppHomeScreen
                         scenario={scenario}
                         activity={activity}
-                        sessionDone={activity === DEMO_ACTIVITY_WALK_DONE}
+                        sessionDone={sessionDone}
+                        sessionCaregiverName={walkDoneCaregiver ?? undefined}
+                        onOpenSessionRecap={openSessionRecap}
+                        onDismissSessionDone={dismissSessionDoneCard}
                         alertDismissed={homeAlertDismissed}
                         alertResolved={homeAlertResolved}
                         onMinimizeAlert={minimizeHomeAlert}
                         onResolveAlert={resolveHomeAlert}
                         onRestoreAlert={restoreHomeAlert}
+                        booking={homeBooking}
+                        bookingCollapsed={homeBookingCollapsed}
+                        onToggleBooking={toggleHomeBooking}
+                        onExpandBooking={expandHomeBooking}
                         onAgendar={() => {
                           if (loadSavedAddress()) {
                             setSearchBackTo('app-home')
@@ -523,6 +625,11 @@ function App() {
                       }}
                     />
                   ) : null}
+                  <SessionRecapScreen
+                    open={sessionRecapOpen}
+                    onClose={closeSessionRecap}
+                    caregiverName={walkDoneCaregiver ?? undefined}
+                  />
                 </div>
                 <div
                   className={`app-pane app-pane--splash${screen === 'splash' ? ' is-visible' : ''}`}
@@ -574,6 +681,20 @@ function App() {
                   ? `Cambiar a ${DEMO_ACTIVITY_OK} (día normal)`
                   : `Bajar a ${DEMO_ACTIVITY_LOW} (sale la alerta)`}
               </span>
+            </button>
+            <button
+              type="button"
+              className={`scenario-toggle scenario-toggle--with-icon${homeBooking ? ' is-active' : ''}`}
+              disabled={!homeBooking}
+              onClick={completeActiveOuting}
+            >
+              <span className="scenario-toggle__copy">
+                <span className="scenario-toggle__label">Salida terminada</span>
+                <span className="scenario-toggle__hint">
+                  {homeBooking ? 'Sesión terminada · ver resumen' : 'Agenda una cita antes'}
+                </span>
+              </span>
+              <CheckCircle2 className="scenario-toggle__icon" size={18} strokeWidth={1.75} aria-hidden="true" />
             </button>
             <button type="button" className={`scenario-toggle scenario-toggle--with-icon${hasSavedAddress ? ' is-active' : ''}`} onClick={resetAddressCache}>
               <span className="scenario-toggle__copy">

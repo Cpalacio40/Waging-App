@@ -171,7 +171,8 @@ function AppHomeView({
   const doneCaregiver = shortCaregiverName(sessionCaregiverName ?? SESSION_CAREGIVER_NAME)
   const bookingName = booking ? shortCaregiverName(booking.caregiverName) : ''
   const dragScroll = useDragScroll({
-    enabled: layoutOpen || sessionDone,
+    /** Rest card is sticky over the lower stage — always allow scroll to reveal copy. */
+    enabled: true,
     ignoreSelector: 'button, a, input, textarea, [role="button"]',
   })
   const { resetScroll } = dragScroll
@@ -570,10 +571,89 @@ function AppHomeView({
               </button>
             </section>
           </div>
+
+          {/* Rest card — Figma 350:8293; below home copy in the scroll flow (y=731). */}
+          <section className="app-home__rest" aria-label="Descanso">
+            <div className="app-home__rest-header">
+              <div className="app-home__rest-identity">
+                <div className="app-home__rest-icon" aria-hidden="true">
+                  <img
+                    src={inicioAsset('icon-moon-rest.svg')}
+                    alt=""
+                    width={22}
+                    height={22}
+                    draggable={false}
+                  />
+                </div>
+                <div className="app-home__rest-title-block">
+                  <p className="app-home__rest-title">Descanso</p>
+                  <span className="app-home__rest-badge">
+                    <img
+                      src={inicioAsset('icon-star-optimo.svg')}
+                      alt=""
+                      width={16}
+                      height={16}
+                      draggable={false}
+                    />
+                    <span>Optimo</span>
+                  </span>
+                </div>
+              </div>
+              <img
+                className="app-home__rest-chevron"
+                src={inicioAsset('icon-chevron-right-white.svg')}
+                alt=""
+                width={24}
+                height={24}
+                draggable={false}
+                aria-hidden="true"
+              />
+            </div>
+
+            <div className="app-home__rest-score">
+              <p className="app-home__rest-value">{data.rest}</p>
+              <p className="app-home__rest-summary">Durmió bien casi toda la noche</p>
+            </div>
+
+            <div className="app-home__rest-timeline">
+              <img
+                className="app-home__rest-bar"
+                src={inicioAsset('rest-sleep-bar.svg')}
+                alt=""
+                draggable={false}
+                aria-hidden="true"
+              />
+              <div className="app-home__rest-times">
+                <span>11:03 pm</span>
+                <span>6:30 am</span>
+              </div>
+            </div>
+
+            <div className="app-home__rest-meta">
+              <div className="app-home__rest-meta-item">
+                <img
+                  src={inicioAsset('icon-cloud-moon.svg')}
+                  alt=""
+                  width={16}
+                  height={16}
+                  draggable={false}
+                />
+                <span>7h 27m</span>
+              </div>
+              <div className="app-home__rest-meta-item">
+                <img
+                  src={inicioAsset('icon-heart-rest.svg')}
+                  alt=""
+                  width={16}
+                  height={16}
+                  draggable={false}
+                />
+                <span>82 bpm</span>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
-
-      <div className="app-home__bottom-fade" aria-hidden="true" />
     </div>
   )
 }

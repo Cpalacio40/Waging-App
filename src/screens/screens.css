@@ -432,7 +432,15 @@
 }
 
 /* ?? App home (Figma 48:3198 ok / 67:8685 attention) ?? */
-.app-home-stack,
+.app-home-stack {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  /* Figma 349:7911 frame fill — shows below the dog photo / rest card */
+  background: #f3f3f3;
+  overflow: hidden;
+}
+
 .app-screen-stack {
   position: relative;
   width: 100%;
@@ -501,7 +509,11 @@
 
 .app-home {
   --alert-shift: 0px;
-  background: #0d0a09;
+  /* Scroll room to bring the rest card fully above the tab bar (Figma frame 1152 − 844). */
+  --rest-scroll: 308px;
+  --rest-card-h: 299px;
+  /* Figma 349:7911 — light grey below the photo / blue card */
+  background: #f3f3f3;
   color: #fcfcfc;
   isolation: isolate;
   overflow: hidden;
@@ -511,6 +523,8 @@
   position: absolute;
   inset: 0;
   overflow: hidden;
+  cursor: grab;
+  touch-action: none;
 }
 
 .app-home.is-alert-open {
@@ -529,18 +543,7 @@
   --alert-shift: 168px;
 }
 
-.app-home.is-alert-open .app-home__scroller,
-.app-home.is-booking-open .app-home__scroller,
-.app-home.is-booking-collapsed .app-home__scroller,
-.app-home.is-session-done .app-home__scroller {
-  cursor: grab;
-  touch-action: none;
-}
-
-.app-home.is-alert-open .app-home__scroller.is-dragging,
-.app-home.is-booking-open .app-home__scroller.is-dragging,
-.app-home.is-booking-collapsed .app-home__scroller.is-dragging,
-.app-home.is-session-done .app-home__scroller.is-dragging {
+.app-home__scroller.is-dragging {
   cursor: grabbing;
   user-select: none;
 }
@@ -552,22 +555,14 @@
   will-change: transform;
 }
 
-/* Tall spacer so transform-scroll knows content height (absolute UI doesn?t contribute). */
+/* Tall spacer so transform-scroll knows content height (absolute UI doesn’t contribute). */
 .app-home__scroll-extent {
   display: block;
   width: 1px;
-  height: var(--phone-h);
+  height: calc(var(--phone-h) + var(--alert-shift) + var(--rest-scroll));
   pointer-events: none;
   visibility: hidden;
   transition: height 0.45s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-.app-home.is-alert-open .app-home__scroll-extent,
-.app-home.is-booking-open .app-home__scroll-extent,
-.app-home.is-booking-collapsed .app-home__scroll-extent,
-.app-home.is-session-done .app-home__scroll-extent {
-  /* Match stage bottom (top: alert-shift + height phone-h) so max scroll = alert-shift */
-  height: calc(var(--phone-h) + var(--alert-shift));
 }
 
 .app-home__bg {
@@ -1195,7 +1190,8 @@
   .app-home__stage,
   .app-home__scroll-extent,
   .app-home__alert,
-  .app-home__booking {
+  .app-home__booking,
+  .app-home__rest {
     transition-duration: 0.01ms;
   }
 }
@@ -1755,21 +1751,196 @@
   white-space: nowrap;
 }
 
-.app-home__bottom-fade {
+/* Rest card — Figma 350:8293; below home copy in the scroll flow (y=731). */
+.app-home__rest {
   position: absolute;
   left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 3;
-  height: 120px;
-  pointer-events: none;
-  background: linear-gradient(
-    to top,
-    #0d0a09 0%,
-    #0d0a09 32%,
-    rgba(13, 10, 9, 0.85) 52%,
-    rgba(13, 10, 9, 0) 100%
-  );
+  top: calc(731px + var(--alert-shift));
+  z-index: 2;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 390px;
+  height: var(--rest-card-h);
+  padding: 28px;
+  border-radius: 28px;
+  background: linear-gradient(-62.1deg, #53aecf 13.47%, #6dd5f3 108.06%);
+  color: #fcfcfc;
+  pointer-events: auto;
+  transition: top 0.45s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.app-home__rest-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.app-home__rest-identity {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: flex-start;
+  gap: 9px;
+  min-width: 0;
+}
+
+.app-home__rest-icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 47px;
+  height: 47px;
+  border-radius: 999px;
+  background: rgba(252, 252, 252, 0.2);
+}
+
+.app-home__rest-icon img {
+  display: block;
+  width: 22px;
+  height: 22px;
+}
+
+.app-home__rest-title-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.app-home__rest-title {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 20px;
+  color: #ffffff;
+}
+
+.app-home__rest-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #9febc2;
+  box-sizing: border-box;
+}
+
+.app-home__rest-badge img {
+  display: block;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.app-home__rest-badge span {
+  padding: 0 6px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  color: #1ba65c;
+  font-feature-settings: 'lnum' 1, 'pnum' 1;
+  white-space: nowrap;
+}
+
+.app-home__rest-chevron {
+  display: block;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.app-home__rest-score {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.app-home__rest-value {
+  margin: 0;
+  height: 62px;
+  display: flex;
+  align-items: center;
+  font-family: var(--font-ui);
+  font-size: 54px;
+  font-weight: 600;
+  line-height: 32px;
+  color: #fcfcfc;
+  font-feature-settings: 'lnum' 1, 'pnum' 1;
+}
+
+.app-home__rest-summary {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 28px;
+  color: #fcfcfc;
+}
+
+.app-home__rest-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.app-home__rest-bar {
+  display: block;
+  width: 100%;
+  height: 8px;
+  object-fit: fill;
+}
+
+.app-home__rest-times {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  color: #fcfcfc;
+  font-feature-settings: 'lnum' 1, 'pnum' 1;
+}
+
+.app-home__rest-meta {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.app-home__rest-meta-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.app-home__rest-meta-item img {
+  display: block;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.app-home__rest-meta-item span {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  color: #fcfcfc;
+  font-feature-settings: 'lnum' 1, 'pnum' 1;
+  white-space: nowrap;
 }
 
 .app-home__tabbar {

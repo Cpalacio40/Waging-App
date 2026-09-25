@@ -17,18 +17,25 @@
   top: 12px;
   width: 54px;
   height: 21px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
   border-radius: 20px;
 }
 
-.ios-status-bar__time img {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 33px;
-  height: 15px;
-  transform: translate(calc(-50% + 0.5px), -50%);
-  display: block;
+.ios-status-bar__time-text {
+  font-family: var(--font-ios);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  line-height: 1;
+  color: #000;
+  font-variant-numeric: tabular-nums;
+}
+
+.ios-status-bar--dark .ios-status-bar__time-text {
+  color: #fff;
 }
 
 .ios-status-bar__icons {

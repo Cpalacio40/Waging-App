@@ -1,5 +1,8 @@
 /** Deterministic caregiver availability for the booking calendar mock. */
 
+/** Minimum notice before a slot can be booked (covers past hours + lead time). */
+export const MIN_BOOKING_LEAD_MINUTES = 60
+
 export type ShiftType = 'early' | 'standard' | 'late'
 
 export type CaregiverSchedule = {
@@ -217,10 +220,39 @@ function emptyDay(date: Date): DayAvailability {
   }
 }
 
+function slotStartDate(date: Date, time: string): Date {
+  const [hourPart, minutePart = '0'] = time.split(':')
+  return new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    Number(hourPart) || 0,
+    Number(minutePart) || 0,
+    0,
+    0,
+  )
+}
+
+/**
+ * A slot is bookable only when it starts at least {@link MIN_BOOKING_LEAD_MINUTES}
+ * after `now` — past hours and same-day slots with insufficient lead time are excluded.
+ */
+export function isSlotBookableAt(
+  date: Date,
+  time: string,
+  now: Date = new Date(),
+  leadMinutes: number = MIN_BOOKING_LEAD_MINUTES,
+): boolean {
+  const slotStart = slotStartDate(startOfDay(date), time)
+  const earliest = new Date(now.getTime() + leadMinutes * 60_000)
+  return slotStart.getTime() >= earliest.getTime()
+}
+
 export function getDayAvailability(
   caregiverId: string,
   date: Date,
   today: Date = startOfDay(new Date()),
+  now: Date = new Date(),
 ): DayAvailability {
   const caregiver = getSchedule(caregiverId)
   const normalized = startOfDay(date)
@@ -258,6 +290,12 @@ export function getDayAvailability(
     }))
   }
 
+  // Drop past / too-soon slots so the day can flip to unavailable when none remain.
+  allSlots = allSlots.map((slot) => ({
+    ...slot,
+    available: slot.available && isSlotBookableAt(normalized, slot.time, now),
+  }))
+
   const availableSlots = allSlots.filter((slot) => slot.available).map((slot) => slot.time)
 
   return {
@@ -274,7 +312,8 @@ export function hasAvailability(
   caregiverId: string,
   date: Date,
   today: Date = startOfDay(new Date()),
+  now: Date = new Date(),
 ): boolean {
-  const day = getDayAvailability(caregiverId, date, today)
+  const day = getDayAvailability(caregiverId, date, today, now)
   return day.isWorkingDay && !day.isFullyBooked
 }

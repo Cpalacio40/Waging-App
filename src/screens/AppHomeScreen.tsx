@@ -108,6 +108,8 @@ type AppHomeScreenProps = {
   onAgendar?: () => void
   /** Open the Descanso detail screen (bubble or rest card). */
   onOpenRestDetail?: () => void
+  /** Open the Actividad detail screen (bubble or “Leer más”). */
+  onOpenActivityDetail?: () => void
   /** Alert minimized to the bell (persists across leaving the app). */
   alertDismissed?: boolean
   /** “Yo me ocupo” — no card, no bell until activity rises again. */
@@ -132,6 +134,7 @@ function AppHomeView({
   onDismissSessionDone,
   onAgendar,
   onOpenRestDetail,
+  onOpenActivityDetail,
   alertOpen,
   alertResolved = false,
   onCloseAlert,
@@ -150,6 +153,7 @@ function AppHomeView({
   onDismissSessionDone?: () => void
   onAgendar?: () => void
   onOpenRestDetail?: () => void
+  onOpenActivityDetail?: () => void
   alertOpen: boolean
   /** Owner chose “Yo me ocupo” — no card, no bell until activity rises again. */
   alertResolved?: boolean
@@ -322,7 +326,12 @@ function AppHomeView({
               <p>Todo</p>
             </div>
 
-            <div className="app-home__metric">
+            <button
+              type="button"
+              className="app-home__metric app-home__metric--button"
+              aria-label={`Actividad ${activity} — ver detalle`}
+              onClick={onOpenActivityDetail}
+            >
               <div className="app-home__metric-icon">
                 <img
                   src={inicioAsset('metric-ring.svg')}
@@ -337,7 +346,7 @@ function AppHomeView({
                 <span className="app-home__metric-value">{activity}</span>
               </div>
               <p>Actividad</p>
-            </div>
+            </button>
 
             <button
               type="button"
@@ -577,7 +586,12 @@ function AppHomeView({
                 <h2 className="app-home__headline">{data.headline}</h2>
                 <p className="app-home__body">{data.body}</p>
               </div>
-              <button type="button" className="app-home__cta">
+              <button
+                type="button"
+                className="app-home__cta"
+                aria-label="Leer más sobre la actividad"
+                onClick={onOpenActivityDetail}
+              >
                 <span>Leer más</span>
               </button>
             </section>
@@ -684,6 +698,7 @@ export function AppHomeScreen({
   onDismissSessionDone,
   onAgendar,
   onOpenRestDetail,
+  onOpenActivityDetail,
   alertDismissed = false,
   alertResolved = false,
   onMinimizeAlert,
@@ -714,6 +729,7 @@ export function AppHomeScreen({
           alertOpen={false}
           onAgendar={onAgendar}
           onOpenRestDetail={onOpenRestDetail}
+          onOpenActivityDetail={onOpenActivityDetail}
           booking={booking}
           bookingCollapsed={bookingCollapsed}
           onToggleBooking={onToggleBooking}
@@ -736,6 +752,7 @@ export function AppHomeScreen({
           alertResolved={alertResolved}
           onAgendar={onAgendar}
           onOpenRestDetail={onOpenRestDetail}
+          onOpenActivityDetail={onOpenActivityDetail}
           onCloseAlert={onMinimizeAlert}
           onOwnerHandles={onResolveAlert}
           onBellClick={onRestoreAlert}

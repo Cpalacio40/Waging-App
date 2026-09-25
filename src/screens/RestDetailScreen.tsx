@@ -127,8 +127,6 @@ export function RestDetailScreen({ open, restScore, onClose }: RestDetailScreenP
             <p>{data.resumen}</p>
           </section>
 
-          <div className="rest-detail__divider" aria-hidden="true" />
-
           <div className="rest-detail__lower">
             <section className="rest-detail__events">
               <h2>Antes y durante el descanso</h2>

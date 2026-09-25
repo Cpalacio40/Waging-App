@@ -42,6 +42,7 @@ import { CaregiverSearchScreen } from './screens/CaregiverSearchScreen'
 import { IosHomeScreen } from './screens/IosHomeScreen'
 import { SessionRecapScreen } from './screens/SessionRecapScreen'
 import { RestDetailScreen } from './screens/RestDetailScreen'
+import { ActivityDetailScreen } from './screens/ActivityDetailScreen'
 import { SplashScreen } from './screens/SplashScreen'
 import './App.css'
 import './screens/screens.css'
@@ -73,11 +74,16 @@ function isInApp(id: ScreenId) {
 /** White icons on SpringBoard / dark screens / Apple Pay overlay; black on light screens. */
 function statusBarTone(
   id: ScreenId,
-  opts: { hasBookingExit: boolean; applePayActive: boolean; restDetailOpen?: boolean },
+  opts: {
+    hasBookingExit: boolean
+    applePayActive: boolean
+    restDetailOpen?: boolean
+    activityDetailOpen?: boolean
+  },
 ): StatusBarTone {
   if (opts.hasBookingExit) return 'light'
   if (opts.applePayActive || id === 'caregiver-pay') return 'dark'
-  if (opts.restDetailOpen) return 'light'
+  if (opts.restDetailOpen || opts.activityDetailOpen) return 'light'
   if (id === 'ios-home' || id === 'splash' || id === 'app-home') return 'dark'
   return 'light'
 }
@@ -187,6 +193,7 @@ function App() {
   )
   const [sessionRecapOpen, setSessionRecapOpen] = useState(false)
   const [restDetailOpen, setRestDetailOpen] = useState(false)
+  const [activityDetailOpen, setActivityDetailOpen] = useState(false)
   const layerAnimRef = useRef<LayerAnim>(null)
   const bannerTimerRef = useRef<number | null>(null)
   const pendingStackRef = useRef<AppViewId[] | null>(null)
@@ -217,6 +224,7 @@ function App() {
       : stackTop
   const showAppTabBar =
     !restDetailOpen &&
+    !activityDetailOpen &&
     !sessionRecapOpen &&
     (screen === 'app-home' ||
       (screen === 'caregiver-search' &&
@@ -304,6 +312,7 @@ function App() {
     setWalkDoneCaregiver(null)
     setSessionRecapOpen(false)
     setRestDetailOpen(false)
+    setActivityDetailOpen(false)
     setBookingExit(details)
     setBookingExitSnap(true)
     setBookingExitVisible(true)
@@ -348,6 +357,7 @@ function App() {
     setSessionDone(true)
     setSessionRecapOpen(false)
     setRestDetailOpen(false)
+    setActivityDetailOpen(false)
     setActivity((current) => clampActivity(current + ACTIVITY_WALK_BONUS))
     setScreen('app-home')
   }, [homeBooking])
@@ -361,6 +371,7 @@ function App() {
   const openSessionRecap = useCallback(() => {
     setSessionRecapOpen(true)
     setRestDetailOpen(false)
+    setActivityDetailOpen(false)
   }, [])
 
   const closeSessionRecap = useCallback(() => {
@@ -371,6 +382,7 @@ function App() {
 
   const openRestDetail = useCallback(() => {
     setRestDetailOpen(true)
+    setActivityDetailOpen(false)
     setSessionRecapOpen(false)
   }, [])
 
@@ -378,10 +390,21 @@ function App() {
     setRestDetailOpen(false)
   }, [])
 
+  const openActivityDetail = useCallback(() => {
+    setActivityDetailOpen(true)
+    setRestDetailOpen(false)
+    setSessionRecapOpen(false)
+  }, [])
+
+  const closeActivityDetail = useCallback(() => {
+    setActivityDetailOpen(false)
+  }, [])
+
   const selectScreen = useCallback(
     (id: ScreenId) => {
       if (id === screen && layerAnim !== 'leave') return
       setRestDetailOpen(false)
+      setActivityDetailOpen(false)
 
       if (id === 'ios-home') {
         if (appOpen) closeApp()
@@ -519,6 +542,7 @@ function App() {
       }
       if (layerAnim === 'leave') {
         setRestDetailOpen(false)
+        setActivityDetailOpen(false)
         setSessionRecapOpen(false)
         setScreen('ios-home')
         setLayerAnim(null)
@@ -571,6 +595,7 @@ function App() {
                         onOpenSessionRecap={openSessionRecap}
                         onDismissSessionDone={dismissSessionDoneCard}
                         onOpenRestDetail={openRestDetail}
+                        onOpenActivityDetail={openActivityDetail}
                         alertDismissed={homeAlertDismissed}
                         alertResolved={homeAlertResolved}
                         onMinimizeAlert={minimizeHomeAlert}
@@ -659,6 +684,11 @@ function App() {
                     restScore={HOME_SCENARIOS[scenario].rest}
                     onClose={closeRestDetail}
                   />
+                  <ActivityDetailScreen
+                    open={activityDetailOpen}
+                    activityScore={activity}
+                    onClose={closeActivityDetail}
+                  />
                 </div>
                 <div
                   className={`app-pane app-pane--splash${screen === 'splash' ? ' is-visible' : ''}`}
@@ -688,6 +718,7 @@ function App() {
                 hasBookingExit: Boolean(bookingExit),
                 applePayActive,
                 restDetailOpen,
+                activityDetailOpen,
               })}
             />
 

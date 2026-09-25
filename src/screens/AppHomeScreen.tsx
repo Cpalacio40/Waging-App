@@ -2,6 +2,7 @@ import { useEffect, useState, type CSSProperties, type TransitionEvent } from 'r
 import { ChevronDown, X } from 'lucide-react'
 import { CAREGIVERS, DEFAULT_CAREGIVER_ID } from '../data/caregivers'
 import { HOME_SCENARIOS, type HomeScenarioId } from '../data/homeScenarios'
+import { restDetailForScore } from '../data/restDetail'
 import { useDragScroll } from '../hooks/useDragScroll'
 import { useHeldScenario } from '../hooks/useHeldScenario'
 import { assetUrl } from '../utils/assetUrl'
@@ -105,6 +106,8 @@ type AppHomeScreenProps = {
   onOpenSessionRecap?: () => void
   onDismissSessionDone?: () => void
   onAgendar?: () => void
+  /** Open the Descanso detail screen (bubble or rest card). */
+  onOpenRestDetail?: () => void
   /** Alert minimized to the bell (persists across leaving the app). */
   alertDismissed?: boolean
   /** “Yo me ocupo” — no card, no bell until activity rises again. */
@@ -128,6 +131,7 @@ function AppHomeView({
   onOpenSessionRecap,
   onDismissSessionDone,
   onAgendar,
+  onOpenRestDetail,
   alertOpen,
   alertResolved = false,
   onCloseAlert,
@@ -145,6 +149,7 @@ function AppHomeView({
   onOpenSessionRecap?: () => void
   onDismissSessionDone?: () => void
   onAgendar?: () => void
+  onOpenRestDetail?: () => void
   alertOpen: boolean
   /** Owner chose “Yo me ocupo” — no card, no bell until activity rises again. */
   alertResolved?: boolean
@@ -158,6 +163,7 @@ function AppHomeView({
 }) {
   const data = HOME_SCENARIOS[scenario]
   const activity = activityProp ?? data.activity
+  const rest = restDetailForScore(data.rest)
   const needsAttention = scenario === 'attention'
   const showBellBadge = needsAttention && !alertOpen && !alertResolved
   const attentionCardOpen = alertOpen && !alertResolved
@@ -333,7 +339,12 @@ function AppHomeView({
               <p>Actividad</p>
             </div>
 
-            <div className="app-home__metric">
+            <button
+              type="button"
+              className="app-home__metric app-home__metric--button"
+              aria-label={`Descanso ${data.rest} — ver detalle`}
+              onClick={onOpenRestDetail}
+            >
               <div className="app-home__metric-icon">
                 <img
                   src={inicioAsset('metric-ring.svg')}
@@ -353,7 +364,7 @@ function AppHomeView({
                 <span className="app-home__metric-value">{data.rest}</span>
               </div>
               <p>Descanso</p>
-            </div>
+            </button>
           </div>
 
           {alertMounted ? (
@@ -573,7 +584,12 @@ function AppHomeView({
           </div>
 
           {/* Rest card — Figma 350:8293; below home copy in the scroll flow (y=731). */}
-          <section className="app-home__rest" aria-label="Descanso">
+          <button
+            type="button"
+            className="app-home__rest"
+            aria-label={`Descanso ${rest.score} — ver detalle`}
+            onClick={onOpenRestDetail}
+          >
             <div className="app-home__rest-header">
               <div className="app-home__rest-identity">
                 <div className="app-home__rest-icon" aria-hidden="true">
@@ -587,7 +603,7 @@ function AppHomeView({
                 </div>
                 <div className="app-home__rest-title-block">
                   <p className="app-home__rest-title">Descanso</p>
-                  <span className="app-home__rest-badge">
+                  <span className={`app-home__rest-badge${rest.badge !== 'Optimo' ? ' is-muted' : ''}`}>
                     <img
                       src={inicioAsset('icon-star-optimo.svg')}
                       alt=""
@@ -595,7 +611,7 @@ function AppHomeView({
                       height={16}
                       draggable={false}
                     />
-                    <span>Optimo</span>
+                    <span>{rest.badge}</span>
                   </span>
                 </div>
               </div>
@@ -611,8 +627,8 @@ function AppHomeView({
             </div>
 
             <div className="app-home__rest-score">
-              <p className="app-home__rest-value">{data.rest}</p>
-              <p className="app-home__rest-summary">Durmió bien casi toda la noche</p>
+              <p className="app-home__rest-value">{rest.score}</p>
+              <p className="app-home__rest-summary">{rest.summaryLine}</p>
             </div>
 
             <div className="app-home__rest-timeline">
@@ -624,8 +640,8 @@ function AppHomeView({
                 aria-hidden="true"
               />
               <div className="app-home__rest-times">
-                <span>11:03 pm</span>
-                <span>6:30 am</span>
+                <span>{rest.sleepStart}</span>
+                <span>{rest.sleepEnd}</span>
               </div>
             </div>
 
@@ -638,7 +654,7 @@ function AppHomeView({
                   height={16}
                   draggable={false}
                 />
-                <span>7h 27m</span>
+                <span>{rest.sleepTotal}</span>
               </div>
               <div className="app-home__rest-meta-item">
                 <img
@@ -648,10 +664,10 @@ function AppHomeView({
                   height={16}
                   draggable={false}
                 />
-                <span>82 bpm</span>
+                <span>{rest.homeBpm}</span>
               </div>
             </div>
-          </section>
+          </button>
         </div>
       </div>
     </div>
@@ -667,6 +683,7 @@ export function AppHomeScreen({
   onOpenSessionRecap,
   onDismissSessionDone,
   onAgendar,
+  onOpenRestDetail,
   alertDismissed = false,
   alertResolved = false,
   onMinimizeAlert,
@@ -696,6 +713,7 @@ export function AppHomeScreen({
           onDismissSessionDone={onDismissSessionDone}
           alertOpen={false}
           onAgendar={onAgendar}
+          onOpenRestDetail={onOpenRestDetail}
           booking={booking}
           bookingCollapsed={bookingCollapsed}
           onToggleBooking={onToggleBooking}
@@ -717,6 +735,7 @@ export function AppHomeScreen({
           alertOpen={alertOpen}
           alertResolved={alertResolved}
           onAgendar={onAgendar}
+          onOpenRestDetail={onOpenRestDetail}
           onCloseAlert={onMinimizeAlert}
           onOwnerHandles={onResolveAlert}
           onBellClick={onRestoreAlert}

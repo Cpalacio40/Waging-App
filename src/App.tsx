@@ -448,6 +448,19 @@ function App() {
       if (item.searchPhase) setSearchPhase(item.searchPhase)
       if (item.caregiverId) setCaregiverId(item.caregiverId)
       selectScreen(item.screen)
+      if (item.activityDetail) {
+        setActivityDetailOpen(true)
+        setRestDetailOpen(false)
+        setSessionRecapOpen(false)
+      } else if (item.restDetail) {
+        setRestDetailOpen(true)
+        setActivityDetailOpen(false)
+        setSessionRecapOpen(false)
+      } else {
+        setActivityDetailOpen(false)
+        setRestDetailOpen(false)
+        setSessionRecapOpen(false)
+      }
     },
     [selectScreen],
   )
@@ -771,6 +784,8 @@ function App() {
                 activity,
                 searchPhase,
                 caregiverId,
+                activityDetailOpen,
+                restDetailOpen,
               })}
               onSelect={selectNav}
             />

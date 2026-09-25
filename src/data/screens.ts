@@ -3,6 +3,7 @@ import {
   DEMO_ACTIVITY_LOW,
   DEMO_ACTIVITY_OK,
   DEMO_ACTIVITY_WALK_DONE,
+  HOME_SCENARIOS,
   isLowActivity,
 } from './homeScenarios'
 import { CAREGIVERS } from './caregivers'
@@ -48,6 +49,10 @@ export type NavItem = {
   /** Collar activity for home demos (overrides scenario presets). */
   activity?: number
   bookingPhase?: BookingPhase
+  /** Open the Actividad detail overlay on app-home. */
+  activityDetail?: boolean
+  /** Open the Descanso detail overlay on app-home. */
+  restDetail?: boolean
 }
 
 export type NavGroup = {
@@ -166,6 +171,50 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    id: 'activity-detail',
+    label: 'Detalle · Actividad',
+    items: [
+      {
+        id: 'activity-detail-ok',
+        label: `Óptimo (${DEMO_ACTIVITY_OK})`,
+        screen: 'app-home',
+        scenario: 'ok',
+        activity: DEMO_ACTIVITY_OK,
+        activityDetail: true,
+      },
+      {
+        id: 'activity-detail-low',
+        label: `Bajo (${DEMO_ACTIVITY_LOW})`,
+        screen: 'app-home',
+        scenario: 'attention',
+        activity: DEMO_ACTIVITY_LOW,
+        activityDetail: true,
+      },
+    ],
+  },
+  {
+    id: 'rest-detail',
+    label: 'Detalle · Descanso',
+    items: [
+      {
+        id: 'rest-detail-ok',
+        label: `Óptimo (${HOME_SCENARIOS.ok.rest})`,
+        screen: 'app-home',
+        scenario: 'ok',
+        activity: DEMO_ACTIVITY_OK,
+        restDetail: true,
+      },
+      {
+        id: 'rest-detail-low',
+        label: `Bajo (${HOME_SCENARIOS.attention.rest})`,
+        screen: 'app-home',
+        scenario: 'attention',
+        activity: DEMO_ACTIVITY_LOW,
+        restDetail: true,
+      },
+    ],
+  },
+  {
     id: 'caregiver-intro',
     label: 'App · Cuidador intro',
     items: [{ id: 'caregiver-intro', label: 'Más que un paseo', screen: 'caregiver-intro' }],
@@ -226,6 +275,8 @@ type NavMatchInput = {
   activity: number
   searchPhase: SearchPhase
   caregiverId: string
+  activityDetailOpen?: boolean
+  restDetailOpen?: boolean
 }
 
 export function activeNavId({
@@ -234,9 +285,19 @@ export function activeNavId({
   activity,
   searchPhase,
   caregiverId,
+  activityDetailOpen = false,
+  restDetailOpen = false,
 }: NavMatchInput): string {
   if (screen === 'ios-home') return 'ios-home'
   if (screen === 'app-home') {
+    if (activityDetailOpen) {
+      return isLowActivity(activity) ? 'activity-detail-low' : 'activity-detail-ok'
+    }
+    if (restDetailOpen) {
+      return isLowActivity(activity) || scenario === 'attention'
+        ? 'rest-detail-low'
+        : 'rest-detail-ok'
+    }
     if (activity === DEMO_ACTIVITY_WALK_DONE) return 'app-home-walk-done'
     if (isLowActivity(activity) || scenario === 'attention') return 'app-home-alert'
     return 'app-home-ok'

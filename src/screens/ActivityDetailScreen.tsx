@@ -10,8 +10,7 @@ import { assetUrl } from '../utils/assetUrl'
 import './screens.css'
 
 const activityAsset = (name: string) => assetUrl(`app-activity/${name}`)
-const restAsset = (name: string) => assetUrl(`app-rest/${name}`)
-const inicioAsset = (name: string) => assetUrl(`app-inicio/${name}`)
+const caregiverAsset = (name: string) => assetUrl(`caregiver/${name}`)
 
 const WALK_ICON: Record<ActivityDetail['walks'][number]['icon'], string> = {
   sunrise: 'icon-sunrise.svg',
@@ -25,9 +24,12 @@ function badgeClass(badge: ActivityWalkBadge) {
   return ' is-muted'
 }
 
-function badgeStar(badge: ActivityWalkBadge) {
-  if (badge === 'Bueno') return activityAsset('icon-star-bueno.svg')
-  return inicioAsset('icon-star-optimo.svg')
+function ActivityBadge({ badge }: { badge: ActivityWalkBadge }) {
+  return (
+    <span className={`activity-detail__badge${badgeClass(badge)}`}>
+      <span>{badge}</span>
+    </span>
+  )
 }
 
 type ActivityDetailScreenProps = {
@@ -78,44 +80,33 @@ export function ActivityDetailScreen({
       aria-hidden={!shown}
       onTransitionEnd={onTransitionEnd}
     >
+      <header
+        className={`caregiver-nav activity-detail__nav${dragScroll.scrolled ? ' is-scrolled' : ''}`}
+      >
+        <button type="button" className="caregiver-back" aria-label="Volver" onClick={onClose}>
+          <img
+            src={caregiverAsset('arrow-left.svg')}
+            alt=""
+            width={32}
+            height={32}
+            draggable={false}
+          />
+        </button>
+        <h1 className="activity-detail__nav-title">Actividad</h1>
+      </header>
+
       <div
         ref={dragScroll.ref}
         className={`activity-detail__scroller${dragScroll.dragging ? ' is-dragging' : ''}`}
         {...dragScroll.scrollerProps}
       >
         <div ref={dragScroll.contentRef} className="activity-detail__content">
-          <header className="activity-detail__nav">
-            <button
-              type="button"
-              className="activity-detail__back"
-              aria-label="Volver"
-              onClick={onClose}
-            >
-              <img
-                src={restAsset('icon-chevron-left.svg')}
-                alt=""
-                width={32}
-                height={32}
-                draggable={false}
-              />
-            </button>
-            <h1 className="activity-detail__nav-title">Actividad</h1>
-            <span className="activity-detail__nav-spacer" aria-hidden="true" />
-          </header>
+          <div className="caregiver-nav-spacer" aria-hidden="true" />
 
           <div className="activity-detail__hero">
             <p className="activity-detail__score">{data.score}</p>
             <div className="activity-detail__hero-copy">
-              <span className={`activity-detail__badge${badgeClass(data.badge)}`}>
-                <img
-                  src={badgeStar(data.badge)}
-                  alt=""
-                  width={16}
-                  height={16}
-                  draggable={false}
-                />
-                <span>{data.badge}</span>
-              </span>
+              <ActivityBadge badge={data.badge} />
               <p className="activity-detail__hero-line">{data.summaryLine}</p>
             </div>
           </div>
@@ -156,16 +147,7 @@ export function ActivityDetailScreen({
                     <div className="activity-detail__walk-body">
                       <div className="activity-detail__walk-top">
                         <p className="activity-detail__walk-title">{walk.title}</p>
-                        <span className={`activity-detail__badge${badgeClass(walk.badge)}`}>
-                          <img
-                            src={badgeStar(walk.badge)}
-                            alt=""
-                            width={16}
-                            height={16}
-                            draggable={false}
-                          />
-                          <span>{walk.badge}</span>
-                        </span>
+                        <ActivityBadge badge={walk.badge} />
                       </div>
                       <p className="activity-detail__walk-detail">{walk.detail}</p>
                     </div>
@@ -187,16 +169,7 @@ export function ActivityDetailScreen({
                 </div>
                 <div className="activity-detail__chart-titles">
                   <p className="activity-detail__chart-title">Movimiento por hora</p>
-                  <span className={`activity-detail__badge${badgeClass(data.badge)}`}>
-                    <img
-                      src={badgeStar(data.badge)}
-                      alt=""
-                      width={16}
-                      height={16}
-                      draggable={false}
-                    />
-                    <span>{data.badge}</span>
-                  </span>
+                  <ActivityBadge badge={data.badge} />
                 </div>
               </div>
 

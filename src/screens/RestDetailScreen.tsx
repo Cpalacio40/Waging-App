@@ -9,6 +9,7 @@ import { assetUrl } from '../utils/assetUrl'
 import './screens.css'
 
 const restAsset = (name: string) => assetUrl(`app-rest/${name}`)
+const caregiverAsset = (name: string) => assetUrl(`caregiver/${name}`)
 const inicioAsset = (name: string) => assetUrl(`app-inicio/${name}`)
 
 const EVENT_ICON: Record<RestDetail['events'][number]['icon'], string> = {
@@ -63,30 +64,26 @@ export function RestDetailScreen({ open, restScore, onClose }: RestDetailScreenP
       aria-hidden={!shown}
       onTransitionEnd={onTransitionEnd}
     >
+      <header className={`caregiver-nav rest-detail__nav${dragScroll.scrolled ? ' is-scrolled' : ''}`}>
+        <button type="button" className="caregiver-back" aria-label="Volver" onClick={onClose}>
+          <img
+            src={caregiverAsset('arrow-left.svg')}
+            alt=""
+            width={32}
+            height={32}
+            draggable={false}
+          />
+        </button>
+        <h1 className="rest-detail__nav-title">Descanso</h1>
+      </header>
+
       <div
         ref={dragScroll.ref}
         className={`rest-detail__scroller${dragScroll.dragging ? ' is-dragging' : ''}`}
         {...dragScroll.scrollerProps}
       >
         <div ref={dragScroll.contentRef} className="rest-detail__content">
-          <header className="rest-detail__nav">
-            <button
-              type="button"
-              className="rest-detail__back"
-              aria-label="Volver"
-              onClick={onClose}
-            >
-              <img
-                src={restAsset('icon-chevron-left.svg')}
-                alt=""
-                width={32}
-                height={32}
-                draggable={false}
-              />
-            </button>
-            <h1 className="rest-detail__nav-title">Descanso</h1>
-            <span className="rest-detail__nav-spacer" aria-hidden="true" />
-          </header>
+          <div className="caregiver-nav-spacer" aria-hidden="true" />
 
           <div className="rest-detail__hero">
             <p className="rest-detail__score">{data.score}</p>

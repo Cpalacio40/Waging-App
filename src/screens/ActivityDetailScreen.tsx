@@ -216,6 +216,7 @@ export function ActivityDetailScreen({
                     {data.chartBars.map((bar, index) => (
                       <div key={index} className="activity-detail__chart-col">
                         <div className="activity-detail__chart-track">
+                          <div className="activity-detail__chart-empty" />
                           <div
                             className="activity-detail__chart-fill"
                             style={{
@@ -227,6 +228,7 @@ export function ActivityDetailScreen({
                       </div>
                     ))}
                   </div>
+                  <div className="activity-detail__chart-baseline" />
                   <div className="activity-detail__chart-times">
                     {data.chartTimes.map((time) => (
                       <span key={time}>{time}</span>

@@ -187,6 +187,7 @@ export function RestDetailScreen({ open, restScore, onClose }: RestDetailScreenP
                   {data.chartBars.map((bar, index) => (
                     <div key={index} className="rest-detail__chart-col">
                       <div className="rest-detail__chart-track">
+                        <div className="rest-detail__chart-empty" />
                         <div
                           className="rest-detail__chart-fill"
                           style={{
@@ -198,6 +199,7 @@ export function RestDetailScreen({ open, restScore, onClose }: RestDetailScreenP
                     </div>
                   ))}
                 </div>
+                <div className="rest-detail__chart-baseline" />
                 <div className="rest-detail__chart-times">
                   {data.chartTimes.map((time) => (
                     <span key={time}>{time}</span>

@@ -95,7 +95,7 @@ export function RestDetailScreen({ open, restScore, onClose }: RestDetailScreenP
             <p className="rest-detail__score">{data.score}</p>
             <div className="rest-detail__hero-copy">
               <span
-                className={`rest-detail__badge${data.badge !== 'Optimo' ? ' is-muted' : ''}`}
+                className={`rest-detail__badge${data.badge !== 'Óptimo' ? ' is-muted' : ''}`}
               >
                 <span>{data.badge}</span>
               </span>
@@ -110,7 +110,7 @@ export function RestDetailScreen({ open, restScore, onClose }: RestDetailScreenP
             </div>
             <div className="rest-detail__chip">
               <p className="rest-detail__chip-value">{data.detailBpm}</p>
-              <p className="rest-detail__chip-label">Ritmo cardiaco</p>
+              <p className="rest-detail__chip-label">Ritmo cardíaco</p>
             </div>
             <div className="rest-detail__chip">
               <p className="rest-detail__chip-value">{data.interruptions}</p>
@@ -159,7 +159,7 @@ export function RestDetailScreen({ open, restScore, onClose }: RestDetailScreenP
                 <div className="rest-detail__stages-titles">
                   <p className="rest-detail__stages-title">Etapas del descanso</p>
                   <span
-                    className={`rest-detail__badge${data.badge !== 'Optimo' ? ' is-muted' : ''}`}
+                    className={`rest-detail__badge${data.badge !== 'Óptimo' ? ' is-muted' : ''}`}
                   >
                     <span>{data.badge}</span>
                   </span>

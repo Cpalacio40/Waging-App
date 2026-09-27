@@ -12,13 +12,13 @@ export type ActivityChartBar = {
   value: number
 }
 
-export type ActivityWalkBadge = 'Optimo' | 'Bueno' | 'Regular' | 'Bajo'
+export type ActivityWalkBadge = 'Óptimo' | 'Bueno' | 'Regular' | 'Bajo'
 
 export type ActivityWalk = {
   icon: 'sunrise' | 'sun' | 'moon-star' | 'id-card'
   title: string
   detail: string
-  /** Omit for empty / pending walks (Figma “Sin datos aun”). */
+  /** Omit for empty / pending walks (Figma “Sin datos aún”). */
   badge?: ActivityWalkBadge
 }
 
@@ -48,7 +48,7 @@ export function activityLevelColor(level: ActivityLevel) {
 /** Figma 352:9138 — normal day (home Actividad 80). */
 const ACTIVITY_OK: ActivityDetail = {
   score: 80,
-  badge: 'Optimo',
+  badge: 'Óptimo',
   summaryLine: 'Buen nivel de actividad hoy',
   steps: '16,800',
   heartRate: '74bpm',
@@ -66,13 +66,13 @@ const ACTIVITY_OK: ActivityDetail = {
       icon: 'sun',
       title: 'Paseo de la tarde',
       detail: '14:00 · 1h · 3 km · 76 bpm',
-      badge: 'Optimo',
+      badge: 'Óptimo',
     },
     {
       icon: 'moon-star',
-      title: 'Paseo  nocturno',
+      title: 'Paseo nocturno',
       detail: '21:00 · 1h · 3 km · 76 bpm',
-      badge: 'Optimo',
+      badge: 'Óptimo',
     },
   ],
   chartBars: [
@@ -97,7 +97,7 @@ const ACTIVITY_OK: ActivityDetail = {
 const ACTIVITY_MID: ActivityDetail = {
   score: 55,
   badge: 'Regular',
-  summaryLine: 'Mejorando, aun por debajo de lo normal',
+  summaryLine: 'Mejorando, aún por debajo de lo normal',
   steps: '7,800',
   heartRate: '75bpm',
   distance: '4.8Km',
@@ -118,14 +118,14 @@ const ACTIVITY_MID: ActivityDetail = {
     },
     {
       icon: 'id-card',
-      title: 'Sesión con Maria Camila',
+      title: 'Sesión con María Camila',
       detail: '17:00 · 1h · 3 km · 78 bpm',
-      badge: 'Optimo',
+      badge: 'Óptimo',
     },
     {
       icon: 'moon-star',
-      title: 'Paseo  nocturno',
-      detail: 'Sin datos aun',
+      title: 'Paseo nocturno',
+      detail: 'Sin datos aún',
     },
   ],
   chartBars: [
@@ -171,8 +171,8 @@ const ACTIVITY_LOW: ActivityDetail = {
     },
     {
       icon: 'moon-star',
-      title: 'Paseo  nocturno',
-      detail: 'Sin datos aun',
+      title: 'Paseo nocturno',
+      detail: 'Sin datos aún',
     },
   ],
   chartBars: [

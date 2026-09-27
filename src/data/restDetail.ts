@@ -26,7 +26,7 @@ export type RestDetail = {
   sleepTotal: string
   /** Shown on the home rest card. */
   homeBpm: string
-  /** Shown on the detail “Ritmo cardiaco” chip. */
+  /** Shown on the detail “Ritmo cardíaco” chip. */
   detailBpm: string
   interruptions: number
   resumen: string
@@ -48,7 +48,7 @@ export function sleepStageColor(stage: SleepStage) {
 /** Figma 359:10645 — normal / good rest night (home Actividad 80). */
 const REST_OK: RestDetail = {
   score: 78,
-  badge: 'Optimo',
+  badge: 'Óptimo',
   summaryLine: 'Durmió bien casi toda la noche',
   sleepStart: '11:03 pm',
   sleepEnd: '6:30 am',
@@ -57,12 +57,12 @@ const REST_OK: RestDetail = {
   detailBpm: '58bpm',
   interruptions: 1,
   resumen:
-    'Luca se durmió sobre las 11:03 pm y descansó profundo la mayor parte de la noche. Se despertó brevemente cerca de la 1 am, probablemente por ruido en la calle, y volvió a dormirse en pocos minutos. Su ritmo cardíaco se mantuvo estable durante toda la noche.',
+    'Luca se durmió sobre las 11:03 pm y descansó profundamente la mayor parte de la noche. Se despertó brevemente cerca de la 1 am, probablemente por ruido en la calle, y volvió a dormirse en pocos minutos. Su ritmo cardíaco se mantuvo estable durante toda la noche.',
   events: [
     {
       icon: 'moon-star',
       title: 'Paseo nocturno antes de dormir',
-      detail: '21:00  · 22:00',
+      detail: '21:00 · 22:00',
     },
     {
       icon: 'audio-lines',
@@ -106,7 +106,7 @@ const REST_LOW: RestDetail = {
     {
       icon: 'moon-star',
       title: 'Paseo nocturno antes de dormir',
-      detail: '20:30  · 21:15',
+      detail: '20:30 · 21:15',
     },
     {
       icon: 'audio-lines',

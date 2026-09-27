@@ -20,7 +20,7 @@ const WALK_ICON: Record<ActivityDetail['walks'][number]['icon'], string> = {
 }
 
 function badgeClass(badge: ActivityWalkBadge) {
-  if (badge === 'Optimo') return ''
+  if (badge === 'Óptimo') return ''
   if (badge === 'Bueno') return ' is-bueno'
   if (badge === 'Regular') return ' is-regular'
   return ' is-muted'
@@ -127,7 +127,7 @@ export function ActivityDetailScreen({
             </div>
             <div className="activity-detail__chip">
               <p className="activity-detail__chip-value">{data.heartRate}</p>
-              <p className="activity-detail__chip-label">Ritmo cardiaco</p>
+              <p className="activity-detail__chip-label">Ritmo cardíaco</p>
             </div>
             <div className="activity-detail__chip">
               <p className="activity-detail__chip-value">{data.distance}</p>

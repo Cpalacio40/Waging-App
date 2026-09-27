@@ -70,7 +70,7 @@ function formatAddressLine(place: {
 
 const FALLBACK_MEET = {
   tag: 'Casa',
-  label: 'Carrer de Petraca, 42',
+  label: 'Carrer de Petrarca, 42',
   lat: 41.3924,
   lng: 2.1468,
   buildingType: 'casa' as const,

@@ -529,8 +529,8 @@ function AppHomeView({
                     </button>
                   </div>
                   <p className="app-home__alert-body">
-                    Luca necesita atención, lleva <strong>quieto más de lo habitual</strong>. ¿Le agendamos una
-                    salida?
+                    Luca necesita atención, lleva <strong>quieto más tiempo de lo habitual</strong>. ¿Le agendamos
+                    una salida?
                   </p>
                   <div className="app-home__alert-actions">
                     <button
@@ -703,7 +703,7 @@ function AppHomeView({
                   </div>
                   <div className="app-home__rest-title-block">
                     <p className="app-home__rest-title">Descanso</p>
-                    <span className={`app-home__rest-badge${rest.badge !== 'Optimo' ? ' is-muted' : ''}`}>
+                    <span className={`app-home__rest-badge${rest.badge !== 'Óptimo' ? ' is-muted' : ''}`}>
                       <span>{rest.badge}</span>
                     </span>
                   </div>

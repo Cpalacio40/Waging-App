@@ -70,7 +70,7 @@ export const CAREGIVERS: Caregiver[] = [
     reviews: [
       {
         owner: 'Dueño de Calletano',
-        text: 'Pensé que Luna nunca iba a poder cruzarse con otro perro sin ladrar. Llevamos dos meses y ayer se cruzó con uno tranquila.',
+        text: 'Pensé que Calletano nunca iba a poder cruzarse con otro perro sin ladrar. Llevamos dos meses y ayer se cruzó con uno tranquilo.',
         date: 'Agosto 10, 2026',
         avatar: '1',
         photo: 'reviews/ansiedad-calletano.png',
@@ -326,7 +326,7 @@ export const CAREGIVERS: Caregiver[] = [
         objectPosition: '50% 50%',
       },
       {
-        owner: 'Dueño de Pancho',
+        owner: 'Dueña de Pancho',
         text: 'Vivir sola con mi perrito a veces puede ser difícil, pero contar con una red de cuidadores que entienden sus necesidades y me ayudan con sus cuidados, incluso para hacer pipí y popó, me hace sentir más acompañada y tranquila.',
         date: 'Junio 7, 2026',
         avatar: '3',
@@ -336,7 +336,7 @@ export const CAREGIVERS: Caregiver[] = [
       },
       {
         owner: 'Dueña de Maru',
-        text: 'Luna ya es mayor y se cansa distinto cada semana. Sofía siempre sigue su ritmo y la cuida en el proceso debido a su artritis.',
+        text: 'Maru ya es mayor y se cansa distinto cada semana. Sofía siempre sigue su ritmo y la cuida en el proceso debido a su artritis.',
         date: 'Septiembre 19, 2026',
         avatar: '1',
         photo: 'reviews/especiales-maru.png',

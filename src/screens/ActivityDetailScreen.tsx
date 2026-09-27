@@ -16,11 +16,13 @@ const WALK_ICON: Record<ActivityDetail['walks'][number]['icon'], string> = {
   sunrise: 'icon-sunrise.svg',
   sun: 'icon-sun.svg',
   'moon-star': 'icon-moon-star.svg',
+  'id-card': 'icon-id-card.svg',
 }
 
 function badgeClass(badge: ActivityWalkBadge) {
   if (badge === 'Optimo') return ''
   if (badge === 'Bueno') return ' is-bueno'
+  if (badge === 'Regular') return ' is-regular'
   return ' is-muted'
 }
 
@@ -38,7 +40,7 @@ type ActivityDetailScreenProps = {
   onClose?: () => void
 }
 
-/** Actividad detail — Figma 352:9138. Values follow the configured activity score. */
+/** Actividad detail — Figma 352:9138 / 378:1420 / 386:4320. */
 export function ActivityDetailScreen({
   open,
   activityScore,
@@ -136,7 +138,10 @@ export function ActivityDetailScreen({
               <h2>Actividades del día</h2>
               <ul className="activity-detail__walk-list">
                 {data.walks.map((walk) => (
-                  <li key={walk.title} className="activity-detail__walk">
+                  <li
+                    key={walk.title}
+                    className={`activity-detail__walk${walk.badge ? '' : ' is-empty'}`}
+                  >
                     <img
                       src={activityAsset(WALK_ICON[walk.icon])}
                       alt=""
@@ -147,7 +152,7 @@ export function ActivityDetailScreen({
                     <div className="activity-detail__walk-body">
                       <div className="activity-detail__walk-top">
                         <p className="activity-detail__walk-title">{walk.title}</p>
-                        <ActivityBadge badge={walk.badge} />
+                        {walk.badge ? <ActivityBadge badge={walk.badge} /> : null}
                       </div>
                       <p className="activity-detail__walk-detail">{walk.detail}</p>
                     </div>
@@ -190,13 +195,15 @@ export function ActivityDetailScreen({
                       <div key={index} className="activity-detail__chart-col">
                         <div className="activity-detail__chart-track">
                           <div className="activity-detail__chart-empty" />
-                          <div
-                            className="activity-detail__chart-fill"
-                            style={{
-                              height: `${bar.value}%`,
-                              background: activityLevelColor(bar.level),
-                            }}
-                          />
+                          {bar.value > 0 ? (
+                            <div
+                              className="activity-detail__chart-fill"
+                              style={{
+                                height: `${bar.value}%`,
+                                background: activityLevelColor(bar.level),
+                              }}
+                            />
+                          ) : null}
                         </div>
                       </div>
                     ))}

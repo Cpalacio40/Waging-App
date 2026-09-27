@@ -89,7 +89,7 @@ const REST_OK: RestDetail = {
   chartTimes: ['10:45 pm', '1 am', '3 am', '6:15am'],
 }
 
-/** Weaker rest night — aligns with low-activity / attention home (rest 60). */
+/** Weaker rest night — Figma 378:1565 (home Descanso 60 / attention). */
 const REST_LOW: RestDetail = {
   score: 60,
   badge: 'Regular',
@@ -105,7 +105,7 @@ const REST_LOW: RestDetail = {
   events: [
     {
       icon: 'moon-star',
-      title: 'Poco movimiento antes de dormir',
+      title: 'Paseo nocturno antes de dormir',
       detail: '20:30  · 21:15',
     },
     {
@@ -120,16 +120,17 @@ const REST_LOW: RestDetail = {
     },
   ],
   chartBars: [
-    { stage: 'awake', value: 42 },
-    { stage: 'light', value: 55 },
-    { stage: 'awake', value: 48 },
-    { stage: 'light', value: 62 },
-    { stage: 'deep', value: 58 },
+    /* Heights match Figma 378:1635 fills of the 170px track. */
     { stage: 'awake', value: 40 },
     { stage: 'light', value: 50 },
-    { stage: 'awake', value: 35 },
+    { stage: 'awake', value: 49 },
+    { stage: 'light', value: 63 },
+    { stage: 'deep', value: 57 },
+    { stage: 'awake', value: 40 },
+    { stage: 'light', value: 50 },
+    { stage: 'awake', value: 28 },
   ],
-  chartTimes: ['12:00 am', '2 am', '4 am', '5:45am'],
+  chartTimes: ['12 am', '2 am', '4 am', '5:45am'],
 }
 
 export function restDetailForScenario(scenario: HomeScenarioId): RestDetail {

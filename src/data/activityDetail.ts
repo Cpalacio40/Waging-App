@@ -1,4 +1,7 @@
-import { ACTIVITY_ALERT_THRESHOLD } from './homeScenarios'
+import {
+  ACTIVITY_ALERT_THRESHOLD,
+  ACTIVITY_OK_THRESHOLD,
+} from './homeScenarios'
 
 /** Hourly movement intensity for the activity chart. */
 export type ActivityLevel = 'low' | 'medium' | 'high'
@@ -9,13 +12,14 @@ export type ActivityChartBar = {
   value: number
 }
 
-export type ActivityWalkBadge = 'Optimo' | 'Bueno' | 'Bajo'
+export type ActivityWalkBadge = 'Optimo' | 'Bueno' | 'Regular' | 'Bajo'
 
 export type ActivityWalk = {
-  icon: 'sunrise' | 'sun' | 'moon-star'
+  icon: 'sunrise' | 'sun' | 'moon-star' | 'id-card'
   title: string
   detail: string
-  badge: ActivityWalkBadge
+  /** Omit for empty / pending walks (Figma “Sin datos aun”). */
+  badge?: ActivityWalkBadge
 }
 
 export type ActivityDetail = {
@@ -89,55 +93,113 @@ const ACTIVITY_OK: ActivityDetail = {
   chartTimes: ['12 am', '4 am', '8 am', '12pm', '4 pm', '8 pm', '12am'],
 }
 
-/** Low-activity day — aligns with attention home (Actividad ≤30). */
-const ACTIVITY_LOW: ActivityDetail = {
-  score: 30,
-  badge: 'Bajo',
-  summaryLine: 'Actividad por debajo de lo habitual',
-  steps: '4,200',
-  heartRate: '68bpm',
-  distance: '1.1Km',
+/** Mid day after a session — Figma 386:4320 (home Actividad ~55). */
+const ACTIVITY_MID: ActivityDetail = {
+  score: 55,
+  badge: 'Regular',
+  summaryLine: 'Mejorando, aun por debajo de lo normal',
+  steps: '7,800',
+  heartRate: '75bpm',
+  distance: '4.8Km',
   resumen:
-    'Luca se movió poco durante el día. Solo hubo una salida corta por la mañana y el resto del tiempo permaneció en casa. Su ritmo cardíaco se mantuvo bajo y estable, coherente con un día de poca actividad.',
+    'Luca tuvo dos salidas cortas por la mañana y el mediodía, de 15 minutos cada una, y María Camila lo sacó a pasear una hora completa a las 17:00. Esa combinación subió su actividad, aunque el día completo sigue por debajo de lo normal para él.',
   walks: [
     {
       icon: 'sunrise',
-      title: 'Salida breve',
+      title: 'Paseo matutino',
       detail: '8:30am · 15 min · 0.6 km · 70 bpm',
       badge: 'Bajo',
     },
     {
       icon: 'sun',
-      title: 'Rato en el jardín',
+      title: 'Paseo de la tarde',
+      detail: '13:00 · 10 min · 0.3 km · 68 bpm',
+      badge: 'Bajo',
+    },
+    {
+      icon: 'id-card',
+      title: 'Sesión con Maria Camila',
+      detail: '17:00 · 1h · 3 km · 78 bpm',
+      badge: 'Optimo',
+    },
+    {
+      icon: 'moon-star',
+      title: 'Paseo  nocturno',
+      detail: 'Sin datos aun',
+    },
+  ],
+  chartBars: [
+    /* Heights match Figma 386:4386 fills of the 170px track. */
+    { level: 'low', value: 12 },
+    { level: 'low', value: 15 },
+    { level: 'low', value: 19 },
+    { level: 'low', value: 24 },
+    { level: 'medium', value: 43 },
+    { level: 'low', value: 16 },
+    { level: 'medium', value: 43 },
+    { level: 'low', value: 21 },
+    { level: 'high', value: 79 },
+    { level: 'low', value: 12 },
+    { level: 'low', value: 0 },
+    { level: 'low', value: 0 },
+  ],
+  chartTimes: ['12 am', '4 am', '8 am', '12pm', '4 pm', '8 pm', '12am'],
+}
+
+/** Low-activity day — Figma 378:1420 (home Actividad ≤30). */
+const ACTIVITY_LOW: ActivityDetail = {
+  score: 30,
+  badge: 'Bajo',
+  summaryLine: 'Actividad por debajo de lo normal',
+  steps: '3,000',
+  heartRate: '72bpm',
+  distance: '1.8Km',
+  resumen:
+    'Luca tuvo dos salidas cortas hoy, de 15 minutos cada una, y ha pasado el resto del día en casa. Su actividad sigue por debajo de lo normal para él.',
+  walks: [
+    {
+      icon: 'sunrise',
+      title: 'Paseo matutino',
+      detail: '8:30am · 15 min · 0.6 km · 70 bpm',
+      badge: 'Bajo',
+    },
+    {
+      icon: 'sun',
+      title: 'Paseo de la tarde',
       detail: '13:00 · 10 min · 0.3 km · 68 bpm',
       badge: 'Bajo',
     },
     {
       icon: 'moon-star',
-      title: 'Sin paseo nocturno',
-      detail: 'Permaneció en casa',
-      badge: 'Bajo',
+      title: 'Paseo  nocturno',
+      detail: 'Sin datos aun',
     },
   ],
   chartBars: [
-    { level: 'low', value: 28 },
+    /* Heights match Figma 378:1493 fills of the 170px track. */
+    { level: 'low', value: 12 },
+    { level: 'low', value: 15 },
+    { level: 'low', value: 19 },
     { level: 'low', value: 24 },
-    { level: 'low', value: 30 },
-    { level: 'medium', value: 52 },
-    { level: 'low', value: 32 },
-    { level: 'low', value: 22 },
-    { level: 'low', value: 20 },
-    { level: 'medium', value: 48 },
-    { level: 'low', value: 18 },
-    { level: 'low', value: 24 },
-    { level: 'low', value: 26 },
-    { level: 'low', value: 20 },
+    { level: 'medium', value: 43 },
+    { level: 'low', value: 16 },
+    { level: 'medium', value: 43 },
+    { level: 'low', value: 21 },
+    { level: 'low', value: 12 },
+    { level: 'low', value: 0 },
+    { level: 'low', value: 0 },
+    { level: 'low', value: 0 },
   ],
   chartTimes: ['12 am', '4 am', '8 am', '12pm', '4 pm', '8 pm', '12am'],
 }
 
 export function activityDetailForScore(activity: number): ActivityDetail {
-  const base = activity > ACTIVITY_ALERT_THRESHOLD ? ACTIVITY_OK : ACTIVITY_LOW
+  const base =
+    activity <= ACTIVITY_ALERT_THRESHOLD
+      ? ACTIVITY_LOW
+      : activity < ACTIVITY_OK_THRESHOLD
+        ? ACTIVITY_MID
+        : ACTIVITY_OK
   if (base.score === activity) return base
   return { ...base, score: activity }
 }

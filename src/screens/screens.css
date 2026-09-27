@@ -1936,13 +1936,6 @@
   box-sizing: border-box;
 }
 
-.app-home__rest-badge img {
-  display: block;
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-}
-
 .app-home__rest-badge span {
   padding: 0 6px;
   font-family: var(--font-body);
@@ -1955,15 +1948,11 @@
 }
 
 .app-home__rest-badge.is-muted {
-  background: #ffe0a8;
+  background: #ffc8af;
 }
 
 .app-home__rest-badge.is-muted span {
-  color: #9a5b00;
-}
-
-.app-home__rest-badge.is-muted img {
-  filter: grayscale(1) sepia(1) saturate(4) hue-rotate(-10deg);
+  color: #9b3000;
 }
 
 .app-home__rest-chevron {
@@ -2184,22 +2173,11 @@
 }
 
 .rest-detail__badge.is-muted {
-  background: #ffe0a8;
+  background: #ffc8af;
 }
 
 .rest-detail__badge.is-muted span {
-  color: #9a5b00;
-}
-
-.rest-detail__badge.is-muted img {
-  filter: grayscale(1) sepia(1) saturate(4) hue-rotate(-10deg);
-}
-
-.rest-detail__badge img {
-  display: block;
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
+  color: #9b3000;
 }
 
 .rest-detail__badge span {
@@ -2686,16 +2664,20 @@
   color: #d09c00;
 }
 
+.activity-detail__badge.is-regular {
+  background: #ffc8af;
+}
+
+.activity-detail__badge.is-regular span {
+  color: #9b3000;
+}
+
 .activity-detail__badge.is-muted {
-  background: #ffe0a8;
+  background: #ffb5bb;
 }
 
 .activity-detail__badge.is-muted span {
-  color: #9a5b00;
-}
-
-.activity-detail__badge.is-muted img {
-  filter: grayscale(1) sepia(1) saturate(4) hue-rotate(-10deg);
+  color: #d00416;
 }
 
 .activity-detail__badge span {
@@ -2824,6 +2806,14 @@
   border-radius: 14px;
   background: #ffc8af;
   box-sizing: border-box;
+}
+
+.activity-detail__walk.is-empty {
+  background: rgba(255, 200, 175, 0.5);
+}
+
+.activity-detail__walk.is-empty .activity-detail__walk-body {
+  opacity: 0.57;
 }
 
 .activity-detail__walk > img {

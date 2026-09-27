@@ -1,10 +1,12 @@
 import type { HomeScenarioId } from './homeScenarios'
 import {
+  ACTIVITY_OK_THRESHOLD,
   DEMO_ACTIVITY_LOW,
   DEMO_ACTIVITY_OK,
   DEMO_ACTIVITY_WALK_DONE,
   HOME_SCENARIOS,
   isLowActivity,
+  restScoreForActivity,
 } from './homeScenarios'
 import { CAREGIVERS } from './caregivers'
 
@@ -183,6 +185,14 @@ export const NAV_GROUPS: NavGroup[] = [
         activityDetail: true,
       },
       {
+        id: 'activity-detail-mid',
+        label: `Regular (${DEMO_ACTIVITY_WALK_DONE})`,
+        screen: 'app-home',
+        scenario: 'ok',
+        activity: DEMO_ACTIVITY_WALK_DONE,
+        activityDetail: true,
+      },
+      {
         id: 'activity-detail-low',
         label: `Bajo (${DEMO_ACTIVITY_LOW})`,
         screen: 'app-home',
@@ -291,10 +301,12 @@ export function activeNavId({
   if (screen === 'ios-home') return 'ios-home'
   if (screen === 'app-home') {
     if (activityDetailOpen) {
-      return isLowActivity(activity) ? 'activity-detail-low' : 'activity-detail-ok'
+      if (isLowActivity(activity)) return 'activity-detail-low'
+      if (activity < ACTIVITY_OK_THRESHOLD) return 'activity-detail-mid'
+      return 'activity-detail-ok'
     }
     if (restDetailOpen) {
-      return isLowActivity(activity) || scenario === 'attention'
+      return restScoreForActivity(activity) < ACTIVITY_OK_THRESHOLD
         ? 'rest-detail-low'
         : 'rest-detail-ok'
     }

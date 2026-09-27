@@ -4,6 +4,7 @@ import { CAREGIVERS, DEFAULT_CAREGIVER_ID } from '../data/caregivers'
 import {
   HOME_SCENARIOS,
   homeCopyForActivity,
+  restScoreForActivity,
   type HomeScenarioId,
 } from '../data/homeScenarios'
 import { restDetailForScore } from '../data/restDetail'
@@ -172,7 +173,8 @@ function AppHomeView({
   const data = HOME_SCENARIOS[scenario]
   const activity = activityProp ?? data.activity
   const copy = homeCopyForActivity(activity, scenario)
-  const rest = restDetailForScore(data.rest)
+  const restScore = restScoreForActivity(activity)
+  const rest = restDetailForScore(restScore)
   const needsAttention = scenario === 'attention'
   const showBellBadge = needsAttention && !alertOpen && !alertResolved
   const attentionCardOpen = alertOpen && !alertResolved
@@ -410,7 +412,7 @@ function AppHomeView({
             <button
               type="button"
               className="app-home__metric app-home__metric--button"
-              aria-label={`Descanso ${data.rest} — ver detalle`}
+              aria-label={`Descanso ${restScore} — ver detalle`}
               onClick={onOpenRestDetail}
             >
               <div className="app-home__metric-icon">
@@ -429,7 +431,7 @@ function AppHomeView({
                   height={18}
                   draggable={false}
                 />
-                <span className="app-home__metric-value">{data.rest}</span>
+                <span className="app-home__metric-value">{restScore}</span>
               </div>
               <p>Descanso</p>
             </button>
@@ -686,13 +688,6 @@ function AppHomeView({
                   <div className="app-home__rest-title-block">
                     <p className="app-home__rest-title">Descanso</p>
                     <span className={`app-home__rest-badge${rest.badge !== 'Optimo' ? ' is-muted' : ''}`}>
-                      <img
-                        src={inicioAsset('icon-star-optimo.svg')}
-                        alt=""
-                        width={16}
-                        height={16}
-                        draggable={false}
-                      />
                       <span>{rest.badge}</span>
                     </span>
                   </div>

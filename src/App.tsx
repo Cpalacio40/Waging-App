@@ -12,9 +12,9 @@ import {
   DEMO_ACTIVITY_LOW,
   DEMO_ACTIVITY_OK,
   DEMO_ACTIVITY_WALK_DONE,
-  HOME_SCENARIOS,
   clampActivity,
   isLowActivity,
+  restScoreForActivity,
   scenarioFromActivity,
 } from './data/homeScenarios'
 import {
@@ -694,7 +694,7 @@ function App() {
                   />
                   <RestDetailScreen
                     open={restDetailOpen}
-                    restScore={HOME_SCENARIOS[scenario].rest}
+                    restScore={restScoreForActivity(activity)}
                     onClose={closeRestDetail}
                   />
                   <ActivityDetailScreen

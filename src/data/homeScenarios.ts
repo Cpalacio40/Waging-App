@@ -23,13 +23,16 @@ export type HomeScenario = {
 export const ACTIVITY_ALERT_THRESHOLD = 30
 
 /** Points added when a scheduled outing finishes (demo “Salida terminada”). */
-export const ACTIVITY_WALK_BONUS = 23
+export const ACTIVITY_WALK_BONUS = 25
 
 /** Demo presets for the side panel / navigator. */
 export const DEMO_ACTIVITY_OK = 80
 export const DEMO_ACTIVITY_LOW = 30
-/** After a finished walk from low activity — Figma 286:3231 (30 + 23). */
+/** After a finished walk from low activity — Figma 386:4320 (30 + 25). */
 export const DEMO_ACTIVITY_WALK_DONE = DEMO_ACTIVITY_LOW + ACTIVITY_WALK_BONUS
+
+/** Mid-day activity band after a walk (above alert, below “óptimo”). */
+export const ACTIVITY_OK_THRESHOLD = 70
 
 export const DEFAULT_ACTIVITY = DEMO_ACTIVITY_OK
 
@@ -70,6 +73,20 @@ export function isLowActivity(activity: number) {
 
 export function scenarioFromActivity(activity: number): HomeScenarioId {
   return isLowActivity(activity) ? 'attention' : 'ok'
+}
+
+/**
+ * Rest reflects last night — a daytime walk must not flip it to the “ok” preset.
+ * Mid activity (post-outing from a low day) keeps the attention rest score.
+ */
+export function restScoreForActivity(activity: number): number {
+  if (
+    activity === DEMO_ACTIVITY_WALK_DONE ||
+    (activity > ACTIVITY_ALERT_THRESHOLD && activity < ACTIVITY_OK_THRESHOLD)
+  ) {
+    return HOME_SCENARIOS.attention.rest
+  }
+  return HOME_SCENARIOS[scenarioFromActivity(activity)].rest
 }
 
 /** Home headline/body for the current activity (walk-done mid-day vs scenario presets). */

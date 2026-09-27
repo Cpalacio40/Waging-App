@@ -509,9 +509,16 @@
 
 .app-home {
   --alert-shift: 0px;
-  /* Scroll room to bring the rest card fully above the tab bar (Figma frame 1152 − 844). */
+  /* Fallback scroll room; JS syncs --home-scroll-extent from the lower stack. */
   --rest-scroll: 308px;
   --rest-card-h: 299px;
+  /* Grey below menu ≈30px; under the card: tab-bar clearance + that same gap (all grey, no black). */
+  --tabbar-top: 751px;
+  --tabbar-h: 63px;
+  --card-tab-gap: calc(var(--phone-h) - var(--tabbar-top) - var(--tabbar-h));
+  --rest-below: calc(var(--phone-h) - var(--tabbar-top) + var(--card-tab-gap));
+  --cta-rest-gap: 28px;
+  --copy-top: 478px;
   /* Figma 349:7911 — light grey below the photo / blue card */
   background: #f3f3f3;
   color: #fcfcfc;
@@ -553,21 +560,18 @@
   width: 100%;
   min-height: 100%;
   will-change: transform;
-  /* Black through the rest-card top corners; grey from there down (under card + below). */
-  background: linear-gradient(
-    to bottom,
-    #0d0a09 0,
-    #0d0a09 calc(731px + var(--alert-shift) + 28px),
-    #f3f3f3 calc(731px + var(--alert-shift) + 28px),
-    #f3f3f3 100%
-  );
+  /* Black under the photo; grey wash + tail cover from the rest card down. */
+  background: #0d0a09;
 }
 
 /* Tall spacer so transform-scroll knows content height (absolute UI doesn’t contribute). */
 .app-home__scroll-extent {
   display: block;
   width: 1px;
-  height: calc(var(--phone-h) + var(--alert-shift) + var(--rest-scroll));
+  height: var(
+    --home-scroll-extent,
+    calc(var(--phone-h) + var(--alert-shift) + var(--rest-scroll))
+  );
   pointer-events: none;
   visibility: hidden;
   transition: height 0.45s cubic-bezier(0.32, 0.72, 0, 1);
@@ -630,7 +634,12 @@
 }
 
 .app-home__bg-scrim--mid {
-  background: linear-gradient(to bottom, rgba(13, 10, 9, 0) 40.284%, rgba(13, 10, 9, 0.82) 73.993%);
+  background: linear-gradient(
+    to bottom,
+    rgba(13, 10, 9, 0) 40.284%,
+    rgba(13, 10, 9, 0.82) 73.993%,
+    #0d0a09 100%
+  );
 }
 
 .app-home__bg-scrim--tint {
@@ -651,7 +660,8 @@
 }
 
 .app-home__stage .app-home__cta,
-.app-home__stage .app-home__copy {
+.app-home__stage .app-home__copy,
+.app-home__lower {
   pointer-events: auto;
 }
 
@@ -661,7 +671,14 @@
   top: 496px;
   width: 392px;
   height: 348px;
-  background: linear-gradient(to bottom, rgba(13, 10, 9, 0), #0d0a09);
+  background: linear-gradient(
+    to bottom,
+    rgba(13, 10, 9, 0) 0%,
+    rgba(13, 10, 9, 0.55) 38%,
+    rgba(13, 10, 9, 0.92) 68%,
+    #0d0a09 85%,
+    #0d0a09 100%
+  );
   pointer-events: none;
   z-index: 1;
 }
@@ -1198,7 +1215,7 @@
   .app-home__scroll-extent,
   .app-home__alert,
   .app-home__booking,
-  .app-home__rest {
+  .app-home__lower {
     transition-duration: 0.01ms;
   }
 }
@@ -1693,18 +1710,13 @@
 }
 
 .app-home__copy {
-  position: absolute;
-  left: 50%;
-  top: 478px;
+  position: relative;
   z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 22px;
-  /* Keep CTA at the same Y as the longer ?ok? copy (headline + body + gaps + button) */
-  min-height: 231px;
   width: 344px;
-  transform: translateX(-50%);
 }
 
 .app-home__copy-text {
@@ -1739,7 +1751,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: auto;
   height: 40px;
   padding: 12px 16px;
   border: 0;
@@ -1758,12 +1769,48 @@
   white-space: nowrap;
 }
 
-/* Rest card — Figma 350:8293; below home copy in the scroll flow (y=731). */
-.app-home__rest {
+/* Copy + rest stack — gap stays fixed; stack height follows copy length. */
+.app-home__lower {
   position: absolute;
   left: 0;
-  top: calc(731px + var(--alert-shift));
+  top: calc(var(--copy-top) + var(--alert-shift));
   z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--cta-rest-gap);
+  width: 100%;
+  /* Fill down to the tab bar so short copy doesn’t leave a huge hole above the menu. */
+  min-height: calc(var(--tabbar-top) - var(--copy-top) - var(--alert-shift));
+  transition: top 0.45s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Rest card — Figma 350:8293 */
+.app-home__rest-anchor {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin-top: auto;
+}
+
+/* Grey from under the card’s top corners through the tail (sibling, not over the blue fill). */
+.app-home__rest-wash {
+  position: absolute;
+  left: 0;
+  top: 28px;
+  width: 100%;
+  bottom: calc(-1 * var(--rest-below));
+  background: #f3f3f3;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.app-home__rest {
+  position: relative;
+  z-index: 1;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -1780,7 +1827,19 @@
   font: inherit;
   pointer-events: auto;
   cursor: pointer;
-  transition: top 0.45s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.app-home__tail {
+  position: relative;
+  z-index: 0;
+  width: 100%;
+  /* Full clearance under the card (tab bar + matching gap above/below menu). */
+  height: var(--rest-below);
+  /* Cancel lower flex gap so card→menu matches menu→bottom (~30px), not gap+30. */
+  margin-top: calc(-1 * var(--cta-rest-gap));
+  flex-shrink: 0;
+  background: #f3f3f3;
+  pointer-events: none;
 }
 
 .app-home__rest:focus-visible {

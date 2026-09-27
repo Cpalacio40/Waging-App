@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties, type TransitionEvent } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type TransitionEvent } from 'react'
 import { ChevronDown, X } from 'lucide-react'
 import { CAREGIVERS, DEFAULT_CAREGIVER_ID } from '../data/caregivers'
 import {
@@ -192,6 +192,59 @@ function AppHomeView({
   })
   const { resetScroll } = dragScroll
   const gauge = gaugePoint(activity)
+  const homeRef = useRef<HTMLDivElement>(null)
+  const lowerRef = useRef<HTMLDivElement>(null)
+  const restRef = useRef<HTMLButtonElement>(null)
+
+  /** Clearance under rest card = tab bar + matching gap above/below menu. */
+  useLayoutEffect(() => {
+    const home = homeRef.current
+    const lower = lowerRef.current
+    const rest = restRef.current
+    if (!home || !lower || !rest) return
+
+    const PHONE_H = 844
+    const TABBAR_TOP = 751
+    const TABBAR_H = 63
+    // Same grey above the menu as below it (menu → screen bottom).
+    const cardTabGap = PHONE_H - TABBAR_TOP - TABBAR_H
+    const clearance = PHONE_H - TABBAR_TOP + cardTabGap
+
+    const sync = () => {
+      home.style.setProperty('--card-tab-gap', `${cardTabGap}px`)
+      home.style.setProperty('--rest-below', `${clearance}px`)
+      const extent = Math.max(PHONE_H, lower.offsetTop + lower.offsetHeight)
+      home.style.setProperty('--home-scroll-extent', `${extent}px`)
+    }
+
+    sync()
+    const ro = new ResizeObserver(sync)
+    ro.observe(lower)
+    ro.observe(rest)
+
+    let raf = 0
+    const trackShift = () => {
+      const started = performance.now()
+      const tick = () => {
+        sync()
+        if (performance.now() - started < 500) raf = requestAnimationFrame(tick)
+      }
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(tick)
+    }
+    trackShift()
+
+    const onTransitionEnd = (event: globalThis.TransitionEvent) => {
+      if (event.propertyName === 'top') sync()
+    }
+    lower.addEventListener('transitionend', onTransitionEnd)
+
+    return () => {
+      ro.disconnect()
+      cancelAnimationFrame(raf)
+      lower.removeEventListener('transitionend', onTransitionEnd)
+    }
+  }, [layoutOpen, sessionDone, bookingCollapsed, copy.headline, copy.body, activity])
 
   useEffect(() => {
     if (attentionCardOpen) {
@@ -233,6 +286,7 @@ function AppHomeView({
 
   return (
     <div
+      ref={homeRef}
       className={[
         'screen app-home',
         needsAttention ? 'is-attention' : '',
@@ -585,7 +639,10 @@ function AppHomeView({
             <p className="app-home__scale app-home__scale--100">100</p>
             <p className="app-home__kpi-label">Actividad</p>
             <p className="app-home__kpi">{activity}</p>
+          </div>
 
+          {/* Copy + rest: flex stack so CTA→card gap stays tight for any copy length. */}
+          <div ref={lowerRef} className="app-home__lower">
             <section className="app-home__copy">
               <div className="app-home__copy-text">
                 <h2 className="app-home__headline">{copy.headline}</h2>
@@ -600,93 +657,98 @@ function AppHomeView({
                 <span>Leer más</span>
               </button>
             </section>
-          </div>
 
-          {/* Rest card — Figma 350:8293; below home copy in the scroll flow (y=731). */}
-          <button
-            type="button"
-            className="app-home__rest"
-            aria-label={`Descanso ${rest.score} — ver detalle`}
-            onClick={onOpenRestDetail}
-          >
-            <div className="app-home__rest-header">
-              <div className="app-home__rest-identity">
-                <div className="app-home__rest-icon" aria-hidden="true">
-                  <img
-                    src={inicioAsset('icon-moon-rest.svg')}
-                    alt=""
-                    width={22}
-                    height={22}
-                    draggable={false}
-                  />
-                </div>
-                <div className="app-home__rest-title-block">
-                  <p className="app-home__rest-title">Descanso</p>
-                  <span className={`app-home__rest-badge${rest.badge !== 'Optimo' ? ' is-muted' : ''}`}>
+            {/* Rest card — Figma 350:8293 */}
+            <div className="app-home__rest-anchor">
+              <div className="app-home__rest-wash" aria-hidden="true" />
+              <button
+                ref={restRef}
+                type="button"
+                className="app-home__rest"
+                aria-label={`Descanso ${rest.score} — ver detalle`}
+                onClick={onOpenRestDetail}
+              >
+              <div className="app-home__rest-header">
+                <div className="app-home__rest-identity">
+                  <div className="app-home__rest-icon" aria-hidden="true">
                     <img
-                      src={inicioAsset('icon-star-optimo.svg')}
+                      src={inicioAsset('icon-moon-rest.svg')}
                       alt=""
-                      width={16}
-                      height={16}
+                      width={22}
+                      height={22}
                       draggable={false}
                     />
-                    <span>{rest.badge}</span>
-                  </span>
+                  </div>
+                  <div className="app-home__rest-title-block">
+                    <p className="app-home__rest-title">Descanso</p>
+                    <span className={`app-home__rest-badge${rest.badge !== 'Optimo' ? ' is-muted' : ''}`}>
+                      <img
+                        src={inicioAsset('icon-star-optimo.svg')}
+                        alt=""
+                        width={16}
+                        height={16}
+                        draggable={false}
+                      />
+                      <span>{rest.badge}</span>
+                    </span>
+                  </div>
+                </div>
+                <img
+                  className="app-home__rest-chevron"
+                  src={inicioAsset('icon-chevron-right-white.svg')}
+                  alt=""
+                  width={24}
+                  height={24}
+                  draggable={false}
+                  aria-hidden="true"
+                />
+              </div>
+
+              <div className="app-home__rest-score">
+                <p className="app-home__rest-value">{rest.score}</p>
+                <p className="app-home__rest-summary">{rest.summaryLine}</p>
+              </div>
+
+              <div className="app-home__rest-timeline">
+                <img
+                  className="app-home__rest-bar"
+                  src={inicioAsset('rest-sleep-bar.svg')}
+                  alt=""
+                  draggable={false}
+                  aria-hidden="true"
+                />
+                <div className="app-home__rest-times">
+                  <span>{rest.sleepStart}</span>
+                  <span>{rest.sleepEnd}</span>
                 </div>
               </div>
-              <img
-                className="app-home__rest-chevron"
-                src={inicioAsset('icon-chevron-right-white.svg')}
-                alt=""
-                width={24}
-                height={24}
-                draggable={false}
-                aria-hidden="true"
-              />
-            </div>
 
-            <div className="app-home__rest-score">
-              <p className="app-home__rest-value">{rest.score}</p>
-              <p className="app-home__rest-summary">{rest.summaryLine}</p>
-            </div>
-
-            <div className="app-home__rest-timeline">
-              <img
-                className="app-home__rest-bar"
-                src={inicioAsset('rest-sleep-bar.svg')}
-                alt=""
-                draggable={false}
-                aria-hidden="true"
-              />
-              <div className="app-home__rest-times">
-                <span>{rest.sleepStart}</span>
-                <span>{rest.sleepEnd}</span>
+              <div className="app-home__rest-meta">
+                <div className="app-home__rest-meta-item">
+                  <img
+                    src={inicioAsset('icon-cloud-moon.svg')}
+                    alt=""
+                    width={16}
+                    height={16}
+                    draggable={false}
+                  />
+                  <span>{rest.sleepTotal}</span>
+                </div>
+                <div className="app-home__rest-meta-item">
+                  <img
+                    src={inicioAsset('icon-heart-rest.svg')}
+                    alt=""
+                    width={16}
+                    height={16}
+                    draggable={false}
+                  />
+                  <span>{rest.homeBpm}</span>
+                </div>
               </div>
+              </button>
             </div>
-
-            <div className="app-home__rest-meta">
-              <div className="app-home__rest-meta-item">
-                <img
-                  src={inicioAsset('icon-cloud-moon.svg')}
-                  alt=""
-                  width={16}
-                  height={16}
-                  draggable={false}
-                />
-                <span>{rest.sleepTotal}</span>
-              </div>
-              <div className="app-home__rest-meta-item">
-                <img
-                  src={inicioAsset('icon-heart-rest.svg')}
-                  alt=""
-                  width={16}
-                  height={16}
-                  draggable={false}
-                />
-                <span>{rest.homeBpm}</span>
-              </div>
-            </div>
-          </button>
+            <div className="app-home__tail" aria-hidden="true" />
+          </div>
         </div>
       </div>
     </div>

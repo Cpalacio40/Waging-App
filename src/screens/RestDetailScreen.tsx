@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type TransitionEvent } from 'react'
 import {
   restDetailForScore,
   sleepStageColor,
@@ -37,10 +37,15 @@ export function RestDetailScreen({ open, restScore, onClose }: RestDetailScreenP
   useEffect(() => {
     if (open) {
       setMounted(true)
-      const frame = window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => setShown(true))
+      // Double rAF so the sheet paints off-screen before sliding in.
+      let inner = 0
+      const outer = window.requestAnimationFrame(() => {
+        inner = window.requestAnimationFrame(() => setShown(true))
       })
-      return () => window.cancelAnimationFrame(frame)
+      return () => {
+        window.cancelAnimationFrame(outer)
+        window.cancelAnimationFrame(inner)
+      }
     }
     setShown(false)
   }, [open])
@@ -49,7 +54,9 @@ export function RestDetailScreen({ open, restScore, onClose }: RestDetailScreenP
     if (!open) resetScroll()
   }, [open, resetScroll])
 
-  const onTransitionEnd = () => {
+  const onTransitionEnd = (event: TransitionEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) return
+    if (event.propertyName !== 'transform') return
     if (!open) setMounted(false)
   }
 

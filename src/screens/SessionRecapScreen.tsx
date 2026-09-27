@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type TransitionEvent } from 'react'
 import {
   SESSION_RECAP_MUSIC,
   SESSION_RECAP_MUSIC_DUCKED,
@@ -102,10 +102,15 @@ export function SessionRecapScreen({ open, onClose, caregiverName }: SessionReca
       setMounted(true)
       setIndex(0)
       setDragX(0)
-      const frame = window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => setShown(true))
+      // Double rAF so the sheet paints off-screen before sliding in.
+      let inner = 0
+      const outer = window.requestAnimationFrame(() => {
+        inner = window.requestAnimationFrame(() => setShown(true))
       })
-      return () => window.cancelAnimationFrame(frame)
+      return () => {
+        window.cancelAnimationFrame(outer)
+        window.cancelAnimationFrame(inner)
+      }
     }
     setShown(false)
   }, [open])
@@ -161,20 +166,25 @@ export function SessionRecapScreen({ open, onClose, caregiverName }: SessionReca
     }
   }, [shown, index])
 
-  const handleTransitionEnd = useCallback(() => {
-    if (!shown) {
-      setMounted(false)
-      setIndex(0)
-      setDragX(0)
-      stopMusicFade()
-      const music = musicRef.current
-      if (music) {
-        music.pause()
-        music.currentTime = 0
-        music.volume = 0
+  const handleTransitionEnd = useCallback(
+    (event: TransitionEvent<HTMLDivElement>) => {
+      if (event.target !== event.currentTarget) return
+      if (event.propertyName !== 'transform') return
+      if (!shown) {
+        setMounted(false)
+        setIndex(0)
+        setDragX(0)
+        stopMusicFade()
+        const music = musicRef.current
+        if (music) {
+          music.pause()
+          music.currentTime = 0
+          music.volume = 0
+        }
       }
-    }
-  }, [shown, stopMusicFade])
+    },
+    [shown, stopMusicFade],
+  )
 
   const goTo = useCallback((next: number) => {
     setIndex(Math.max(0, Math.min(SESSION_RECAP_SLIDES.length - 1, next)))

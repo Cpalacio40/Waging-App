@@ -251,10 +251,14 @@ function AppHomeView({
   useEffect(() => {
     if (attentionCardOpen) {
       setAlertMounted(true)
-      const frame = window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => setAlertShown(true))
+      let inner = 0
+      const outer = window.requestAnimationFrame(() => {
+        inner = window.requestAnimationFrame(() => setAlertShown(true))
       })
-      return () => window.cancelAnimationFrame(frame)
+      return () => {
+        window.cancelAnimationFrame(outer)
+        window.cancelAnimationFrame(inner)
+      }
     }
     setAlertShown(false)
   }, [attentionCardOpen])
@@ -262,10 +266,14 @@ function AppHomeView({
   useEffect(() => {
     if (bookingCardOpen) {
       setBookingMounted(true)
-      const frame = window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => setBookingShown(true))
+      let inner = 0
+      const outer = window.requestAnimationFrame(() => {
+        inner = window.requestAnimationFrame(() => setBookingShown(true))
       })
-      return () => window.cancelAnimationFrame(frame)
+      return () => {
+        window.cancelAnimationFrame(outer)
+        window.cancelAnimationFrame(inner)
+      }
     }
     setBookingShown(false)
   }, [bookingCardOpen])

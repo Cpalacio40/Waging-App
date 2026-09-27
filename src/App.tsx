@@ -5,7 +5,7 @@ import { IosNotification, type IosNotificationPhase } from './components/IosNoti
 import { IosStatusBar, type StatusBarTone } from './components/IosStatusBar'
 import { PhoneFrame } from './components/PhoneFrame'
 import { ScreenNavigator } from './components/ScreenNavigator'
-import { DEFAULT_CAREGIVER_ID } from './data/caregivers'
+import { DEFAULT_CAREGIVER_ID, findCaregiver } from './data/caregivers'
 import {
   ACTIVITY_WALK_BONUS,
   DEFAULT_ACTIVITY,
@@ -20,10 +20,11 @@ import {
 import {
   loadScheduledOuting,
   saveScheduledOuting,
+  clearScheduledOuting,
   type ScheduledOutingState,
 } from './data/scheduledOuting'
 import { SCENARIO_HOLD_MS } from './hooks/useHeldScenario'
-import { clearSavedAddress, loadSavedAddress, subscribeAddressChange } from './data/savedAddress'
+import { clearSavedAddress, ensureDemoAddress, loadSavedAddress, subscribeAddressChange } from './data/savedAddress'
 import {
   DEFAULT_SCREEN,
   activeNavId,
@@ -48,6 +49,12 @@ import './App.css'
 import './screens/screens.css'
 
 const ALERT_BANNER_HOLD_MS = 4000
+
+const DEMO_HOME_BOOKING: BookingSuccessDetails = {
+  caregiverName: findCaregiver(DEFAULT_CAREGIVER_ID).name,
+  sessionLine: '10:00 - 11:00, Sábado, Sep 26, 2026',
+  addressLine: 'Carrer de Petrarca, 42',
+}
 
 type LayerAnim = 'enter' | 'leave' | null
 type AppViewId = 'app-home' | 'caregiver-intro' | 'caregiver-search'
@@ -431,24 +438,40 @@ function App() {
         setSessionDone(walkDone)
         setSessionCardDismissed(false)
         setHomeAlertDismissed(false)
-        setHomeAlertResolved(walkDone)
-        if (walkDone) {
+        setHomeAlertResolved(walkDone || Boolean(item.seedBooking))
+        if (item.seedBooking) {
+          const address = ensureDemoAddress()
+          setHomeBooking({
+            ...DEMO_HOME_BOOKING,
+            addressLine: address.label,
+          })
+          setHomeBookingCollapsed(false)
+          setWalkDoneCaregiver(null)
+        } else if (walkDone) {
           setHomeBooking(null)
-          setWalkDoneCaregiver((current) => current ?? 'María Camila Rodríguez')
+          setWalkDoneCaregiver((current) => current ?? findCaregiver(DEFAULT_CAREGIVER_ID).name)
+        } else {
+          setHomeBooking(null)
+          setWalkDoneCaregiver(null)
         }
       } else if (item.scenario) {
         setActivity(item.scenario === 'attention' ? DEMO_ACTIVITY_LOW : DEMO_ACTIVITY_OK)
         setSessionDone(false)
         setSessionCardDismissed(false)
-        // Demo jump to ≤30 shows a fresh alert; jump to normal clears notification state.
         setHomeAlertDismissed(false)
         setHomeAlertResolved(false)
+        setHomeBooking(null)
+        setWalkDoneCaregiver(null)
       }
       if (item.widgetIndex != null) setWidgetIndex(item.widgetIndex)
       if (item.searchPhase) setSearchPhase(item.searchPhase)
       if (item.caregiverId) setCaregiverId(item.caregiverId)
       selectScreen(item.screen)
-      if (item.activityDetail) {
+      if (item.sessionRecap) {
+        setSessionRecapOpen(true)
+        setActivityDetailOpen(false)
+        setRestDetailOpen(false)
+      } else if (item.activityDetail) {
         setActivityDetailOpen(true)
         setRestDetailOpen(false)
         setSessionRecapOpen(false)
@@ -495,6 +518,18 @@ function App() {
 
   const resetAddressCache = useCallback(() => {
     clearSavedAddress()
+    clearScheduledOuting()
+    setHomeBooking(null)
+    setHomeBookingCollapsed(false)
+    setSessionDone(false)
+    setSessionCardDismissed(false)
+    setWalkDoneCaregiver(null)
+    setSessionRecapOpen(false)
+    setRestDetailOpen(false)
+    setActivityDetailOpen(false)
+    setHomeAlertDismissed(false)
+    setHomeAlertResolved(false)
+    setActivity(DEFAULT_ACTIVITY)
     setSearchPhase('map')
     setSearchBackTo('caregiver-intro')
     if (appOpen) setScreen('caregiver-intro')
@@ -786,6 +821,8 @@ function App() {
                 caregiverId,
                 activityDetailOpen,
                 restDetailOpen,
+                sessionRecapOpen,
+                hasBooking: Boolean(homeBooking),
               })}
               onSelect={selectNav}
             />

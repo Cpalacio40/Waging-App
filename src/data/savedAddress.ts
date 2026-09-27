@@ -167,6 +167,43 @@ export function clearSavedAddress() {
   notifyAddressChange()
 }
 
+/** Demo onboarding address — Carrer de Petrarca 42, Barcelona (Nominatim). */
+export const DEMO_ONBOARDING_ADDRESS = {
+  label: 'Carrer de Petrarca, 42',
+  secondary: 'Barcelona, España',
+  lat: 41.42889,
+  lng: 2.16445,
+  buildingType: 'casa' as const,
+  floor: '',
+  door: '',
+  notes: '',
+  tag: 'Casa',
+}
+
+/** Return the active address, seeding the demo onboarding place if none exists. */
+export function ensureDemoAddress(): SavedAddress {
+  const existing = loadSavedAddress()
+  if (existing) {
+    const isDemoLabel = existing.label === DEMO_ONBOARDING_ADDRESS.label
+    const coordsStale =
+      existing.lat !== DEMO_ONBOARDING_ADDRESS.lat ||
+      existing.lng !== DEMO_ONBOARDING_ADDRESS.lng
+    if (isDemoLabel && coordsStale) {
+      return saveAddress({
+        ...existing,
+        ...DEMO_ONBOARDING_ADDRESS,
+        id: existing.id,
+        savedAt: existing.savedAt,
+      })
+    }
+    return existing
+  }
+  return saveAddress({
+    ...DEMO_ONBOARDING_ADDRESS,
+    savedAt: new Date().toISOString(),
+  })
+}
+
 export function subscribeAddressChange(listener: () => void) {
   window.addEventListener(ADDRESS_EVENT, listener)
   window.addEventListener('storage', listener)

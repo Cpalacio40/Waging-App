@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { Caregiver } from '../data/caregivers'
 import { getDayAvailability, hasAvailability } from '../data/caregiverAvailability'
 import type { BookingPhase } from '../data/screens'
-import { buildingOption, loadSavedAddress, subscribeAddressChange } from '../data/savedAddress'
+import { buildingOption, DEMO_ONBOARDING_ADDRESS, loadSavedAddress, subscribeAddressChange } from '../data/savedAddress'
 import { useDragScroll } from '../hooks/useDragScroll'
 import { assetUrl } from '../utils/assetUrl'
 import { BookingSuccessScreen, type BookingSuccessDetails } from './BookingSuccessScreen'
@@ -69,11 +69,11 @@ function formatAddressLine(place: {
 }
 
 const FALLBACK_MEET = {
-  tag: 'Casa',
-  label: 'Carrer de Petrarca, 42',
-  lat: 41.3924,
-  lng: 2.1468,
-  buildingType: 'casa' as const,
+  tag: DEMO_ONBOARDING_ADDRESS.tag,
+  label: DEMO_ONBOARDING_ADDRESS.label,
+  lat: DEMO_ONBOARDING_ADDRESS.lat,
+  lng: DEMO_ONBOARDING_ADDRESS.lng,
+  buildingType: DEMO_ONBOARDING_ADDRESS.buildingType,
 }
 
 const CANCEL_TIERS = [

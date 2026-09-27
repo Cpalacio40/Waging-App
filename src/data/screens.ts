@@ -45,6 +45,10 @@ export type NavItem = {
   bookingPhase?: BookingPhase
   activityDetail?: boolean
   restDetail?: boolean
+  /** Seed a demo scheduled outing on app-home. */
+  seedBooking?: boolean
+  /** Open the session recap overlay on app-home. */
+  sessionRecap?: boolean
 }
 
 export type NavGroup = {
@@ -89,6 +93,14 @@ export const NAV_GROUPS: NavGroup[] = [
         scenario: 'attention',
         activity: DEMO_ACTIVITY_LOW,
       },
+      {
+        id: 'app-home-booking',
+        label: 'Con cita agendada',
+        screen: 'app-home',
+        scenario: 'ok',
+        activity: DEMO_ACTIVITY_OK,
+        seedBooking: true,
+      },
     ],
   },
   {
@@ -101,6 +113,14 @@ export const NAV_GROUPS: NavGroup[] = [
         screen: 'app-home',
         scenario: 'ok',
         activity: DEMO_ACTIVITY_WALK_DONE,
+      },
+      {
+        id: 'session-recap',
+        label: 'Resumen de sesión',
+        screen: 'app-home',
+        scenario: 'ok',
+        activity: DEMO_ACTIVITY_WALK_DONE,
+        sessionRecap: true,
       },
     ],
   },
@@ -192,6 +212,13 @@ export const NAV_GROUPS: NavGroup[] = [
         bookingPhase: 'idle',
       },
       {
+        id: 'calendar-pay',
+        label: 'Apple Pay',
+        screen: 'caregiver-pay',
+        searchPhase: 'results',
+        bookingPhase: 'apple-pay',
+      },
+      {
         id: 'calendar-success',
         label: '¡Todo listo!',
         screen: 'caregiver-success',
@@ -218,6 +245,8 @@ type NavMatchInput = {
   caregiverId: string
   activityDetailOpen?: boolean
   restDetailOpen?: boolean
+  sessionRecapOpen?: boolean
+  hasBooking?: boolean
 }
 
 export function activeNavId({
@@ -228,9 +257,12 @@ export function activeNavId({
   caregiverId,
   activityDetailOpen = false,
   restDetailOpen = false,
+  sessionRecapOpen = false,
+  hasBooking = false,
 }: NavMatchInput): string {
   if (screen === 'ios-home') return 'ios-home'
   if (screen === 'app-home') {
+    if (sessionRecapOpen) return 'session-recap'
     if (activityDetailOpen) {
       if (isLowActivity(activity)) return 'activity-detail-low'
       if (activity < ACTIVITY_OK_THRESHOLD) return 'activity-detail-mid'
@@ -242,6 +274,7 @@ export function activeNavId({
         : 'rest-detail-ok'
     }
     if (activity === DEMO_ACTIVITY_WALK_DONE) return 'app-home-walk-done'
+    if (hasBooking && !isLowActivity(activity)) return 'app-home-booking'
     if (isLowActivity(activity) || scenario === 'attention') return 'app-home-alert'
     return 'app-home-ok'
   }
@@ -250,7 +283,8 @@ export function activeNavId({
     return 'search-map'
   }
   if (screen === 'caregiver-profile') return `profile-${caregiverId}`
-  if (screen === 'caregiver-calendar' || screen === 'caregiver-pay') return 'calendar'
+  if (screen === 'caregiver-calendar') return 'calendar'
+  if (screen === 'caregiver-pay') return 'calendar-pay'
   if (screen === 'caregiver-success') return 'calendar-success'
   return screen
 }

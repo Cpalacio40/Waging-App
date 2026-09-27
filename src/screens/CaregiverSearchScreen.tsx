@@ -12,6 +12,7 @@ import {
 } from '../data/favoriteCaregivers'
 import {
   buildingOption,
+  DEMO_ONBOARDING_ADDRESS,
   loadSavedAddress,
   loadSavedAddresses,
   removeAddress,
@@ -37,10 +38,10 @@ const SKELETON_COUNT = 3
 const CARD_TOP_INSET_PX = 124
 
 const DEMO_PLACE: LocatedPlace = {
-  label: 'Carrer Petrarca 42',
-  secondary: 'Barcelona, España',
-  lat: 41.4036,
-  lng: 2.1744,
+  label: DEMO_ONBOARDING_ADDRESS.label,
+  secondary: DEMO_ONBOARDING_ADDRESS.secondary,
+  lat: DEMO_ONBOARDING_ADDRESS.lat,
+  lng: DEMO_ONBOARDING_ADDRESS.lng,
 }
 
 type CaregiverSearchOverlay = 'none' | 'profile' | 'calendar' | 'pay' | 'success'

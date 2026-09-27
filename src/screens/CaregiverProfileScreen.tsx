@@ -280,53 +280,23 @@ export function CaregiverProfileScreen({
   const navRef = useRef<HTMLElement>(null)
   const topRef = useRef<HTMLDivElement>(null)
   const nameRef = useRef<HTMLHeadingElement>(null)
-  const mutedSurfaceRef = useRef(true)
-  const titlePinnedRef = useRef(false)
-  const titleSettledRef = useRef(false)
-
-  // Keep nav/photo classes in sync via the DOM so a transparent header never
-  // reveals the photo. Re-applied after React renders (className would wipe
-  // imperative classList changes when is-scrolled etc. update).
-  const applyTitleChromeClasses = useCallback((show: boolean, pinned: boolean) => {
-    const nav = navRef.current
-    const name = nameRef.current
-    const photo = topRef.current?.querySelector('.caregiver-profile__photo-wrap')
-    if (!nav || !name) return
-
-    name.classList.toggle('is-sticky', show)
-    name.classList.toggle('is-pinned', pinned)
-
-    if (show) {
-      photo?.classList.add('is-under-header')
-      nav.classList.add('has-title')
-      nav.classList.toggle('is-title-pinned', pinned)
-    } else {
-      // Opaque first (no bg transition on profile nav), then reveal photo.
-      nav.classList.remove('has-title', 'is-title-pinned')
-      photo?.classList.remove('is-under-header')
-    }
-  }, [])
-
-  useLayoutEffect(() => {
-    applyTitleChromeClasses(titlePinnedRef.current, titleSettledRef.current)
-  })
+  const navTitleRef = useRef<HTMLParagraphElement>(null)
 
   const syncNavChrome = useCallback((offset: number) => {
     const nav = navRef.current
     const top = topRef.current
     const name = nameRef.current
+    const navTitle = navTitleRef.current
 
     if (nav && top) {
       // Sample the content row sitting under the nav bottom edge.
       const underNavY = offset + nav.offsetHeight
       const muted = underNavY < top.offsetHeight
-      mutedSurfaceRef.current = muted
       const nextSurface = muted ? NAV_SURFACE_MUTED : NAV_SURFACE_DEFAULT
       nav.style.setProperty('--caregiver-nav-bg', nextSurface)
-      name?.style.setProperty('--caregiver-nav-bg', nextSurface)
     }
 
-    if (!nav || !name) return
+    if (!nav || !name || !navTitle) return
 
     const content = name.closest('.caregiver-profile__scroll-content') as HTMLElement | null
     if (!content) return
@@ -344,29 +314,11 @@ export function CaregiverProfileScreen({
         offset
     }
 
-    const navBottom = nav.offsetHeight
-    // Match Actividad / Descanso nav title: 16/600/24 body, bottom 14px in the nav band.
-    const headerTitleHeight = 24
-    const stickPoint = Math.max(0, navBottom - 14 - headerTitleHeight)
-    const nameViewportTop = nameTop - offset
-    // While the title crosses the nav, keep it on top (nav goes transparent)
-    // instead of letting it slide underneath and disappear.
-    const crossingNav = nameViewportTop < navBottom
-    const pin = Math.max(0, offset - (nameTop - stickPoint))
-    const pinned = pin > 0.5
-    const showTitleChrome = crossingNav || pinned
-
-    name.style.transform = pinned ? `translate3d(0, ${pin}px, 0)` : ''
-    // Stretch the title surface up to the top of the nav so the photo
-    // never flashes through the transparent header.
-    const visualTop = pinned ? stickPoint : Math.max(0, nameViewportTop)
-    const coverTop = showTitleChrome ? -visualTop : 14
-    name.style.setProperty('--sticky-cover-top', `${coverTop}px`)
-
-    titlePinnedRef.current = showTitleChrome
-    titleSettledRef.current = pinned
-    applyTitleChromeClasses(showTitleChrome, pinned)
-  }, [applyTitleChromeClasses])
+    // Show the nav title once the in-page name has scrolled fully under the header.
+    const nameBottom = nameTop - offset + name.offsetHeight
+    const showNavTitle = nameBottom <= nav.offsetHeight
+    navTitle.classList.toggle('is-visible', showNavTitle)
+  }, [])
 
   const dragScroll = useDragScroll({
     enabled: open && entered && !calendarOpen,
@@ -377,21 +329,8 @@ export function CaregiverProfileScreen({
 
   useEffect(() => {
     if (!open || !entered) return
-    mutedSurfaceRef.current = true
-    titlePinnedRef.current = false
-    titleSettledRef.current = false
-    const name = nameRef.current
-    if (name) {
-      name.style.transform = ''
-      name.style.removeProperty('--sticky-cover-top')
-      name.classList.remove('is-sticky', 'is-pinned')
-    }
-    topRef.current
-      ?.querySelector('.caregiver-profile__photo-wrap')
-      ?.classList.remove('is-under-header')
-    navRef.current?.classList.remove('has-title', 'is-title-pinned')
+    navTitleRef.current?.classList.remove('is-visible')
     navRef.current?.style.setProperty('--caregiver-nav-bg', NAV_SURFACE_MUTED)
-    nameRef.current?.style.setProperty('--caregiver-nav-bg', NAV_SURFACE_MUTED)
     syncNavChrome(0)
   }, [open, entered, caregiver.id, syncNavChrome])
 
@@ -514,21 +453,8 @@ export function CaregiverProfileScreen({
   const onCalendarOpened = () => {
     // Reset profile scroll only once the calendar fully covers the sheet.
     dragScroll.resetScroll()
-    mutedSurfaceRef.current = true
-    titlePinnedRef.current = false
-    titleSettledRef.current = false
-    const name = nameRef.current
-    if (name) {
-      name.style.transform = ''
-      name.style.removeProperty('--sticky-cover-top')
-      name.classList.remove('is-sticky', 'is-pinned')
-    }
-    topRef.current
-      ?.querySelector('.caregiver-profile__photo-wrap')
-      ?.classList.remove('is-under-header')
-    navRef.current?.classList.remove('has-title', 'is-title-pinned')
+    navTitleRef.current?.classList.remove('is-visible')
     navRef.current?.style.setProperty('--caregiver-nav-bg', NAV_SURFACE_MUTED)
-    name?.style.setProperty('--caregiver-nav-bg', NAV_SURFACE_MUTED)
   }
 
   const onSheetTransitionEnd = (e: TransitionEvent<HTMLDivElement>) => {
@@ -566,6 +492,9 @@ export function CaregiverProfileScreen({
         <button type="button" className="caregiver-back" aria-label="Volver" onClick={onBack}>
           <img src={caregiverAsset('arrow-left.svg')} alt="" width={32} height={32} draggable={false} />
         </button>
+        <p ref={navTitleRef} className="caregiver-profile__nav-title" aria-hidden="true">
+          {caregiver.name}
+        </p>
         <button
           type="button"
           className={`caregiver-favorite${favorited ? ' is-favorited' : ''}`}

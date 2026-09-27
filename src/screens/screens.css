@@ -674,6 +674,11 @@
   pointer-events: auto;
 }
 
+/* Keep home cards/buttons at 1:1 on press (override global button:active scale). */
+.app-home button:active:not(:disabled):not([aria-disabled='true']) {
+  transform: none;
+}
+
 .app-home__veil {
   position: absolute;
   left: 0;
@@ -1005,6 +1010,8 @@
   font-weight: 400;
   line-height: 38px;
   color: #fcfcfc;
+  -webkit-text-stroke: var(--display-stroke) currentColor;
+  paint-order: stroke fill;
 }
 
 .app-home__session-done-meta {
@@ -3238,8 +3245,6 @@
 
 .caregiver-nav--profile {
   z-index: 7;
-  /* Only the surface color eases — background itself stays instant so
-     has-title transparent ↔ opaque never flashes the photo. */
   transition: --caregiver-nav-bg 0.55s ease;
 }
 
@@ -3249,17 +3254,31 @@
   z-index: 2;
 }
 
-.caregiver-nav--profile.has-title {
-  background: transparent;
-}
-
-.caregiver-nav--profile.has-title::after,
-.caregiver-nav--profile.has-title.is-scrolled::after {
+.caregiver-profile__nav-title {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  z-index: 1;
+  box-sizing: border-box;
+  max-width: calc(100% - 96px);
+  margin: 0;
+  padding: 0 8px;
+  transform: translateX(-50%);
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  text-align: center;
+  color: #340616;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
   opacity: 0;
+  transition: opacity 0.2s ease;
 }
 
-.caregiver-nav--profile.has-title.is-title-pinned::after,
-.caregiver-nav--profile.has-title.is-title-pinned.is-scrolled::after {
+.caregiver-profile__nav-title.is-visible {
   opacity: 1;
 }
 
@@ -3908,11 +3927,6 @@
   border-radius: 28px;
 }
 
-.caregiver-profile__photo-wrap.is-under-header {
-  opacity: 0;
-  pointer-events: none;
-}
-
 .caregiver-profile__photo {
   width: 100%;
   height: 100%;
@@ -3956,48 +3970,6 @@
   font-weight: 400;
   line-height: 38px;
   color: var(--ink);
-  transition:
-    --caregiver-nav-bg 0.55s ease,
-    font-size 0.2s ease,
-    line-height 0.2s ease,
-    font-weight 0.2s ease;
-}
-
-.caregiver-profile__name.is-sticky {
-  position: relative;
-  z-index: 5;
-  align-self: stretch;
-  box-sizing: border-box;
-  width: 100%;
-  padding: 0 40px;
-  will-change: transform;
-  /* Match Actividad / Descanso nav titles */
-  font-family: var(--font-body);
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 24px;
-  color: #340616;
-  -webkit-text-stroke: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.caregiver-profile__name.is-sticky::before {
-  content: '';
-  position: absolute;
-  top: var(--sticky-cover-top, -14px);
-  bottom: -12px;
-  left: -20px;
-  right: -20px;
-  z-index: -1;
-  background: var(--caregiver-nav-bg, #fcfcfc);
-  box-shadow: none;
-}
-
-.caregiver-profile__name.is-sticky.is-pinned::before {
-  /* Hairline comes from .caregiver-nav--profile.has-title.is-title-pinned::after */
-  box-shadow: none;
 }
 
 .caregiver-profile__tagline {

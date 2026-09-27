@@ -612,18 +612,19 @@ export function CaregiverCalendarScreen({
                       const status = resolvedStatus(cell)
                       const selected = cell.key === selectedKey
                       const selectable = canSelect(cell)
+                      // Outside-month overflow stays visible when it has a booking
+                      // status (available/unavailable). Only hide pure fillers.
+                      if (cell.outside && status !== 'available' && status !== 'unavailable') {
+                        return <div key={cell.key} className="caregiver-calendar__day is-empty" aria-hidden="true" />
+                      }
+
                       const className = [
                         'caregiver-calendar__day',
                         `caregiver-calendar__day--${status}`,
                         selected ? 'is-selected' : '',
-                        cell.outside && status !== 'available' ? 'is-empty' : '',
                       ]
                         .filter(Boolean)
                         .join(' ')
-
-                      if (cell.outside && status !== 'available' && status !== 'unavailable') {
-                        return <div key={cell.key} className="caregiver-calendar__day is-empty" aria-hidden="true" />
-                      }
 
                       return (
                         <button

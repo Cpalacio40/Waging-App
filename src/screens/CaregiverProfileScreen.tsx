@@ -345,8 +345,9 @@ export function CaregiverProfileScreen({
     }
 
     const navBottom = nav.offsetHeight
-    // Park the title in the nav band (aligned with the back control).
-    const stickPoint = Math.max(0, navBottom - 12 - name.offsetHeight)
+    // Match Actividad / Descanso nav title: 16/600/24 body, bottom 14px in the nav band.
+    const headerTitleHeight = 24
+    const stickPoint = Math.max(0, navBottom - 14 - headerTitleHeight)
     const nameViewportTop = nameTop - offset
     // While the title crosses the nav, keep it on top (nav goes transparent)
     // instead of letting it slide underneath and disappear.

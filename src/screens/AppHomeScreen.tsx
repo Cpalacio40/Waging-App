@@ -578,8 +578,8 @@ function AppHomeView({
                   <img
                     src={inicioAsset('icon-session-done-close.svg')}
                     alt=""
-                    width={19}
-                    height={19}
+                    width={20}
+                    height={20}
                     draggable={false}
                     aria-hidden="true"
                   />

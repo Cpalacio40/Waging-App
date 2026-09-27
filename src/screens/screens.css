@@ -879,7 +879,7 @@
   font-feature-settings: 'tnum' 1, 'lnum' 1;
 }
 
-/* Post-walk card — Figma 286:3231 / 349:7374 */
+/* Post-walk card — Figma 286:3231 / 349:7374 (sizes rounded up to even px) */
 .app-home__session-done {
   position: absolute;
   left: 22px;
@@ -892,14 +892,14 @@
   width: 346px;
   height: 140px;
   padding: 16px 14px;
-  border-radius: 20.36px;
+  border-radius: 22px;
   background: linear-gradient(180deg, #f1743c 0%, #fd8d5d 100%);
   color: #fcfcfc;
   overflow: hidden;
   pointer-events: auto;
 }
 
-/* Swirl: Figma Group 8 — wrapper 247.64×226 at left 150 / top -42, art rotated -4.46° */
+/* Swirl: Figma Group 8 — wrapper at left 150 / top -42, art rotated -4° */
 .app-home__session-done-swirl-wrap {
   position: absolute;
   left: 150px;
@@ -908,17 +908,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 247.64px;
+  width: 248px;
   height: 226px;
   pointer-events: none;
 }
 
 .app-home__session-done-swirl {
   display: block;
-  width: 232.12px;
-  height: 209.28px;
+  width: 234px;
+  height: 210px;
   flex-shrink: 0;
-  transform: rotate(-4.46deg);
+  transform: rotate(-4deg);
 }
 
 .app-home__session-done-top {
@@ -939,8 +939,8 @@
   padding: 4px 8px;
   border-radius: 10px;
   background: #ff905f;
-  backdrop-filter: blur(2.4px);
-  -webkit-backdrop-filter: blur(2.4px);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   font-family: var(--font-body);
   font-size: 12px;
   font-weight: 500;
@@ -974,8 +974,8 @@
 
 .app-home__session-done-close img {
   display: block;
-  width: 18.91px;
-  height: 18.91px;
+  width: 20px;
+  height: 20px;
 }
 
 .app-home__session-done-body {
@@ -986,7 +986,7 @@
   align-items: flex-start;
   justify-content: center;
   gap: 2px;
-  width: min(239px, 100%);
+  width: min(240px, 100%);
   margin: 0;
   padding: 0;
   border: 0;
@@ -1003,7 +1003,7 @@
   font-family: var(--font-display);
   font-size: 30px;
   font-weight: 400;
-  line-height: 37.58px;
+  line-height: 38px;
   color: #fcfcfc;
 }
 
@@ -3956,7 +3956,11 @@
   font-weight: 400;
   line-height: 38px;
   color: var(--ink);
-  transition: --caregiver-nav-bg 0.55s ease;
+  transition:
+    --caregiver-nav-bg 0.55s ease,
+    font-size 0.2s ease,
+    line-height 0.2s ease,
+    font-weight 0.2s ease;
 }
 
 .caregiver-profile__name.is-sticky {
@@ -3967,6 +3971,16 @@
   width: 100%;
   padding: 0 40px;
   will-change: transform;
+  /* Match Actividad / Descanso nav titles */
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  color: #340616;
+  -webkit-text-stroke: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .caregiver-profile__name.is-sticky::before {

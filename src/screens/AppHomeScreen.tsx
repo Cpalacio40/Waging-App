@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type TransitionEvent } from 'react'
-import { ChevronDown, X } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 import { CAREGIVERS, DEFAULT_CAREGIVER_ID } from '../data/caregivers'
 import {
   HOME_SCENARIOS,
@@ -547,13 +547,14 @@ function AppHomeView({
 
           {sessionDone ? (
             <div className="app-home__session-done">
-              <img
-                className="app-home__session-done-swirl"
-                src={inicioAsset('session-done-swirl.svg')}
-                alt=""
-                draggable={false}
-                aria-hidden="true"
-              />
+              <div className="app-home__session-done-swirl-wrap" aria-hidden="true">
+                <img
+                  className="app-home__session-done-swirl"
+                  src={inicioAsset('session-done-swirl.svg')}
+                  alt=""
+                  draggable={false}
+                />
+              </div>
               <div className="app-home__session-done-top">
                 <span className="app-home__session-done-pill">
                   <img
@@ -574,7 +575,14 @@ function AppHomeView({
                     onDismissSessionDone?.()
                   }}
                 >
-                  <X size={14} strokeWidth={2} aria-hidden="true" />
+                  <img
+                    src={inicioAsset('icon-session-done-close.svg')}
+                    alt=""
+                    width={19}
+                    height={19}
+                    draggable={false}
+                    aria-hidden="true"
+                  />
                 </button>
               </div>
               <button

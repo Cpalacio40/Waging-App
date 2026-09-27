@@ -2482,6 +2482,7 @@
 
 /* Activity detail — Figma 352:9138 */
 .activity-detail {
+  --activity-orange: #ff905f;
   position: absolute;
   inset: 0;
   z-index: 40;
@@ -2553,7 +2554,7 @@
   margin: 12px auto 0;
   padding: 22px 12px;
   border-radius: 24px;
-  background: #ff905f;
+  background: var(--activity-orange);
   box-sizing: border-box;
 }
 
@@ -2706,7 +2707,7 @@
   width: calc(100% + 40px);
   margin: 28px -20px 0;
   padding: 0 23px 40px;
-  background: #ff905f;
+  background: var(--activity-orange);
   box-sizing: border-box;
 }
 

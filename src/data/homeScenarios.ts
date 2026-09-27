@@ -23,12 +23,12 @@ export type HomeScenario = {
 export const ACTIVITY_ALERT_THRESHOLD = 30
 
 /** Points added when a scheduled outing finishes (demo “Salida terminada”). */
-export const ACTIVITY_WALK_BONUS = 40
+export const ACTIVITY_WALK_BONUS = 23
 
 /** Demo presets for the side panel / navigator. */
 export const DEMO_ACTIVITY_OK = 80
 export const DEMO_ACTIVITY_LOW = 30
-/** After a finished walk from low activity — Figma 286:3231 (30 + 40). */
+/** After a finished walk from low activity — Figma 286:3231 (30 + 23). */
 export const DEMO_ACTIVITY_WALK_DONE = DEMO_ACTIVITY_LOW + ACTIVITY_WALK_BONUS
 
 export const DEFAULT_ACTIVITY = DEMO_ACTIVITY_OK
@@ -58,12 +58,28 @@ export const HOME_SCENARIOS: Record<HomeScenarioId, HomeScenario> = {
   },
 }
 
+/** Post-walk home copy — Figma 350:8596 (rewritten: encouraging, no guilt). */
+export const WALK_DONE_HOME_COPY = {
+  headline: 'La sesión le ha venido bien',
+  body: 'Con la salida de hoy ya lleva un buen impulso. Si más tarde sale un rato más, el día quedará redondo.',
+} as const
+
 export function isLowActivity(activity: number) {
   return activity <= ACTIVITY_ALERT_THRESHOLD
 }
 
 export function scenarioFromActivity(activity: number): HomeScenarioId {
   return isLowActivity(activity) ? 'attention' : 'ok'
+}
+
+/** Home headline/body for the current activity (walk-done mid-day vs scenario presets). */
+export function homeCopyForActivity(
+  activity: number,
+  scenario: HomeScenarioId,
+): { headline: string; body: string } {
+  if (activity === DEMO_ACTIVITY_WALK_DONE) return WALK_DONE_HOME_COPY
+  const data = HOME_SCENARIOS[scenario]
+  return { headline: data.headline, body: data.body }
 }
 
 /** @deprecated Prefer DEFAULT_ACTIVITY + scenarioFromActivity */

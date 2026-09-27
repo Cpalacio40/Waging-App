@@ -1,7 +1,11 @@
 import { useEffect, useState, type CSSProperties, type TransitionEvent } from 'react'
 import { ChevronDown, X } from 'lucide-react'
 import { CAREGIVERS, DEFAULT_CAREGIVER_ID } from '../data/caregivers'
-import { HOME_SCENARIOS, type HomeScenarioId } from '../data/homeScenarios'
+import {
+  HOME_SCENARIOS,
+  homeCopyForActivity,
+  type HomeScenarioId,
+} from '../data/homeScenarios'
 import { restDetailForScore } from '../data/restDetail'
 import { useDragScroll } from '../hooks/useDragScroll'
 import { useHeldScenario } from '../hooks/useHeldScenario'
@@ -167,6 +171,7 @@ function AppHomeView({
 }) {
   const data = HOME_SCENARIOS[scenario]
   const activity = activityProp ?? data.activity
+  const copy = homeCopyForActivity(activity, scenario)
   const rest = restDetailForScore(data.rest)
   const needsAttention = scenario === 'attention'
   const showBellBadge = needsAttention && !alertOpen && !alertResolved
@@ -583,8 +588,8 @@ function AppHomeView({
 
             <section className="app-home__copy">
               <div className="app-home__copy-text">
-                <h2 className="app-home__headline">{data.headline}</h2>
-                <p className="app-home__body">{data.body}</p>
+                <h2 className="app-home__headline">{copy.headline}</h2>
+                <p className="app-home__body">{copy.body}</p>
               </div>
               <button
                 type="button"

@@ -6,8 +6,13 @@ import {
   useState,
   type TransitionEvent,
 } from 'react'
-import { Play } from 'lucide-react'
+import { Heart, Play } from 'lucide-react'
 import type { Caregiver, CaregiverReview } from '../data/caregivers'
+import {
+  isFavoriteCaregiver,
+  subscribeFavoritesChange,
+  toggleFavoriteCaregiver,
+} from '../data/favoriteCaregivers'
 import type { BookingPhase } from '../data/screens'
 import { useDragScroll } from '../hooks/useDragScroll'
 import { useHorizontalDragScroll } from '../hooks/useHorizontalDragScroll'
@@ -270,6 +275,7 @@ export function CaregiverProfileScreen({
   const [calendarMounted, setCalendarMounted] = useState(false)
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [playingKey, setPlayingKey] = useState<string | null>(null)
+  const [favorited, setFavorited] = useState(() => isFavoriteCaregiver(caregiver.id))
   const videoEls = useRef(new Map<string, HTMLVideoElement>())
   const navRef = useRef<HTMLElement>(null)
   const topRef = useRef<HTMLDivElement>(null)
@@ -387,6 +393,13 @@ export function CaregiverProfileScreen({
     nameRef.current?.style.setProperty('--caregiver-nav-bg', NAV_SURFACE_MUTED)
     syncNavChrome(0)
   }, [open, entered, caregiver.id, syncNavChrome])
+
+  useEffect(() => {
+    setFavorited(isFavoriteCaregiver(caregiver.id))
+    return subscribeFavoritesChange(() => {
+      setFavorited(isFavoriteCaregiver(caregiver.id))
+    })
+  }, [caregiver.id])
 
   const pausePlaying = () => {
     if (!playingKey) return
@@ -551,6 +564,20 @@ export function CaregiverProfileScreen({
       >
         <button type="button" className="caregiver-back" aria-label="Volver" onClick={onBack}>
           <img src={caregiverAsset('arrow-left.svg')} alt="" width={32} height={32} draggable={false} />
+        </button>
+        <button
+          type="button"
+          className={`caregiver-favorite${favorited ? ' is-favorited' : ''}`}
+          aria-label={favorited ? 'Quitar de favoritos' : 'Añadir a favoritos'}
+          aria-pressed={favorited}
+          onClick={() => setFavorited(toggleFavoriteCaregiver(caregiver.id))}
+        >
+          <Heart
+            size={24}
+            strokeWidth={2}
+            fill={favorited ? 'currentColor' : 'none'}
+            aria-hidden
+          />
         </button>
       </header>
 

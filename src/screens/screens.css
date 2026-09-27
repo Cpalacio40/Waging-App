@@ -3196,6 +3196,25 @@
   pointer-events: auto;
 }
 
+.caregiver-nav .caregiver-favorite {
+  pointer-events: auto;
+  margin-left: auto;
+}
+
+.caregiver-favorite {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--orange);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
 .caregiver-nav--profile {
   z-index: 7;
   /* Only the surface color eases — background itself stays instant so
@@ -3203,7 +3222,8 @@
   transition: --caregiver-nav-bg 0.55s ease;
 }
 
-.caregiver-nav--profile .caregiver-back {
+.caregiver-nav--profile .caregiver-back,
+.caregiver-nav--profile .caregiver-favorite {
   position: relative;
   z-index: 2;
 }
@@ -3664,6 +3684,22 @@
   line-height: 16px;
   color: #fcfcfc;
   white-space: nowrap;
+}
+
+.caregiver-card__favorite {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--orange);
+  color: #fcfcfc;
+  pointer-events: none;
 }
 
 .caregiver-card__copy {

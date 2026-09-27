@@ -1,9 +1,15 @@
-import { useEffect, useRef, useState, type AnimationEvent } from 'react'
+import { Heart } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState, type AnimationEvent } from 'react'
 import {
   caregiversForAddress,
   findCaregiver,
   type Caregiver,
 } from '../data/caregivers'
+import {
+  loadFavoriteCaregiverIds,
+  sortCaregiversByFavorite,
+  subscribeFavoritesChange,
+} from '../data/favoriteCaregivers'
 import {
   buildingOption,
   loadSavedAddress,
@@ -137,6 +143,7 @@ export function CaregiverSearchScreen({
   const [editingDraft, setEditingDraft] = useState<SavedAddress | null>(null)
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>(() => loadSavedAddresses())
   const [activeAddress, setActiveAddress] = useState<SavedAddress | null>(() => loadSavedAddress())
+  const [favoriteIds, setFavoriteIds] = useState(() => loadFavoriteCaregiverIds())
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const phase = phaseProp ?? internalPhase
   const overlay = overlayProp ?? (profileOpen ? 'profile' : 'none')
@@ -160,6 +167,12 @@ export function CaregiverSearchScreen({
     return subscribeAddressChange(() => {
       setSavedAddresses(loadSavedAddresses())
       setActiveAddress(loadSavedAddress())
+    })
+  }, [])
+
+  useEffect(() => {
+    return subscribeFavoritesChange(() => {
+      setFavoriteIds(loadFavoriteCaregiverIds())
     })
   }, [])
 
@@ -324,7 +337,15 @@ export function CaregiverSearchScreen({
     setPhase('details')
   }
 
-  const visibleCaregivers = caregiversForAddress(activeAddress, savedAddresses)
+  const visibleCaregivers = useMemo(
+    () =>
+      sortCaregiversByFavorite(
+        caregiversForAddress(activeAddress, savedAddresses),
+        favoriteIds,
+      ),
+    [activeAddress, savedAddresses, favoriteIds],
+  )
+  const favoriteIdSet = useMemo(() => new Set(favoriteIds), [favoriteIds])
 
   const openProfile = (caregiver: Caregiver) => {
     if (dragScroll.consumeClickSuppression()) return
@@ -567,32 +588,52 @@ export function CaregiverSearchScreen({
 
                   {phase === 'results' || leavingPanel === 'list' ? (
                     <ul className="caregiver-search__results">
-                      {visibleCaregivers.map((caregiver) => (
-                        <li key={caregiver.id}>
-                          <button
-                            type="button"
-                            className="caregiver-card caregiver-card--button"
-                            data-caregiver-id={caregiver.id}
-                            onClick={() => openProfile(caregiver)}
-                          >
-                            <div className="caregiver-card__hero">
-                              <img
-                                className={`caregiver-card__photo caregiver-card__photo--${caregiver.id}`}
-                                src={caregiverAsset(caregiver.photo)}
-                                alt=""
-                                draggable={false}
-                              />
-                              <div className="caregiver-card__scrim" aria-hidden="true" />
-                              <span className="caregiver-card__badge">{caregiver.badge}</span>
-                              <div className="caregiver-card__copy">
-                                <h2 className="caregiver-card__name display-title">{caregiver.name}</h2>
-                                <p className="caregiver-card__specialty">{caregiver.specialty}</p>
+                      {visibleCaregivers.map((caregiver) => {
+                        const isFavorited = favoriteIdSet.has(caregiver.id)
+                        return (
+                          <li key={caregiver.id}>
+                            <button
+                              type="button"
+                              className="caregiver-card caregiver-card--button"
+                              data-caregiver-id={caregiver.id}
+                              onClick={() => openProfile(caregiver)}
+                            >
+                              <div className="caregiver-card__hero">
+                                <img
+                                  className={`caregiver-card__photo caregiver-card__photo--${caregiver.id}`}
+                                  src={caregiverAsset(caregiver.photo)}
+                                  alt=""
+                                  draggable={false}
+                                />
+                                <div className="caregiver-card__scrim" aria-hidden="true" />
+                                <span className="caregiver-card__badge">{caregiver.badge}</span>
+                                {isFavorited ? (
+                                  <span
+                                    className="caregiver-card__favorite"
+                                    aria-label="Favorito"
+                                  >
+                                    <Heart
+                                      size={18}
+                                      strokeWidth={2}
+                                      fill="currentColor"
+                                      aria-hidden
+                                    />
+                                  </span>
+                                ) : null}
+                                <div className="caregiver-card__copy">
+                                  <h2 className="caregiver-card__name display-title">
+                                    {caregiver.name}
+                                  </h2>
+                                  <p className="caregiver-card__specialty">
+                                    {caregiver.specialty}
+                                  </p>
+                                </div>
                               </div>
-                            </div>
-                            <p className="caregiver-card__bio">{caregiver.bio}</p>
-                          </button>
-                        </li>
-                      ))}
+                              <p className="caregiver-card__bio">{caregiver.bio}</p>
+                            </button>
+                          </li>
+                        )
+                      })}
                     </ul>
                   ) : null}
                 </div>

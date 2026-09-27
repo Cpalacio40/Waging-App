@@ -217,26 +217,19 @@ export function useDragScroll({ enabled, ignoreSelector, onOffsetChange }: UseDr
   )
 
   // Non-passive wheel listener so preventDefault works.
+  // Wheel always scrolls — ignoreSelector only blocks pointer-drag start (buttons/links).
   useEffect(() => {
     const el = ref.current
     if (!el || !enabled) return
 
     const onWheel = (e: WheelEvent) => {
-      const target = e.target
-      if (
-        ignoreSelector &&
-        target instanceof Element &&
-        target.closest(ignoreSelector)
-      ) {
-        return
-      }
       e.preventDefault()
       applyOffset(offsetRef.current + e.deltaY)
     }
 
     el.addEventListener('wheel', onWheel, { passive: false })
     return () => el.removeEventListener('wheel', onWheel)
-  }, [applyOffset, enabled, ignoreSelector])
+  }, [applyOffset, enabled])
 
   // Freeze scroll position while disabled (e.g. calendar covering the profile).
   // Call resetScroll() explicitly when the view should jump back to top.

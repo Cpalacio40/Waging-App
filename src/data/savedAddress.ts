@@ -146,15 +146,6 @@ export function setActiveAddressId(id: string) {
   writeBook(book)
 }
 
-/** @deprecated Use setActiveAddressId */
-export function setActiveAddressTag(tag: string) {
-  const book = readBook()
-  const match = book.items.find((item) => item.tag === tag)
-  if (!match) return
-  book.activeId = match.id
-  writeBook(book)
-}
-
 /** Remove one saved address by id. */
 export function removeAddress(id: string) {
   const book = readBook()

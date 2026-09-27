@@ -1,12 +1,7 @@
-import type { HomeScenarioId } from './homeScenarios'
-import { HOME_SCENARIOS } from './homeScenarios'
-
-/** Sleep stage for the “Etapas del descanso” bar chart. */
 export type SleepStage = 'deep' | 'light' | 'awake'
 
 export type RestChartBar = {
   stage: SleepStage
-  /** Fill height as % of the chart column (0–100). */
   value: number
 }
 
@@ -19,14 +14,11 @@ export type RestEvent = {
 export type RestDetail = {
   score: number
   badge: string
-  /** Home card + detail hero line. */
   summaryLine: string
   sleepStart: string
   sleepEnd: string
   sleepTotal: string
-  /** Shown on the home rest card. */
   homeBpm: string
-  /** Shown on the detail “Ritmo cardíaco” chip. */
   detailBpm: string
   interruptions: number
   resumen: string
@@ -131,11 +123,6 @@ const REST_LOW: RestDetail = {
     { stage: 'awake', value: 28 },
   ],
   chartTimes: ['12 am', '2 am', '4 am', '5:45am'],
-}
-
-export function restDetailForScenario(scenario: HomeScenarioId): RestDetail {
-  const score = HOME_SCENARIOS[scenario].rest
-  return restDetailForScore(score)
 }
 
 export function restDetailForScore(rest: number): RestDetail {

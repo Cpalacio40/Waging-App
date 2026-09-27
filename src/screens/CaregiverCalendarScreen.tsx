@@ -239,11 +239,12 @@ export function CaregiverCalendarScreen({
   const payBusy = payPhase !== 'idle'
   const dragScroll = useDragScroll({
     enabled: open && entered && !policyOpen && !policyClosing && !payBusy,
-    ignoreSelector: 'button, a, select, .caregiver-calendar__time',
+    ignoreSelector: 'a, input, textarea, select, .leaflet-container, .caregiver-calendar__meet-map',
   })
   const showPolicyModal = policyOpen || policyClosing
 
   const openPolicyModal = () => {
+    if (dragScroll.consumeClickSuppression()) return
     setPolicyClosing(false)
     setPolicyOpen(true)
   }
@@ -448,6 +449,7 @@ export function CaregiverCalendarScreen({
     .join(' ')
 
   const shiftMonth = (delta: number) => {
+    if (dragScroll.consumeClickSuppression()) return
     setCursor((prev) => {
       const candidate = new Date(prev.getFullYear(), prev.getMonth() + delta, 1)
       const candidateIndex = monthIndex(candidate)
@@ -465,6 +467,7 @@ export function CaregiverCalendarScreen({
   const canSelect = (cell: CalendarDay) => resolvedStatus(cell) === 'available'
 
   const onSelectDay = (cell: CalendarDay) => {
+    if (dragScroll.consumeClickSuppression()) return
     if (!canSelect(cell)) return
     setSelectedKey(cell.key)
     setSelectedDate(startOfDay(cell.date))
@@ -472,6 +475,11 @@ export function CaregiverCalendarScreen({
     if (cell.outside && monthIndex(cell.date) <= secondMonthIndex) {
       setCursor(new Date(cell.date.getFullYear(), cell.date.getMonth(), 1))
     }
+  }
+
+  const onSelectTime = (slot: string) => {
+    if (dragScroll.consumeClickSuppression()) return
+    setTime(slot)
   }
 
   const buildBookingDetails = (date: Date, slot: string): BookingSuccessDetails => ({
@@ -673,7 +681,7 @@ export function CaregiverCalendarScreen({
                             role="option"
                             aria-selected={selected}
                             className={`caregiver-calendar__slot${selected ? ' is-selected' : ''}`}
-                            onClick={() => setTime(slot)}
+                            onClick={() => onSelectTime(slot)}
                           >
                             {slot}
                           </button>

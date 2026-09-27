@@ -98,6 +98,3 @@ export function homeCopyForActivity(
   const data = HOME_SCENARIOS[scenario]
   return { headline: data.headline, body: data.body }
 }
-
-/** @deprecated Prefer DEFAULT_ACTIVITY + scenarioFromActivity */
-export const DEFAULT_SCENARIO: HomeScenarioId = 'ok'

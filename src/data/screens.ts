@@ -33,13 +33,6 @@ export type SearchPhase =
   | 'loading'
   | 'results'
 
-export type ScreenMeta = {
-  id: ScreenId
-  label: string
-  shortLabel: string
-  description: string
-}
-
 export type NavItem = {
   id: string
   label: string
@@ -48,12 +41,9 @@ export type NavItem = {
   searchPhase?: SearchPhase
   caregiverId?: string
   scenario?: HomeScenarioId
-  /** Collar activity for home demos (overrides scenario presets). */
   activity?: number
   bookingPhase?: BookingPhase
-  /** Open the Actividad detail overlay on app-home. */
   activityDetail?: boolean
-  /** Open the Descanso detail overlay on app-home. */
   restDetail?: boolean
 }
 
@@ -62,64 +52,6 @@ export type NavGroup = {
   label: string
   items: NavItem[]
 }
-
-/** Screens available in the prototype navigator (outside the phone). */
-export const SCREENS: ScreenMeta[] = [
-  {
-    id: 'ios-home',
-    label: 'Home iOS',
-    shortLabel: 'Home',
-    description: 'Pantalla de inicio del móvil con widget Waging',
-  },
-  {
-    id: 'splash',
-    label: 'Splash',
-    shortLabel: 'Splash',
-    description: 'Arranque de la app',
-  },
-  {
-    id: 'app-home',
-    label: 'App · Inicio',
-    shortLabel: 'Inicio',
-    description: 'Inicio de Waging (Luca)',
-  },
-  {
-    id: 'caregiver-intro',
-    label: 'App · Cuidador intro',
-    shortLabel: 'Intro',
-    description: 'Más que un paseo — valor del cuidador',
-  },
-  {
-    id: 'caregiver-search',
-    label: 'App · Buscar cuidador',
-    shortLabel: 'Buscar',
-    description: 'Buscador y fichas de cuidadores cerca',
-  },
-  {
-    id: 'caregiver-profile',
-    label: 'App · Perfil cuidador',
-    shortLabel: 'Perfil',
-    description: 'Ficha del cuidador, reseñas y especialidad',
-  },
-  {
-    id: 'caregiver-calendar',
-    label: 'App · Calendario',
-    shortLabel: 'Calendario',
-    description: 'Disponibilidad y reserva de sesión',
-  },
-  {
-    id: 'caregiver-pay',
-    label: 'App · Apple Pay',
-    shortLabel: 'Pago',
-    description: 'Confirmación Apple Pay antes del éxito',
-  },
-  {
-    id: 'caregiver-success',
-    label: 'App · Reserva OK',
-    shortLabel: 'Éxito',
-    description: 'Confirmación de reserva — ¡Todo listo!',
-  },
-]
 
 const CAREGIVER_OPTION_HINT: Record<string, string> = {
   maria: 'ansiedad',
@@ -273,7 +205,6 @@ export const NAV_GROUPS: NavGroup[] = [
 export const NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((group) => group.items)
 
 export const DEFAULT_SCREEN: ScreenId = 'ios-home'
-export const DEFAULT_NAV_ID = 'ios-home'
 
 export function navItemById(id: string): NavItem | undefined {
   return NAV_ITEMS.find((item) => item.id === id)

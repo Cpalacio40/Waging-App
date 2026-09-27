@@ -290,8 +290,8 @@ function AppHomeView({
       className={[
         'screen app-home',
         needsAttention ? 'is-attention' : '',
-        layoutOpen ? 'is-alert-open' : '',
-        bookingShown && !alertShown
+        alertShown ? 'is-alert-open' : '',
+        bookingShown
           ? bookingCollapsed
             ? 'is-booking-collapsed'
             : 'is-booking-open'
@@ -435,108 +435,112 @@ function AppHomeView({
             </button>
           </div>
 
-          {alertMounted ? (
-            <aside
-              className={`app-home__alert${alertShown ? ' is-open' : ''}`}
-              aria-label="Aviso de inactividad"
-              aria-hidden={!alertShown}
-              onTransitionEnd={onAlertTransitionEnd}
-            >
-              <div className="app-home__alert-top">
-                <div className="app-home__alert-badge">
-                  <img src={inicioAsset('icon-info.svg')} alt="" width={14} height={14} draggable={false} />
-                  <span>Inactividad acumulada: Alta</span>
-                </div>
-                <button
-                  type="button"
-                  className="app-home__alert-close"
-                  aria-label="Cerrar aviso"
-                  onClick={onCloseAlert}
+          {alertMounted || (bookingMounted && booking) ? (
+            <div className="app-home__banners">
+              {bookingMounted && booking ? (
+                <aside
+                  className={[
+                    'app-home__booking',
+                    bookingShown ? 'is-open' : '',
+                    bookingCollapsed ? 'is-collapsed' : 'is-expanded',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  aria-label={`Sesión con ${bookingName}`}
+                  aria-hidden={!bookingShown}
+                  onTransitionEnd={onBookingTransitionEnd}
                 >
-                  <img src={inicioAsset('icon-close.svg')} alt="" width={22} height={22} draggable={false} />
-                </button>
-              </div>
-              <p className="app-home__alert-body">
-                Luca necesita atención, lleva <strong>quieto más de lo habitual</strong>. ¿Le agendamos una
-                salida?
-              </p>
-              <div className="app-home__alert-actions">
-                <button
-                  type="button"
-                  className="app-home__alert-btn app-home__alert-btn--primary"
-                  onClick={onAgendar}
-                >
-                  <span>Agendar</span>
-                </button>
-                <button
-                  type="button"
-                  className="app-home__alert-btn app-home__alert-btn--ghost"
-                  onClick={onOwnerHandles}
-                >
-                  <span>Yo me ocupo</span>
-                </button>
-              </div>
-            </aside>
-          ) : null}
+                  <div className="app-home__booking-header">
+                    <img
+                      className="app-home__booking-icon"
+                      src={bookingAsset('icon-id-card.svg')}
+                      alt=""
+                      width={20}
+                      height={20}
+                      draggable={false}
+                    />
+                    <p className="app-home__booking-title">Sesión con {bookingName}</p>
+                    <button
+                      type="button"
+                      className="app-home__booking-toggle"
+                      aria-expanded={!bookingCollapsed}
+                      aria-label={bookingCollapsed ? 'Expandir sesión' : 'Contraer sesión'}
+                      onClick={onToggleBooking}
+                    >
+                      <ChevronDown size={28} strokeWidth={1.75} aria-hidden="true" />
+                    </button>
+                  </div>
+                  <div className="app-home__booking-details" aria-hidden={bookingCollapsed}>
+                    <div className="app-home__booking-details-inner">
+                      <div className="app-home__booking-row">
+                        <img
+                          src={inicioAsset('icon-calendar-check.svg')}
+                          alt=""
+                          width={20}
+                          height={20}
+                          draggable={false}
+                        />
+                        <span className="app-home__booking-when">{booking.sessionLine}</span>
+                      </div>
+                      <div className="app-home__booking-row">
+                        <img
+                          src={inicioAsset('icon-map-pin.svg')}
+                          alt=""
+                          width={20}
+                          height={20}
+                          draggable={false}
+                        />
+                        <span>{booking.addressLine}</span>
+                      </div>
+                    </div>
+                  </div>
+                </aside>
+              ) : null}
 
-          {bookingMounted && booking ? (
-            <aside
-              className={[
-                'app-home__booking',
-                bookingShown ? 'is-open' : '',
-                bookingCollapsed ? 'is-collapsed' : 'is-expanded',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              aria-label={`Sesión con ${bookingName}`}
-              aria-hidden={!bookingShown}
-              onTransitionEnd={onBookingTransitionEnd}
-            >
-              <div className="app-home__booking-header">
-                <img
-                  className="app-home__booking-icon"
-                  src={bookingAsset('icon-id-card.svg')}
-                  alt=""
-                  width={20}
-                  height={20}
-                  draggable={false}
-                />
-                <p className="app-home__booking-title">Sesión con {bookingName}</p>
-                <button
-                  type="button"
-                  className="app-home__booking-toggle"
-                  aria-expanded={!bookingCollapsed}
-                  aria-label={bookingCollapsed ? 'Expandir sesión' : 'Contraer sesión'}
-                  onClick={onToggleBooking}
+              {alertMounted ? (
+                <aside
+                  className={`app-home__alert${alertShown ? ' is-open' : ''}`}
+                  aria-label="Aviso de inactividad"
+                  aria-hidden={!alertShown}
+                  onTransitionEnd={onAlertTransitionEnd}
                 >
-                  <ChevronDown size={28} strokeWidth={1.75} aria-hidden="true" />
-                </button>
-              </div>
-              <div className="app-home__booking-details" aria-hidden={bookingCollapsed}>
-                <div className="app-home__booking-details-inner">
-                  <div className="app-home__booking-row">
-                    <img
-                      src={inicioAsset('icon-calendar-check.svg')}
-                      alt=""
-                      width={20}
-                      height={20}
-                      draggable={false}
-                    />
-                    <span className="app-home__booking-when">{booking.sessionLine}</span>
+                  <div className="app-home__alert-top">
+                    <div className="app-home__alert-badge">
+                      <img src={inicioAsset('icon-info.svg')} alt="" width={14} height={14} draggable={false} />
+                      <span>Inactividad acumulada: Alta</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="app-home__alert-close"
+                      aria-label="Cerrar aviso"
+                      onClick={onCloseAlert}
+                    >
+                      <img src={inicioAsset('icon-close.svg')} alt="" width={22} height={22} draggable={false} />
+                    </button>
                   </div>
-                  <div className="app-home__booking-row">
-                    <img
-                      src={inicioAsset('icon-map-pin.svg')}
-                      alt=""
-                      width={20}
-                      height={20}
-                      draggable={false}
-                    />
-                    <span>{booking.addressLine}</span>
+                  <p className="app-home__alert-body">
+                    Luca necesita atención, lleva <strong>quieto más de lo habitual</strong>. ¿Le agendamos una
+                    salida?
+                  </p>
+                  <div className="app-home__alert-actions">
+                    <button
+                      type="button"
+                      className="app-home__alert-btn app-home__alert-btn--primary"
+                      onClick={onAgendar}
+                    >
+                      <span>Agendar</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="app-home__alert-btn app-home__alert-btn--ghost"
+                      onClick={onOwnerHandles}
+                    >
+                      <span>Yo me ocupo</span>
+                    </button>
                   </div>
-                </div>
-              </div>
-            </aside>
+                </aside>
+              ) : null}
+            </div>
           ) : null}
 
           {sessionDone ? (

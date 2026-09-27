@@ -550,6 +550,15 @@
   --alert-shift: 168px;
 }
 
+/* Session + attention stacked: booking on top, alert below (+12px gap). */
+.app-home.is-alert-open.is-booking-collapsed {
+  --alert-shift: 310px;
+}
+
+.app-home.is-alert-open.is-booking-open {
+  --alert-shift: 386px;
+}
+
 .app-home__scroller.is-dragging {
   cursor: grabbing;
   user-select: none;
@@ -683,13 +692,22 @@
   z-index: 1;
 }
 
+/* Session / attention cards stack — booking first, alert underneath. */
+.app-home__banners {
+  position: absolute;
+  left: 24px;
+  top: 242px;
+  z-index: 3;
+  width: 341px;
+  pointer-events: none;
+}
+
 /* Attention alert card ? Figma Frame 91191 */
 .app-home__alert {
   position: absolute;
-  left: 24px;
-  top: 243px;
-  z-index: 3;
-  width: 341px;
+  left: 0;
+  top: 0;
+  width: 100%;
   padding: 18px;
   border-radius: 26px;
   background: rgba(13, 10, 9, 0.56);
@@ -702,7 +720,8 @@
   transform: scale(0.88) translate3d(0, -8px, 0);
   transition:
     opacity 0.32s ease,
-    transform 0.45s cubic-bezier(0.32, 0.72, 0, 1);
+    transform 0.45s cubic-bezier(0.32, 0.72, 0, 1),
+    top 0.38s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .app-home__alert.is-open {
@@ -711,17 +730,26 @@
   pointer-events: auto;
 }
 
+/* Sit the attention card under the session banner when both are open. */
+.app-home.is-alert-open.is-booking-collapsed .app-home__alert {
+  top: 76px; /* collapsed booking (~64px) + 12px gap */
+}
+
+.app-home.is-alert-open.is-booking-open .app-home__alert {
+  top: 162px; /* expanded booking (~150px) + 12px gap */
+}
+
 /* Scheduled session card — Figma 349:7708 (expanded) / 349:7465 (collapsed) */
 .app-home__booking {
   position: absolute;
-  left: 24px;
-  top: 242px;
-  z-index: 3;
+  left: 0;
+  top: 0;
+  z-index: 1;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  width: 341px;
+  width: 100%;
   padding: 18px;
   border-radius: 26px;
   background: rgba(13, 10, 9, 0.56);
@@ -1215,6 +1243,7 @@
   .app-home__scroll-extent,
   .app-home__alert,
   .app-home__booking,
+  .app-home__banners,
   .app-home__lower {
     transition-duration: 0.01ms;
   }

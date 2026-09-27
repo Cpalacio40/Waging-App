@@ -76,14 +76,15 @@ const REST_OK: RestDetail = {
     },
   ],
   chartBars: [
-    { stage: 'light', value: 60 },
-    { stage: 'deep', value: 94 },
-    { stage: 'awake', value: 36 },
-    { stage: 'deep', value: 100 },
+    /* Heights match Figma 359:10718 fills of the 170px track. */
+    { stage: 'light', value: 57 },
+    { stage: 'deep', value: 89 },
+    { stage: 'awake', value: 34 },
+    { stage: 'deep', value: 95 },
+    { stage: 'deep', value: 87 },
+    { stage: 'light', value: 65 },
     { stage: 'deep', value: 92 },
-    { stage: 'light', value: 68 },
-    { stage: 'deep', value: 97 },
-    { stage: 'light', value: 68 },
+    { stage: 'light', value: 65 },
   ],
   chartTimes: ['10:45 pm', '1 am', '3 am', '6:15am'],
 }

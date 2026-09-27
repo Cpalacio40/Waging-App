@@ -10,7 +10,6 @@ import './screens.css'
 
 const restAsset = (name: string) => assetUrl(`app-rest/${name}`)
 const caregiverAsset = (name: string) => assetUrl(`caregiver/${name}`)
-const inicioAsset = (name: string) => assetUrl(`app-inicio/${name}`)
 
 const EVENT_ICON: Record<RestDetail['events'][number]['icon'], string> = {
   'moon-star': 'icon-moon-star.svg',
@@ -91,13 +90,6 @@ export function RestDetailScreen({ open, restScore, onClose }: RestDetailScreenP
               <span
                 className={`rest-detail__badge${data.badge !== 'Optimo' ? ' is-muted' : ''}`}
               >
-                <img
-                  src={inicioAsset('icon-star-optimo.svg')}
-                  alt=""
-                  width={16}
-                  height={16}
-                  draggable={false}
-                />
                 <span>{data.badge}</span>
               </span>
               <p className="rest-detail__hero-line">{data.summaryLine}</p>
@@ -162,13 +154,6 @@ export function RestDetailScreen({ open, restScore, onClose }: RestDetailScreenP
                   <span
                     className={`rest-detail__badge${data.badge !== 'Optimo' ? ' is-muted' : ''}`}
                   >
-                    <img
-                      src={inicioAsset('icon-star-optimo.svg')}
-                      alt=""
-                      width={16}
-                      height={16}
-                      draggable={false}
-                    />
                     <span>{data.badge}</span>
                   </span>
                 </div>

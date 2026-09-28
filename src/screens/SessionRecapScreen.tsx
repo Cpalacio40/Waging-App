@@ -284,6 +284,8 @@ export function SessionRecapScreen({ open, onClose, caregiverName }: SessionReca
                     <p className="session-recap__intro-eyebrow">{introLine}</p>
                   ) : null}
                   {slide.id === 'share' ? (
+                    <>
+                    <p className="session-recap__share-eyebrow">{introLine}</p>
                     <button
                       type="button"
                       className="session-recap__share"
@@ -298,6 +300,7 @@ export function SessionRecapScreen({ open, onClose, caregiverName }: SessionReca
                       />
                       <span>Compartir</span>
                     </button>
+                    </>
                   ) : null}
                 </>
               ) : (

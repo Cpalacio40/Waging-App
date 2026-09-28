@@ -1200,6 +1200,36 @@
   background: #ff905f;
 }
 
+/* Share eyebrow — same line as intro (289:4841), white over photo; 36px above Resumen (y:219). */
+.session-recap__share-eyebrow {
+  position: absolute;
+  left: 50%;
+  top: 183px;
+  z-index: 1;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 309px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  transform: translateX(-50%);
+  font-family: var(--font-body);
+  font-size: 18px;
+  font-weight: 500;
+  font-style: normal;
+  line-height: 28px;
+  letter-spacing: 0;
+  color: #fcfcfc;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  user-select: none;
+}
+
 /* Share CTA — Figma 338:8371 inside footer 338:8296 (y:727+10) */
 .session-recap__share {
   position: absolute;

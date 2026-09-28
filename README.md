@@ -26,11 +26,22 @@ Waging combines a **smart collar**, a **trusted certified caregiver**, and **act
 ## What this prototype includes
 
 - Desktop studio with a **phone emulator** (~**390×844**, Figma / near iPhone 11)
-- **Screen navigator** under the device to jump between views without walking the full flow
-- In-phone flow: **iOS home** (widget arrows + Waging icon) → **splash** → **app home**
+- **Screen navigator** and demo toggles under the device to jump between states without walking the full flow
+- In-phone flow: **iOS home** (widget + notification) → **splash** → **app home**
 - UI copy in **Spanish**, brand tokens aligned with the landing
 
-Screens are currently **high-level placeholders** ready to be replaced with fidelity from the Figma design library.
+### Main flows
+
+| Area | What’s covered |
+| --- | --- |
+| Home | Collar activity & rest, inactivity alert, scheduled outing banner, “sesión terminada” + session recap |
+| Detail | Activity and rest detail sheets with day summaries and charts |
+| Caregiver | Value intro → address onboarding (map) → search results → profile (reviews, favorites) |
+| Booking | Availability calendar → Apple Pay sheet → confirmation → back to home with cita |
+
+Demo chrome (outside the phone): activity level toggle, **Salida terminada**, **Repetir onboarding**, and navigator shortcuts (e.g. home with cita, Apple Pay, session recap).
+
+Data is local mock / `localStorage` only (addresses, favorites, scheduled outing).
 
 ---
 
@@ -40,9 +51,11 @@ Screens are currently **high-level placeholders** ready to be replaced with fide
 | --- | --- |
 | UI | React 19 + TypeScript |
 | Build | Vite 8 |
+| Maps | Leaflet |
 | Icons | lucide-react |
 | Styling | Custom CSS (brand variables; no UI kit) |
-| Hosting | [GitHub Pages](https://cpalacio40.github.io/Waging-App/) |
+| Lint | Oxlint |
+| Hosting | [GitHub Pages](https://cpalacio40.github.io/Waging-App/) (Actions on push to `main`) |
 
 ---
 
@@ -54,7 +67,7 @@ Open the live mockup: **[https://cpalacio40.github.io/Waging-App/](https://cpala
 
 ## Getting started (local)
 
-**Requirements:** [Node.js](https://nodejs.org/) 18+
+**Requirements:** [Node.js](https://nodejs.org/) 18+ (CI uses 22)
 
 ```bash
 npm install
@@ -66,7 +79,7 @@ Open the URL Vite prints (usually `http://localhost:5173`).
 | Script | What it does |
 | --- | --- |
 | `npm run dev` | Local dev server with HMR |
-| `npm run build` | Production build into `dist/` |
+| `npm run build` | Production build into `dist/` (`base` `/Waging-App/` for Pages) |
 | `npm run preview` | Preview the production build |
 | `npm run lint` | Oxlint |
 

@@ -50,8 +50,10 @@ import './screens/screens.css'
 
 const ALERT_BANNER_HOLD_MS = 4000
 
+const DEMO_CAREGIVER = findCaregiver(DEFAULT_CAREGIVER_ID)
 const DEMO_HOME_BOOKING: BookingSuccessDetails = {
-  caregiverName: findCaregiver(DEFAULT_CAREGIVER_ID).name,
+  caregiverName: DEMO_CAREGIVER.name,
+  caregiverGender: DEMO_CAREGIVER.gender,
   sessionLine: '10:00 - 11:00, Sábado, Sep 26, 2026',
   addressLine: 'Carrer de Petrarca, 42',
 }
@@ -735,6 +737,7 @@ function App() {
                   <ActivityDetailScreen
                     open={activityDetailOpen}
                     activityScore={activity}
+                    sessionCaregiverName={walkDoneCaregiver}
                     onClose={closeActivityDetail}
                   />
                 </div>

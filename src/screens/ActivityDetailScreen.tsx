@@ -37,6 +37,8 @@ function ActivityBadge({ badge }: { badge: ActivityWalkBadge }) {
 type ActivityDetailScreenProps = {
   open: boolean
   activityScore: number
+  /** Caregiver from the finished outing — personalizes the mid-day session card. */
+  sessionCaregiverName?: string | null
   onClose?: () => void
 }
 
@@ -44,11 +46,12 @@ type ActivityDetailScreenProps = {
 export function ActivityDetailScreen({
   open,
   activityScore,
+  sessionCaregiverName,
   onClose,
 }: ActivityDetailScreenProps) {
   const [mounted, setMounted] = useState(open)
   const [shown, setShown] = useState(false)
-  const data = activityDetailForScore(activityScore)
+  const data = activityDetailForScore(activityScore, sessionCaregiverName)
   const dragScroll = useDragScroll({
     enabled: shown,
     ignoreSelector: 'button, a, input, textarea, [role="button"]',

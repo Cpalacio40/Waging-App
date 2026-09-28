@@ -193,13 +193,40 @@ const ACTIVITY_LOW: ActivityDetail = {
   chartTimes: ['12 am', '4 am', '8 am', '12pm', '4 pm', '8 pm', '12am'],
 }
 
-export function activityDetailForScore(activity: number): ActivityDetail {
+/** First + second token — keeps “María Camila” / “Andrés Eduardo” like the recap. */
+function shortCaregiverName(fullName: string) {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean)
+  if (!parts.length) return 'María Camila'
+  if (parts.length === 1) return parts[0]!
+  return `${parts[0]} ${parts[1]}`
+}
+
+function withSessionCaregiver(detail: ActivityDetail, caregiverName: string): ActivityDetail {
+  const name = shortCaregiverName(caregiverName)
+  return {
+    ...detail,
+    resumen: detail.resumen.replace(/María Camila/g, name),
+    walks: detail.walks.map((walk) =>
+      walk.icon === 'id-card'
+        ? { ...walk, title: `Sesión con ${name}` }
+        : walk,
+    ),
+  }
+}
+
+export function activityDetailForScore(
+  activity: number,
+  sessionCaregiverName?: string | null,
+): ActivityDetail {
   const base =
     activity <= ACTIVITY_ALERT_THRESHOLD
       ? ACTIVITY_LOW
       : activity < ACTIVITY_OK_THRESHOLD
         ? ACTIVITY_MID
         : ACTIVITY_OK
-  if (base.score === activity) return base
-  return { ...base, score: activity }
+  const scored = base.score === activity ? base : { ...base, score: activity }
+  if (sessionCaregiverName && scored.walks.some((w) => w.icon === 'id-card')) {
+    return withSessionCaregiver(scored, sessionCaregiverName)
+  }
+  return scored
 }

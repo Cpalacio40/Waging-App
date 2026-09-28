@@ -1,3 +1,4 @@
+import { caregiverRoleLabel, type CaregiverGender } from '../data/caregivers'
 import { assetUrl } from '../utils/assetUrl'
 import './screens.css'
 
@@ -5,6 +6,7 @@ const bookingAsset = (name: string) => assetUrl(`caregiver/booking/${name}`)
 
 export type BookingSuccessDetails = {
   caregiverName: string
+  caregiverGender: CaregiverGender
   sessionLine: string
   addressLine: string
   email?: string
@@ -79,7 +81,7 @@ export function BookingSuccessScreen({
                 draggable={false}
               />
               <span>
-                {details.caregiverName} (Cuidadora)
+                {details.caregiverName} ({caregiverRoleLabel(details.caregiverGender)})
               </span>
             </li>
             <li className="booking-success__row">

@@ -17,9 +17,12 @@ export type CaregiverReview = {
   objectPosition: string
 }
 
+export type CaregiverGender = 'male' | 'female'
+
 export type Caregiver = {
   id: string
   name: string
+  gender: CaregiverGender
   specialty: string
   badge: string
   bio: string
@@ -33,11 +36,16 @@ export type Caregiver = {
   reviews: CaregiverReview[]
 }
 
+export function caregiverRoleLabel(gender: CaregiverGender): string {
+  return gender === 'male' ? 'Cuidador' : 'Cuidadora'
+}
+
 /** Mock caregivers for search + profile — Figma 120:6900 / 160:4038 / 180:5520+ */
 export const CAREGIVERS: Caregiver[] = [
   {
     id: 'maria',
     name: 'María Camila Rodríguez',
+    gender: 'female',
     specialty: 'Especialista en perros ansiosos · 312 salidas realizadas',
     badge: '50 dueños repiten',
     bio: 'Llevo cuatro años trabajando con perros, y me especialicé en ansiedad de separación porque tuve el mío propio...',
@@ -117,6 +125,7 @@ export const CAREGIVERS: Caregiver[] = [
   {
     id: 'andres',
     name: 'Andrés Eduardo Peralta',
+    gender: 'male',
     specialty: 'Especialista en perros reactivos · 220 salidas realizadas',
     badge: '58 dueños repiten',
     bio: 'Leo las señales de tu perro antes de que la tensión escale, y trabajo con calma la distancia y el control...',
@@ -197,6 +206,7 @@ export const CAREGIVERS: Caregiver[] = [
   {
     id: 'javier',
     name: 'Javier Ramírez',
+    gender: 'male',
     specialty: 'Especialista en perros activos · 148 salidas realizadas',
     badge: '58 dueños repiten',
     bio: 'Combino ejercicio físico con comandos y estímulos mentales, no solo cansarlo caminando...',
@@ -277,6 +287,7 @@ export const CAREGIVERS: Caregiver[] = [
   {
     id: 'sofia',
     name: 'Sofía Gutiérrez',
+    gender: 'female',
     specialty: 'Especialista en perros con necesidades especiales · 501 salidas realizadas',
     badge: '60 dueños repiten',
     bio: 'Adapto cada salida a lo que tu perro puede hacer hoy, atenta a signos de dolor o cansancio...',

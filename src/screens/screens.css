@@ -2844,6 +2844,10 @@
   opacity: 0.57;
 }
 
+.activity-detail__walk.is-empty > img {
+  opacity: 0.4;
+}
+
 .activity-detail__walk > img {
   display: block;
   width: 24px;
@@ -4784,20 +4788,23 @@ button.caregiver-review__play:active:not(:disabled):not([aria-disabled='true']) 
 
 .caregiver-calendar__policy-help {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   width: 16px;
   height: 16px;
   padding: 0;
-  border: 1px solid #da6938;
+  border: 0;
   border-radius: 50%;
   background: transparent;
-  font-family: var(--font-body);
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1;
   color: #da6938;
   cursor: pointer;
+}
+
+.caregiver-calendar__policy-help svg {
+  display: block;
+  width: 16px;
+  height: 16px;
 }
 
 .caregiver-calendar__policy-copy {

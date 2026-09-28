@@ -393,6 +393,7 @@ export function CaregiverCalendarScreen({
 
     const seededDetails: BookingSuccessDetails = {
       caregiverName: caregiver.name,
+      caregiverGender: caregiver.gender,
       sessionLine: formatSessionLine(seed, seedTime ?? '08:30'),
       addressLine: formatAddressLine(meetPlace),
     }
@@ -484,6 +485,7 @@ export function CaregiverCalendarScreen({
 
   const buildBookingDetails = (date: Date, slot: string): BookingSuccessDetails => ({
     caregiverName: caregiver.name,
+    caregiverGender: caregiver.gender,
     sessionLine: formatSessionLine(date, slot),
     addressLine: formatAddressLine(meetPlace),
   })
@@ -721,7 +723,24 @@ export function CaregiverCalendarScreen({
                     aria-label="Más información sobre la política de cancelación"
                     onClick={openPolicyModal}
                   >
-                    ?
+                    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+                      <circle
+                        cx="8"
+                        cy="8"
+                        r="7"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1"
+                      />
+                      <path
+                        d="M6.15 6.05c0-1.12.9-1.95 1.9-1.95s1.9.83 1.9 1.95c0 .72-.35 1.2-.95 1.58-.5.32-.75.55-.75 1.05v.22"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.25"
+                        strokeLinecap="round"
+                      />
+                      <circle cx="8" cy="11.55" r="0.7" fill="currentColor" />
+                    </svg>
                   </button>
                 </div>
                 <p className="caregiver-calendar__policy-copy">

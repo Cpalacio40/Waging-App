@@ -29,13 +29,21 @@ function isBooking(value: unknown): value is BookingSuccessDetails {
   )
 }
 
+function normalizeBooking(value: BookingSuccessDetails): BookingSuccessDetails {
+  const gender = value.caregiverGender
+  return {
+    ...value,
+    caregiverGender: gender === 'male' || gender === 'female' ? gender : 'female',
+  }
+}
+
 export function loadScheduledOuting(): ScheduledOutingState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return { ...EMPTY }
     const parsed = JSON.parse(raw) as Partial<ScheduledOutingState>
     return {
-      booking: isBooking(parsed.booking) ? parsed.booking : null,
+      booking: isBooking(parsed.booking) ? normalizeBooking(parsed.booking) : null,
       sessionDone: Boolean(parsed.sessionDone),
       sessionCaregiverName:
         typeof parsed.sessionCaregiverName === 'string' ? parsed.sessionCaregiverName : null,

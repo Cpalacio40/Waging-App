@@ -12,6 +12,8 @@ type SessionRecapScreenProps = {
   onClose: () => void
   /** Caregiver from the completed outing — shown on the intro slide. */
   caregiverName?: string
+  /** Studio mute — keeps the phone mockup free of demo-only controls. */
+  muted?: boolean
 }
 
 const DEFAULT_RECAP_CAREGIVER = 'María Camila'
@@ -34,12 +36,13 @@ function clampVolume(value: number) {
   return Math.min(1, Math.max(0, value))
 }
 
-function targetMusicVolume(slideIndex: number) {
+function targetMusicVolume(slideIndex: number, muted: boolean) {
+  if (muted) return 0
   return slideIndex === VIDEO_SLIDE_INDEX ? SESSION_RECAP_MUSIC_DUCKED : SESSION_RECAP_MUSIC_VOLUME
 }
 
 /** Post-walk recap — slides in from the right; swipe between 8 sections (video = 4th). */
-export function SessionRecapScreen({ open, onClose, caregiverName }: SessionRecapScreenProps) {
+export function SessionRecapScreen({ open, onClose, caregiverName, muted = false }: SessionRecapScreenProps) {
   const [mounted, setMounted] = useState(open)
   const [shown, setShown] = useState(false)
   const [index, setIndex] = useState(0)
@@ -52,8 +55,10 @@ export function SessionRecapScreen({ open, onClose, caregiverName }: SessionReca
   const scrollerRef = useRef<HTMLDivElement | null>(null)
   const fadeRafRef = useRef<number | null>(null)
   const indexRef = useRef(0)
+  const mutedRef = useRef(false)
   const musicReadyRef = useRef(false)
   indexRef.current = index
+  mutedRef.current = muted
 
   const stopMusicFade = useCallback(() => {
     if (fadeRafRef.current != null) {
@@ -125,7 +130,7 @@ export function SessionRecapScreen({ open, onClose, caregiverName }: SessionReca
       void music
         .play()
         .then(() => {
-          fadeMusicTo(targetMusicVolume(indexRef.current), MUSIC_FADE_IN_MS)
+          fadeMusicTo(targetMusicVolume(indexRef.current, mutedRef.current), MUSIC_FADE_IN_MS)
         })
         .catch(() => {})
       return () => stopMusicFade()
@@ -149,22 +154,22 @@ export function SessionRecapScreen({ open, onClose, caregiverName }: SessionReca
       musicReadyRef.current = true
       return
     }
-    fadeMusicTo(targetMusicVolume(index), MUSIC_DUCK_MS)
-  }, [index, shown, fadeMusicTo])
+    fadeMusicTo(targetMusicVolume(index, muted), MUSIC_DUCK_MS)
+  }, [index, muted, shown, fadeMusicTo])
 
   useEffect(() => {
     const video = videoRef.current
     if (!video) return
     const onVideo = shown && index === VIDEO_SLIDE_INDEX
     if (onVideo) {
-      video.muted = false
-      video.volume = 1
+      video.muted = muted
+      video.volume = muted ? 0 : 1
       void video.play().catch(() => {})
     } else {
       video.pause()
       video.muted = true
     }
-  }, [shown, index])
+  }, [shown, index, muted])
 
   const handleTransitionEnd = useCallback(
     (event: TransitionEvent<HTMLDivElement>) => {

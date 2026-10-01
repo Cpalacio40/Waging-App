@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type AnimationEvent, type TransitionEvent } from 'react'
-import { CheckCircle2, Trash2 } from 'lucide-react'
+import { CheckCircle2, Trash2, Volume2, VolumeX } from 'lucide-react'
 import { AppTabBar } from './components/AppTabBar'
 import { IosNotification, type IosNotificationPhase } from './components/IosNotification'
 import { IosStatusBar, type StatusBarTone } from './components/IosStatusBar'
@@ -201,6 +201,7 @@ function App() {
     () => loadScheduledOuting().sessionCardDismissed,
   )
   const [sessionRecapOpen, setSessionRecapOpen] = useState(false)
+  const [audioMuted, setAudioMuted] = useState(false)
   const [restDetailOpen, setRestDetailOpen] = useState(false)
   const [activityDetailOpen, setActivityDetailOpen] = useState(false)
   const layerAnimRef = useRef<LayerAnim>(null)
@@ -606,6 +607,20 @@ function App() {
 
   return (
     <div className="studio">
+      <button
+        type="button"
+        className={`studio__volume${audioMuted ? ' is-muted' : ''}`}
+        aria-label={audioMuted ? 'Activar sonido' : 'Silenciar'}
+        aria-pressed={audioMuted}
+        onClick={() => setAudioMuted((prev) => !prev)}
+      >
+        {audioMuted ? (
+          <VolumeX size={20} strokeWidth={1.75} aria-hidden="true" />
+        ) : (
+          <Volume2 size={20} strokeWidth={1.75} aria-hidden="true" />
+        )}
+      </button>
+
       <header className="studio__brand">
         <p className="studio__eyebrow">TFM · Camila Palacio</p>
         <h1 className="studio__title">Waging App</h1>
@@ -728,6 +743,7 @@ function App() {
                     open={sessionRecapOpen}
                     onClose={closeSessionRecap}
                     caregiverName={walkDoneCaregiver ?? undefined}
+                    muted={audioMuted}
                   />
                   <RestDetailScreen
                     open={restDetailOpen}

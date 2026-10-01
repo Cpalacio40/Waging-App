@@ -86,7 +86,8 @@ const DEMO_OVERRIDES: Record<string, RelativeDemoOverride[]> = {
   ],
   javier: [
     { fromToday: 0, freeIndexes: [1, 2, 3, 4] },
-    { fromToday: 1, freeIndexes: [] },
+    // TFM demo: next working day keeps 17:00 + 18:30 free (late shift indexes 3, 4).
+    { fromToday: 1, freeIndexes: [3, 4] },
     { fromToday: 3, freeIndexes: [0, 4] },
     { fromToday: 4, freeIndexes: [0, 1, 2, 3, 4] },
     { fromToday: 6, freeIndexes: [3] },
